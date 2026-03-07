@@ -1,0 +1,17 @@
+name: DevSecOps Pipeline
+on: [push, pull_request]
+jobs:
+  security-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan for secrets (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install dependencies
+        run: pnpm install  # Asume package.json en React
+      - name: Lint Code
+        run: pnpx prettier . --check --ext .js,.jsx,.ts,.tsx  # Linting con Prettier para React
