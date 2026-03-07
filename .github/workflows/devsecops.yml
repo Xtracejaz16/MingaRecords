@@ -12,6 +12,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Install dependencies
-        run: pnpm install  # Asume package.json en React
+        run: npm install  # Asume package.json en React
       - name: Lint Code
-        run: pnpx prettier . --check --ext .js,.jsx,.ts,.tsx  # Linting con Prettier para React
+        run: npx prettier . --check --ext .js,.jsx,.ts,.tsx  # Linting con Prettier para React
