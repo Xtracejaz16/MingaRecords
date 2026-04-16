@@ -1,16 +1,4 @@
 export function Hero() {
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
-    e.preventDefault();
-    const element = document.querySelector(targetId);
-    if (element && 'offsetTop' in element) {
-      const htmlElement = element as HTMLElement;
-      window.scrollTo({
-        top: htmlElement.offsetTop - 80,
-        behavior: 'smooth'
-      });
-    }
-  };
-
   return (
     <section className="relative min-h-screen pt-32 pb-20 flex flex-col items-center justify-center text-center pattern-vueltiao overflow-hidden">
       {/* Rotating Muisca Emblem Background */}
@@ -36,13 +24,12 @@ export function Hero() {
           <a 
             className="px-10 py-4 bg-muiscaGold text-obsidian font-cinzel font-bold tracking-widest hover:bg-koguiCream transition-all duration-300 transform hover:-translate-y-1 shadow-[0_0_20px_rgba(200,134,10,0.3)] cursor-pointer"
             href="#cosecha"
-            onClick={(e) => handleNavClick(e, '#cosecha')}
           >
             EXPLORAR BEATS
           </a>
           <a 
             className="px-10 py-4 border-2 border-wayuuJade text-wayuuJade font-cinzel font-bold tracking-widest hover:bg-wayuuJade hover:text-white transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
-            href="#"
+            href="#/ser-productor"
           >
             SER PRODUCTOR
           </a>
