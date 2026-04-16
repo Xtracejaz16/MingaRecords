@@ -1,35 +1,62 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useScrollReveal } from './hooks';
+import {
+  Navigation,
+  Hero,
+  Cosecha,
+  Comunidad,
+  Impulso,
+  Ritual,
+  Ofrendas,
+  Minga,
+  Footer,
+} from './components';
+import './index.css';
 
 function App() {
-  const [count, setCount] = useState(0)
+  // Initialize scroll reveal animations
+  useScrollReveal();
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        MingaRecords
-      </p>
-    </>
-  )
+    <div className="bg-obsidian text-koguiCream font-crimson overflow-x-hidden">
+      {/* Grain overlay texture */}
+      <div className="grain-overlay" />
+      
+      {/* Skip to content for accessibility */}
+      <a 
+        href="#cosecha" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-muiscaGold focus:text-obsidian focus:px-4 focus:py-2"
+      >
+        Skip to content
+      </a>
+      
+      {/* Navigation */}
+      <Navigation />
+      
+      {/* Hero Section */}
+      <Hero />
+      
+      {/* La Cosecha (Beat Catalog) */}
+      <Cosecha />
+      
+      {/* La Comunidad (Producer Community) */}
+      <Comunidad />
+      
+      {/* El Impulso (Stats) */}
+      <Impulso />
+      
+      {/* El Ritual (Flow) */}
+      <Ritual />
+      
+      {/* Las Ofrendas (Pricing) */}
+      <Ofrendas />
+      
+      {/* Nuestra Minga (Manifesto) */}
+      <Minga />
+      
+      {/* Footer */}
+      <Footer />
+    </div>
+  );
 }
 
-export default App
+export default App;

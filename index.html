@@ -1,13 +1,462 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>mingarecords</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MINGA RECORDS | El Ritmo Nació Aquí</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,400&display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#0F0A00',
+            muiscaGold: '#C8860A',
+            taironaTerracotta: '#8B2500',
+            koguiCream: '#F2E8D0',
+            zenuCopper: '#B5651D',
+            emberaNavy: '#1A2340',
+            wayuuJade: '#1A7A6E',
+          },
+          fontFamily: {
+            cinzel: ['Cinzel', 'serif'],
+            crimson: ['Crimson Pro', 'serif'],
+          },
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-textures-and-patterns">
+    /* Vueltiao Pattern Overlay */
+    .pattern-vueltiao {
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L60 30L30 60L0 30L30 0ZM30 10L50 30L30 50L10 30L30 10Z' fill='%23F2E8D0' fill-opacity='0.04'/%3E%3C/svg%3E");
+    }
+
+    /* Noise Texture overlay */
+    .grain-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.05;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    /* Muisca Solar Emblem Rotation */
+    @keyframes rotateSolar {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .solar-emblem {
+      animation: rotateSolar 20s linear infinite;
+    }
+
+    /* Custom Cursor */
+    body {
+      cursor: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 2L15 9H22L16 14L18 21L12 17L6 21L8 14L2 9H9L12 2Z' fill='%23C8860A'/%3E%3C/svg%3E"), auto;
+    }
+
+    /* Wayuu Diamond Border */
+    .wayuu-border {
+      border-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20L20 0Z' fill='%231A7A6E'/%3E%3C/svg%3E") 30 repeat;
+      border-width: 4px;
+      border-style: solid;
+    }
+
+    /* Reveal animations */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.8s ease-out;
+    }
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body class="bg-obsidian text-koguiCream font-crimson overflow-x-hidden">
+<div class="grain-overlay"></div>
+<!-- BEGIN: Navigation -->
+<nav class="fixed top-0 w-full z-50 bg-obsidian/90 backdrop-blur-md border-b border-muiscaGold/20 px-6 py-4 flex justify-between items-center">
+<div class="font-cinzel text-xl font-black tracking-widest text-muiscaGold">
+      MINGA <span class="text-taironaTerracotta">RECORDS</span>
+</div>
+<div class="hidden md:flex space-x-8 font-cinzel text-xs tracking-[0.2em] uppercase">
+<a class="hover:text-muiscaGold transition-colors" href="#cosecha">Cosecha</a>
+<a class="hover:text-muiscaGold transition-colors" href="#comunidad">Comunidad</a>
+<a class="hover:text-muiscaGold transition-colors" href="#ofrendas">Ofrendas</a>
+<a class="hover:text-muiscaGold transition-colors" href="#minga">La Minga</a>
+</div>
+<button class="md:hidden text-muiscaGold">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16m-7 6h7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</nav>
+<!-- END: Navigation -->
+<!-- BEGIN: Hero Section -->
+<section class="relative min-h-screen pt-32 pb-20 flex flex-col items-center justify-center text-center pattern-vueltiao overflow-hidden">
+<!-- Rotating Muisca Emblem Background -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 pointer-events-none">
+<svg class="solar-emblem w-[600px] h-[600px]" fill="none" viewbox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+<circle cx="50" cy="50" r="45" stroke="#C8860A" stroke-dasharray="2 2" stroke-width="0.5"></circle>
+<path d="M50 5 L55 45 L95 50 L55 55 L50 95 L45 55 L5 50 L45 45 Z" fill="#C8860A"></path>
+<circle cx="50" cy="50" r="10" stroke="#C8860A" stroke-width="1"></circle>
+</svg>
+</div>
+<div class="relative z-10 px-6">
+<p class="font-cinzel text-muiscaGold tracking-[0.4em] mb-4 text-sm md:text-lg animate-pulse">BIENVENIDOS AL ORIGEN</p>
+<h1 class="font-cinzel text-5xl md:text-8xl font-black text-koguiCream mb-6 leading-none">
+        EL RITMO <br/> <span class="text-muiscaGold">NACIÓ AQUÍ</span>
+</h1>
+<p class="text-xl md:text-2xl font-light italic mb-10 max-w-2xl mx-auto opacity-80">
+        "Del territorio colombiano al mundo — beats con raíz"
+      </p>
+<div class="flex flex-col md:flex-row gap-6 justify-center">
+<a class="px-10 py-4 bg-muiscaGold text-obsidian font-cinzel font-bold tracking-widest hover:bg-koguiCream transition-all duration-300 transform hover:-translate-y-1 shadow-[0_0_20px_rgba(200,134,10,0.3)]" href="#cosecha">
+          EXPLORAR BEATS
+        </a>
+<a class="px-10 py-4 border-2 border-wayuuJade text-wayuuJade font-cinzel font-bold tracking-widest hover:bg-wayuuJade hover:text-white transition-all duration-300 transform hover:-translate-y-1" href="#">
+          SER PRODUCTOR
+        </a>
+</div>
+</div>
+</section>
+<!-- END: Hero Section -->
+<!-- BEGIN: La Cosecha (Beat Catalog) -->
+<section class="py-24 px-6 max-w-7xl mx-auto reveal" id="cosecha">
+<div class="flex flex-col md:flex-row justify-between items-end mb-12">
+<div>
+<h2 class="font-cinzel text-4xl font-bold text-muiscaGold mb-2">LA COSECHA</h2>
+<p class="italic text-lg opacity-70">Sonidos sembrados en tierras sagradas.</p>
+</div>
+<div class="flex gap-4 mt-6 md:mt-0 font-cinzel text-xs tracking-widest overflow-x-auto pb-2 w-full md:w-auto">
+<button class="px-4 py-2 border border-muiscaGold text-muiscaGold bg-muiscaGold/10">TODO</button>
+<button class="px-4 py-2 border border-koguiCream/20 hover:border-muiscaGold transition-colors">AFROBEAT</button>
+<button class="px-4 py-2 border border-koguiCream/20 hover:border-muiscaGold transition-colors">CHAMPETA</button>
+<button class="px-4 py-2 border border-koguiCream/20 hover:border-muiscaGold transition-colors">CUMBIA</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Beat Card 1 -->
+<div class="group relative p-1 bg-gradient-to-br from-muiscaGold/40 to-transparent">
+<div class="bg-obsidian p-6 border border-muiscaGold/20 relative overflow-hidden">
+<!-- Angled Corner Detail -->
+<div class="absolute top-0 right-0 w-8 h-8 bg-muiscaGold/10" style="clip-path: polygon(100% 0, 0 0, 100% 100%);"></div>
+<div class="aspect-square bg-neutral-900 mb-6 relative overflow-hidden">
+<img alt="Beat Art" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCeS4gYFfZZxiAiwpiQFWNv6F1YeWR4er60GjsQzX-Vp1HIrK9eVZwlzPeSQpwjnvE2tMl7eErssAEl22pLr-ItW4N2jFesNRqSCPJQ5MUZXEbTZibe5e5ONxT-IpSD-eRjR0WEQz6wtFDT1qNtrAIVbgOwbAaPMpHiUBB_8I24uvzwOqs5x0KAPuzBttz9vENnC_UNA3Hl6rbE2gykwlYg9iKlboIk4dOP4A-6DuO0tlepLo28VxoyDec25yFqvJPNuERFXjEBuis"/>
+<button class="absolute inset-0 flex items-center justify-center bg-obsidian/40 opacity-0 group-hover:opacity-100 transition-opacity">
+<div class="w-16 h-16 rounded-full bg-muiscaGold flex items-center justify-center text-obsidian">
+<svg class="w-8 h-8 fill-current" viewbox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+</div>
+</button>
+</div>
+<h3 class="font-cinzel text-xl font-bold mb-1">TIERRA SANTA</h3>
+<p class="text-sm tracking-widest text-wayuuJade uppercase mb-4">Muisca Beats</p>
+<div class="flex justify-between items-center pt-4 border-t border-koguiCream/10">
+<span class="font-cinzel text-muiscaGold">$29.99</span>
+<button class="text-xs font-cinzel tracking-widest hover:text-white transition-colors">AÑADIR +</button>
+</div>
+</div>
+</div>
+<!-- Beat Card 2 -->
+<div class="group relative p-1 bg-gradient-to-br from-muiscaGold/40 to-transparent">
+<div class="bg-obsidian p-6 border border-muiscaGold/20 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-8 h-8 bg-muiscaGold/10" style="clip-path: polygon(100% 0, 0 0, 100% 100%);"></div>
+<div class="aspect-square bg-neutral-900 mb-6 relative overflow-hidden">
+<img alt="Beat Art" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzUDVHhbWuGsSc5XSgAMaozxZSSHfrxzZ9KIzWnX2rt6SKJyGWUSD2V_JHBCvnW1rM-5hEZnkorUPh3bFSUb7uufD-eh98TqAL28qL9rhAQgzihZHnniEwRyROfrQqu_Zozm4WJPb2LXZMEBfqcsTIvyTDPNTelCxYF3hWkhY4j-3cQ9W8Mpzt2EGMYXpiJRlQFdLOOfQQN5j-82g7O00C3DKPXEaRkc4MUQDk9zG_j-hQi1sClSjgDsCPPbSOt-S23C684j7JbJs"/>
+<button class="absolute inset-0 flex items-center justify-center bg-obsidian/40 opacity-0 group-hover:opacity-100 transition-opacity">
+<div class="w-16 h-16 rounded-full bg-muiscaGold flex items-center justify-center text-obsidian">
+<svg class="w-8 h-8 fill-current" viewbox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+</div>
+</button>
+</div>
+<h3 class="font-cinzel text-xl font-bold mb-1">JAGUAR SUN</h3>
+<p class="text-sm tracking-widest text-wayuuJade uppercase mb-4">Tayrona Flow</p>
+<div class="flex justify-between items-center pt-4 border-t border-koguiCream/10">
+<span class="font-cinzel text-muiscaGold">$34.99</span>
+<button class="text-xs font-cinzel tracking-widest hover:text-white transition-colors">AÑADIR +</button>
+</div>
+</div>
+</div>
+<!-- Beat Card 3 -->
+<div class="group relative p-1 bg-gradient-to-br from-muiscaGold/40 to-transparent">
+<div class="bg-obsidian p-6 border border-muiscaGold/20 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-8 h-8 bg-muiscaGold/10" style="clip-path: polygon(100% 0, 0 0, 100% 100%);"></div>
+<div class="aspect-square bg-neutral-900 mb-6 relative overflow-hidden">
+<img alt="Beat Art" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-THEOQzsOQDuiHmvmcIZaI--h38ltcFuUNwfP1g_Y8jB2AQ3CumHCNnWHsRYuUZMoA1z2f6EN1oc6bDY1_Nj680zZgvDEqjGikGY03kj1Fr-63FxWnuwvF5fg2E0B7gEHEu9b3-5RZhFm9NIVXYbp-OhIlPJkSZ5ICWuTk9-ATGHoFu49iwm1f1bOPvyvdFiDVtYCnkJoIrKqxP_mSCGYK3MePczXyzivRckYd2q5XGh3CtjD222WpP_Fc7ejkBfX5BM_lMo9Zbc"/>
+<button class="absolute inset-0 flex items-center justify-center bg-obsidian/40 opacity-0 group-hover:opacity-100 transition-opacity">
+<div class="w-16 h-16 rounded-full bg-muiscaGold flex items-center justify-center text-obsidian">
+<svg class="w-8 h-8 fill-current" viewbox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+</div>
+</button>
+</div>
+<h3 class="font-cinzel text-xl font-bold mb-1">DESIERTO & MAR</h3>
+<p class="text-sm tracking-widest text-wayuuJade uppercase mb-4">Wayuu Riddim</p>
+<div class="flex justify-between items-center pt-4 border-t border-koguiCream/10">
+<span class="font-cinzel text-muiscaGold">$39.99</span>
+<button class="text-xs font-cinzel tracking-widest hover:text-white transition-colors">AÑADIR +</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: La Cosecha -->
+<!-- BEGIN: La Comunidad (Producer Scroll) -->
+<section class="py-24 bg-obsidian/50 reveal" id="comunidad">
+<div class="max-w-7xl mx-auto px-6 mb-12 text-center">
+<h2 class="font-cinzel text-4xl font-bold text-muiscaGold">LA COMUNIDAD</h2>
+<div class="w-24 h-1 bg-zenuCopper mx-auto mt-4"></div>
+</div>
+<div class="flex overflow-x-auto gap-12 px-6 pb-12 snap-x">
+<!-- Producer Card 1 -->
+<div class="flex-none w-64 snap-center group">
+<div class="relative mb-6">
+<div class="absolute inset-0 border-2 border-dashed border-muiscaGold rounded-full animate-[spin_10s_linear_infinite]"></div>
+<div class="p-3">
+<img alt="Producer" class="rounded-full grayscale hover:grayscale-0 transition-all duration-500 border-4 border-obsidian" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBB5Kj-BcdZYacAroO9Y94b3hff3yHOOgFcFgDYVUGCv4aV2jOL5vOiRlY7gLHzyTHzvKoj8GKefCEG6cwYWArv4tu_8wFLZ428vNZcUzgjPMAuCo2FcZHm1dxIoNLj9mzxkA88IsFUh0N7gJnPjC7H8sENpQ-JdyK2-Q0gdnQ6Zaku-Be2wYhxkCDOJ-yW2FeBPhRv72vcume-zra9WEig0b__AKlw6FFWMznrNGrDm-BrMwXx9MyTLbADFTYjG6a9p-oLFep4vis"/>
+</div>
+</div>
+<div class="text-center">
+<h4 class="font-cinzel text-lg font-bold">KOGUI VIBES</h4>
+<p class="text-xs tracking-widest text-zenuCopper">SIERRA NEVADA</p>
+</div>
+</div>
+<!-- Producer Card 2 -->
+<div class="flex-none w-64 snap-center group">
+<div class="relative mb-6">
+<div class="absolute inset-0 border-2 border-dashed border-muiscaGold rounded-full animate-[spin_15s_linear_infinite_reverse]"></div>
+<div class="p-3">
+<img alt="Producer" class="rounded-full grayscale hover:grayscale-0 transition-all duration-500 border-4 border-obsidian" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOj8E9YwAOH9wi-SL4PV1niIC7jVI0NMs7B74gkaMT6Ri3a-c2SHGD-C2b02u5edM8vakEGjPGMfXeqWZ1AcrvxbEhTuRsoc6Dfr09LiDtR_4YVtRLMnwFLcZs-wpzqO7PtqnJtBG58UYpNAwP2Gf25TfkM1rPXueTEf_6iSV4b2qPg5uatNvIR4A6K2D0tWHMYxMz1-WxNysoH6vUn0xTB-N4Fhzfrw9gIjVBgqHqKgguY1zu_ROWIE4H90_m8Ndk5Li5-AbXMRs"/>
+</div>
+</div>
+<div class="text-center">
+<h4 class="font-cinzel text-lg font-bold">ZENU FLOW</h4>
+<p class="text-xs tracking-widest text-zenuCopper">SINÚ</p>
+</div>
+</div>
+<!-- Producer Card 3 -->
+<div class="flex-none w-64 snap-center group">
+<div class="relative mb-6">
+<div class="absolute inset-0 border-2 border-dashed border-muiscaGold rounded-full animate-[spin_12s_linear_infinite]"></div>
+<div class="p-3">
+<img alt="Producer" class="rounded-full grayscale hover:grayscale-0 transition-all duration-500 border-4 border-obsidian" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJYofex6CTHE0CEw_rTBoc_9M9CZ_KfwCxqDuNwzqq5MeZEHOnLdOmjDt4_w9JUd_CMLbIZlmFKEWYrjJJGzrVLzagL7UlalmGHWswrqGbhrhLn69eIgrGtZXu9dKa6Vskj8KP7WyyJFdIQ8JlXQE7c9n2L_gLYLXSuQzrmVnMJdoUL2qHSwbXj_HmbIVCelRX_G1y2dzp0ooDlU0VfTvKnQelAqPvx_rGBxaFikHj1Fz5am7PvjYK6B04e27ogKw4seBQZL9Ttpc"/>
+</div>
+</div>
+<div class="text-center">
+<h4 class="font-cinzel text-lg font-bold">EMBERA DRUM</h4>
+<p class="text-xs tracking-widest text-zenuCopper">CHOCO</p>
+</div>
+</div>
+<!-- Producer Card 4 -->
+<div class="flex-none w-64 snap-center group">
+<div class="relative mb-6">
+<div class="absolute inset-0 border-2 border-dashed border-muiscaGold rounded-full animate-[spin_8s_linear_infinite_reverse]"></div>
+<div class="p-3">
+<img alt="Producer" class="rounded-full grayscale hover:grayscale-0 transition-all duration-500 border-4 border-obsidian" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAafZeBKw3q90YLDS2_fXdKi4qwkI6GrbfOwrHKQeMKp5VSXfqm_3F0vKQH0Ria2u4283qdbKHn7GoAET2-qbUEjQ-qb7-Q2jF6Jez-1LfriZdqkf36zqqeVJNMf_qKx8QwwhYxsYpnpIjR7V8WRJdpbv96Z_6IvEQblwMaKilrsRNXAAKG4yKbd4mBJ8wJ_ehXfMXFzF-docJ79GPMz24XrrdYrFaQ1AwJ-X-FYlOYjOPrSWO5SkdoulbGnfS007GYfkYBfdQHKa4"/>
+</div>
+</div>
+<div class="text-center">
+<h4 class="font-cinzel text-lg font-bold">WAYUU SOUL</h4>
+<p class="text-xs tracking-widest text-zenuCopper">GUAJIRA</p>
+</div>
+</div>
+</div>
+</section>
+<!-- END: La Comunidad -->
+<!-- BEGIN: El Impulso (Stats) -->
+<section class="py-20 bg-taironaTerracotta text-koguiCream" id="impulso">
+<div class="max-w-7xl mx-auto px-6 grid grid-cols-2 lg:grid-cols-4 gap-12 text-center">
+<div class="reveal">
+<span class="block font-cinzel text-5xl font-black mb-2">1.2K+</span>
+<span class="block tracking-[0.3em] text-xs uppercase opacity-80 font-cinzel">Beats Cosechados</span>
+</div>
+<div class="reveal">
+<span class="block font-cinzel text-5xl font-black mb-2">350</span>
+<span class="block tracking-[0.3em] text-xs uppercase opacity-80 font-cinzel">Minguis (Productores)</span>
+</div>
+<div class="reveal">
+<span class="block font-cinzel text-5xl font-black mb-2">45</span>
+<span class="block tracking-[0.3em] text-xs uppercase opacity-80 font-cinzel">Países Resonando</span>
+</div>
+<div class="reveal">
+<span class="block font-cinzel text-5xl font-black mb-2">8K+</span>
+<span class="block tracking-[0.3em] text-xs uppercase opacity-80 font-cinzel">Rituales (Licencias)</span>
+</div>
+</div>
+</section>
+<!-- END: El Impulso -->
+<!-- BEGIN: El Ritual (Flow) -->
+<section class="py-24 px-6 max-w-7xl mx-auto reveal">
+<div class="text-center mb-16">
+<h2 class="font-cinzel text-4xl font-bold text-muiscaGold">EL RITUAL</h2>
+<p class="italic opacity-70">Cómo fluye la energía en nuestra red.</p>
+</div>
+<div class="relative grid grid-cols-1 md:grid-cols-2 gap-20 items-center">
+<!-- Spiral Connector (Mobile Hidden) -->
+<div class="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20 pointer-events-none">
+<svg fill="none" height="200" viewbox="0 0 100 100" width="200" xmlns="http://www.w3.org/2000/svg">
+<path d="M50 50C70 50 80 30 80 15C80 5 70 5 60 15C40 35 40 65 60 85C70 95 80 95 80 85C80 70 70 50 50 50Z" stroke="#B5651D" stroke-width="2"></path>
+</svg>
+</div>
+<!-- Artist Side -->
+<div class="space-y-12">
+<div class="flex items-start gap-6">
+<div class="flex-none w-12 h-12 flex items-center justify-center bg-muiscaGold/10 text-muiscaGold">
+<svg class="w-8 h-8" fill="currentColor" viewbox="0 0 24 24"><path d="M12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2Z"></path></svg>
+</div>
+<div>
+<h4 class="font-cinzel text-lg font-bold mb-2">EL BUSCADOR (ARTISTA)</h4>
+<p class="opacity-80">Explora la cosecha y encuentra el alma de tu próxima creación entre cientos de texturas únicas.</p>
+</div>
+</div>
+</div>
+<!-- Beatmaker Side -->
+<div class="space-y-12">
+<div class="flex items-start gap-6">
+<div class="flex-none w-12 h-12 flex items-center justify-center bg-wayuuJade/10 text-wayuuJade">
+<svg class="w-8 h-8" fill="currentColor" viewbox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"></path></svg>
+</div>
+<div>
+<h4 class="font-cinzel text-lg font-bold mb-2">EL SEMBRADOR (BEATMAKER)</h4>
+<p class="opacity-80">Sube tus ritmos, establece tus leyes y comparte tu medicina con el mundo entero.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: El Ritual -->
+<!-- BEGIN: Las Ofrendas (Pricing) -->
+<section class="py-24 px-6 bg-emberaNavy/30 reveal" id="ofrendas">
+<div class="max-w-7xl mx-auto">
+<div class="text-center mb-16">
+<h2 class="font-cinzel text-4xl font-bold text-muiscaGold">LAS OFRENDAS</h2>
+<p class="italic opacity-70">El intercambio justo por el espíritu del sonido.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Card 1 -->
+<div class="bg-stone-900 border-2 border-stone-800 p-8 flex flex-col items-center text-center transform hover:-translate-y-2 transition-transform duration-500 relative group">
+<div class="absolute -top-4 bg-stone-800 px-4 py-1 text-xs font-cinzel tracking-widest">SEMILLA</div>
+<span class="font-cinzel text-3xl mb-4">$29</span>
+<p class="text-sm italic mb-8 opacity-60">Uso básico en plataformas digitales.</p>
+<ul class="space-y-4 text-sm mb-10 opacity-80 flex-grow">
+<li>MP3 320kbps</li>
+<li>5,000 Streams</li>
+<li>Uso No-Lucrativo</li>
+</ul>
+<button class="w-full py-3 bg-stone-800 font-cinzel tracking-widest hover:bg-muiscaGold hover:text-obsidian transition-colors">ADQUIRIR</button>
+</div>
+<!-- Card 2 (Featured) -->
+<div class="bg-stone-900 border-2 border-wayuuJade p-8 flex flex-col items-center text-center transform hover:-translate-y-4 transition-transform duration-500 relative group shadow-[0_0_40px_rgba(26,122,110,0.2)]">
+<div class="absolute -top-4 bg-wayuuJade px-4 py-1 text-xs font-cinzel tracking-widest text-white">RA��Z</div>
+<span class="font-cinzel text-3xl mb-4 text-wayuuJade">$99</span>
+<p class="text-sm italic mb-8 opacity-80">El estándar para el artista profesional.</p>
+<ul class="space-y-4 text-sm mb-10 flex-grow">
+<li class="font-bold">WAV + STEMS (Pistas)</li>
+<li>Streams Ilimitados</li>
+<li>Distribución Comercial</li>
+<li>Acuerdo de Regalías 50/50</li>
+</ul>
+<button class="w-full py-3 bg-wayuuJade font-cinzel tracking-widest hover:bg-koguiCream hover:text-obsidian transition-colors">POPULAR</button>
+</div>
+<!-- Card 3 -->
+<div class="bg-stone-900 border-2 border-stone-800 p-8 flex flex-col items-center text-center transform hover:-translate-y-2 transition-transform duration-500 relative group">
+<div class="absolute -top-4 bg-stone-800 px-4 py-1 text-xs font-cinzel tracking-widest">CEIBA</div>
+<span class="font-cinzel text-3xl mb-4">$499</span>
+<p class="text-sm italic mb-8 opacity-60">Propiedad total y eterna.</p>
+<ul class="space-y-4 text-sm mb-10 opacity-80 flex-grow">
+<li>EXCLUSIVIDAD TOTAL</li>
+<li>Contrato de Transferencia</li>
+<li>Uso en Cine/TV</li>
+<li>Sin Límites</li>
+</ul>
+<button class="w-full py-3 bg-stone-800 font-cinzel tracking-widest hover:bg-muiscaGold hover:text-obsidian transition-colors">EXCLUSIVO</button>
+</div>
+</div>
+</div>
+</section>
+<!-- END: Las Ofrendas -->
+<!-- BEGIN: Nuestra Minga (Manifesto) -->
+<section class="relative py-32 bg-taironaTerracotta overflow-hidden" id="minga">
+<!-- Kogui Watermark -->
+<div class="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+<svg fill="white" height="400" viewbox="0 0 100 100" width="400">
+<path d="M50 0 L100 50 L50 100 L0 50 Z"></path>
+</svg>
+</div>
+<div class="relative z-10 max-w-4xl mx-auto px-6 text-center">
+<blockquote class="font-crimson italic text-3xl md:text-5xl leading-tight text-koguiCream">
+        "Nuestra música no es un producto, es un tejido. Una minga digital donde cada beat lleva el sudor de la montaña y el eco de los ancestros. Somos el puente entre lo antiguo y lo que está por nacer."
+      </blockquote>
+<p class="mt-12 font-cinzel tracking-widest font-bold text-muiscaGold">— MANIFIESTO MINGA</p>
+</div>
+</section>
+<!-- END: Nuestra Minga -->
+<!-- BEGIN: Footer -->
+<footer class="bg-obsidian pt-24 pb-12 px-6">
+<div class="max-w-7xl mx-auto">
+<div class="flex flex-col items-center text-center">
+<div class="font-cinzel text-3xl font-black text-muiscaGold mb-8">
+          MINGA <span class="text-taironaTerracotta">RECORDS</span>
+</div>
+<!-- Zenu Divider -->
+<div class="w-full flex items-center justify-center gap-4 mb-12">
+<div class="h-[1px] bg-gradient-to-r from-transparent to-muiscaGold flex-grow"></div>
+<svg class="text-muiscaGold" fill="none" height="40" viewbox="0 0 100 100" width="40">
+<path d="M50 10 C30 10 10 30 10 50 C10 70 30 90 50 90 C70 90 90 70 90 50 C90 30 70 10 50 10 Z M50 25 C65 25 75 35 75 50 C75 65 65 75 50 75 C35 75 25 65 25 50 C25 35 35 25 50 25 Z" fill="currentColor"></path>
+</svg>
+<div class="h-[1px] bg-gradient-to-l from-transparent to-muiscaGold flex-grow"></div>
+</div>
+<div class="flex gap-8 mb-16">
+<a class="text-koguiCream/60 hover:text-muiscaGold transition-colors" href="#">
+<span class="sr-only">Instagram</span>
+<svg class="w-6 h-6" fill="currentColor" viewbox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"></path></svg>
+</a>
+<a class="text-koguiCream/60 hover:text-muiscaGold transition-colors" href="#">
+<span class="sr-only">YouTube</span>
+<svg class="w-6 h-6" fill="currentColor" viewbox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"></path></svg>
+</a>
+</div>
+<p class="text-xs font-cinzel tracking-[0.2em] opacity-40">© 2024 MINGA RECORDS. ORIGEN COLOMBIANO.</p>
+</div>
+</div>
+<!-- Pattern Base -->
+<div class="w-full h-8 mt-12 pattern-vueltiao opacity-20"></div>
+</footer>
+<!-- END: Footer -->
+<script data-purpose="interaction-handlers">
+    // Reveal On Scroll
+    const observerOptions = {
+      threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Smooth Scroll Offset for Nav
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href');
+        const targetElement = document.querySelector(targetId);
+        if (targetElement) {
+          window.scrollTo({
+            top: targetElement.offsetTop - 80,
+            behavior: 'smooth'
+          });
+        }
+      });
+    });
+  </script>
+</body></html>
