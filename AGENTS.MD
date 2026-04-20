@@ -16,8 +16,8 @@ Las skills son instrucciones especializadas que el agente carga automáticamente
 
 | Skill | Dominio | Cuándo activar | Archivo |
 |---|---|---|---|
-| `git-commits-pr` | Git, commits, pull requests | Usuario dice "commit", "PR", "sube los cambios", "push", o termina de implementar cualquier feature/fix | [SKILL.md](skills/git-commits-pr/SKILL.md) |
-| `hexagonal-frontend` | Arquitectura React + TypeScript | Usuario pide crear un módulo, feature, pantalla o pregunta cómo organizar código frontend | [SKILL.md](skills/hexagonal-frontend/SKILL.MD) |
+| `git-commits-pr` | Git, commits, pull requests | Usuario dice "commit", "PR", "sube los cambios", "push", o termina de implementar cualquier feature/fix | [SKILL.md](skill/git-commits-pr/SKILL.md) |
+| `hexagonal-frontend` | Arquitectura React + TypeScript | Usuario pide crear un módulo, feature, pantalla o pregunta cómo organizar código frontend | [SKILL.md](skill/hexagonal-frontend/SKILL.MD) |
 | `playwright` | Testing E2E | Usuario pide tests, E2E, o menciona Playwright | [SKILL.md](skill/playwright/SKILL.md) |
 | `pr-review` | Code review de PRs | Usuario comparte una URL de PR o pide revisar un PR | [SKILL.md](skill/pr-review/SKILL.md) |
 | `react-19` | Componentes React | Cualquier componente React — no usar `useMemo`/`useCallback` manual | [SKILL.md](skill/react-19/SKILL.md) |
