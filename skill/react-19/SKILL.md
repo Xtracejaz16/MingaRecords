@@ -1,18 +1,20 @@
 ---
 name: react-19
 description: >
-  React 19 patterns with React Compiler.
-  Trigger: When writing React components - no useMemo/useCallback needed.
+  React 19 patterns for Vite-based projects.
+  Trigger: When writing React components.
 license: Apache-2.0
 metadata:
   author: gentleman-programming
   version: "1.0"
 ---
 
-## No Manual Memoization (REQUIRED)
+## Memoization
+
+> **Note:** Avoid `useMemo`/`useCallback` only if React Compiler is enabled in `vite.config.ts` (e.g. `babel-plugin-react-compiler`). In this repo the compiler is **not configured**, so use them when needed to prevent expensive recalculations or unstable references.
 
 ```typescript
-// ✅ React Compiler handles optimization automatically
+// ✅ With React Compiler enabled — no manual memoization needed
 function Component({ items }) {
   const filtered = items.filter(x => x.active);
   const sorted = filtered.sort((a, b) => a.name.localeCompare(b.name));
@@ -24,7 +26,7 @@ function Component({ items }) {
   return <List items={sorted} onClick={handleClick} />;
 }
 
-// ❌ NEVER: Manual memoization
+// ✅ Without React Compiler — memoize expensive computations / stable callbacks
 const filtered = useMemo(() => items.filter(x => x.active), [items]);
 const handleClick = useCallback((id) => console.log(id), []);
 ```
