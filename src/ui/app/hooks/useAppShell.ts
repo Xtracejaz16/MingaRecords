@@ -26,8 +26,7 @@ export function useAppShell() {
     }
 
     if (window.location.hash !== resolvedRoute.canonicalHash) {
-      window.history.replaceState(null, '', resolvedRoute.canonicalHash);
-      setHash(resolvedRoute.canonicalHash);
+      window.location.hash = resolvedRoute.canonicalHash;
     }
   }, [resolvedRoute.canonicalHash, resolvedRoute.kind]);
 
