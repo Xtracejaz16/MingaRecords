@@ -81,5 +81,5 @@ Terminar implementación → Analizar cambios → Proponer commit con Convention
 Al crear una nueva skill con `skill-creator`, registrarla en la tabla de arriba:
 
 ```markdown
-| `nombre-skill` | Dominio breve | Cuándo activarla | [SKILL.md](skills/nombre-skill/SKILL.md) |
+| `nombre-skill` | Dominio breve | Cuándo activarla | [SKILL.md](skill/nombre-skill/SKILL.md) |
 ```
