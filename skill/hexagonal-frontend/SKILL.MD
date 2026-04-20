@@ -138,8 +138,8 @@ export function use{Accion}() {
     try {
       const result = await useCase.execute(input)
       setData(result)
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error inesperado')
     } finally {
       setLoading(false)
     }
