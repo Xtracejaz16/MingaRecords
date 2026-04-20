@@ -28,7 +28,7 @@ Create a skill when:
 ## Skill Structure
 
 ```
-skills/{skill-name}/
+skill/{skill-name}/
 ├── SKILL.md              # Required - main skill file
 ├── assets/               # Optional - templates, schemas, examples
 │   ├── template.py
@@ -145,24 +145,24 @@ Generic skill needs Prowler info?  → Add references/ pointing to Prowler docs
 
 ## Registering the Skill
 
-After creating the skill, add it to `AGENTS.md`:
+After creating the skill, add it to `AGENTS.MD`:
 
 ```markdown
-| `{skill-name}` | {Description} | [SKILL.md](skills/{skill-name}/SKILL.md) |
+| `{skill-name}` | {Description} | [SKILL.md](skill/{skill-name}/SKILL.md) |
 ```
 
 ---
 
 ## Checklist Before Creating
 
-- [ ] Skill doesn't already exist (check `skills/`)
+- [ ] Skill doesn't already exist (check `skill/`)
 - [ ] Pattern is reusable (not one-off)
 - [ ] Name follows conventions
 - [ ] Frontmatter is complete (description includes trigger keywords)
 - [ ] Critical patterns are clear
 - [ ] Code examples are minimal
 - [ ] Commands section exists
-- [ ] Added to AGENTS.md
+- [ ] Added to AGENTS.MD
 
 ## Resources
 
