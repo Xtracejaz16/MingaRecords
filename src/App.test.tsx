@@ -43,7 +43,7 @@ describe('App routing', () => {
     expect(screen.getByText(/Necesitás iniciar sesión para entrar al panel privado/i)).toBeInTheDocument();
   });
 
-  it('lets authenticated users enter the private panel', async () => {
+  it('lets authenticated users enter the private panel', () => {
     window.localStorage.setItem(
       'mingarecords.auth.session',
       JSON.stringify({
@@ -61,11 +61,9 @@ describe('App routing', () => {
     expect(screen.getByText(/Panel de productor listo para crecer/i)).toBeInTheDocument();
   });
 
-  it('navigates through canonical home actions', () => {
+  it('exposes canonical home navigation links', () => {
     render(<App />);
 
-    fireEvent.click(screen.getAllByRole('button', { name: /ser productor/i })[0]);
-
-    expect(window.location.hash).toBe('#/ser-productor');
+    expect(screen.getByRole('link', { name: /ser productor/i })).toHaveAttribute('href', '#/ser-productor');
   });
 });

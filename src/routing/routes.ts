@@ -1,4 +1,4 @@
-import type { AuthTab } from '../domain/auth';
+import type { AuthTab } from '../domain/auth/entities/auth';
 
 export type AppRouteKey = 'home' | 'login' | 'register' | 'panel';
 export type ResolvedRouteKind = 'public' | 'private' | 'notFound';
