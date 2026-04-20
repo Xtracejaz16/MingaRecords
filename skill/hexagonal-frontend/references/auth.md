@@ -174,7 +174,7 @@ export class MockAuthRepository implements AuthRepository {
 import { AuthRepository } from '../../domain/auth/AuthRepository'
 import { User, LoginCredentials, RegisterCredentials } from '../../domain/auth/User'
 
-const BASE_URL = process.env.REACT_APP_AUTH_API_URL ?? '/api/auth'
+ const BASE_URL = import.meta.env.VITE_AUTH_API_URL ?? '/api/auth'
 
 export class ApiAuthRepository implements AuthRepository {
   async login(credentials: LoginCredentials): Promise<User> {
