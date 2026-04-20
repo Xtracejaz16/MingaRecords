@@ -18,14 +18,14 @@ Las skills son instrucciones especializadas que el agente carga automáticamente
 |---|---|---|---|
 | `git-commits-pr` | Git, commits, pull requests | Usuario dice "commit", "PR", "sube los cambios", "push", o termina de implementar cualquier feature/fix | [SKILL.md](skills/git-commits-pr/SKILL.md) |
 | `hexagonal-frontend` | Arquitectura React + TypeScript | Usuario pide crear un módulo, feature, pantalla o pregunta cómo organizar código frontend | [SKILL.md](skills/hexagonal-frontend/SKILL.MD) |
-| `playwright` | Testing E2E | Usuario pide tests, E2E, o menciona Playwright | [SKILL.md](skills/playwright/SKILL.md) |
-| `pr-review` | Code review de PRs | Usuario comparte una URL de PR o pide revisar un PR | [SKILL.md](skills/pr-review/SKILL.md) |
-| `react-19` | Componentes React | Cualquier componente React — no usar `useMemo`/`useCallback` manual | [SKILL.md](skills/react-19/SKILL.md) |
-| `tailwind-4` | Estilos CSS | Cualquier tarea de estilos con Tailwind — nunca `var()` en className | [SKILL.md](skills/tailwind-4/SKILL.md) |
-| `typescript` | Tipos TypeScript | Cualquier código TypeScript — const types, interfaces planas, sin `any` | [SKILL.md](skills/typescript/SKILL.md) |
-| `zod-4` | Validación de schemas | Usuario usa Zod para validar datos o formularios | [SKILL.md](skills/zod-4/SKILL.md) |
-| `zustand-5` | Estado global React | Usuario maneja estado global con Zustand | [SKILL.md](skills/zustand-5/SKILL.md) |
-| `skill-creator` | Crear nuevas skills | Usuario pide crear, editar o mejorar una skill | [SKILL.md](skills/skill-creator/SKILL.md) |
+| `playwright` | Testing E2E | Usuario pide tests, E2E, o menciona Playwright | [SKILL.md](skill/playwright/SKILL.md) |
+| `pr-review` | Code review de PRs | Usuario comparte una URL de PR o pide revisar un PR | [SKILL.md](skill/pr-review/SKILL.md) |
+| `react-19` | Componentes React | Cualquier componente React — no usar `useMemo`/`useCallback` manual | [SKILL.md](skill/react-19/SKILL.md) |
+| `tailwind-4` | Estilos CSS | Cualquier tarea de estilos con Tailwind — nunca `var()` en className | [SKILL.md](skill/tailwind-4/SKILL.md) |
+| `typescript` | Tipos TypeScript | Cualquier código TypeScript — const types, interfaces planas, sin `any` | [SKILL.md](skill/typescript/SKILL.md) |
+| `zod-4` | Validación de schemas | Usuario usa Zod para validar datos o formularios | [SKILL.md](skill/zod-4/SKILL.md) |
+| `zustand-5` | Estado global React | Usuario maneja estado global con Zustand | [SKILL.md](skill/zustand-5/SKILL.md) |
+| `skill-creator` | Crear nuevas skills | Usuario pide crear, editar o mejorar una skill | [SKILL.md](skill/skill-creator/SKILL.md) |
 
 ---
 
