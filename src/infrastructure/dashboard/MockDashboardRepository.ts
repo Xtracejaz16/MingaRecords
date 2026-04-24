@@ -40,7 +40,7 @@ const ACTIVITY: ActivityItem[] = [
     type: ACTIVITY_TYPE.COMMENT,
     author: 'Esteban R.',
     timeAgo: '2h ago',
-    message: "'The percussion in \'Ancestral Pulse\' is exactly what I was looking for my new EP. Great work on the mix.'",
+    message: "'The percussion in 'Ancestral Pulse' is exactly what I was looking for my new EP. Great work on the mix.'",
   },
   {
     id: 'activity-2',
