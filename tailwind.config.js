@@ -16,6 +16,9 @@ export default {
         wayuuJade: '#1A7A6E',
       },
       fontFamily: {
+        headline: ['Cinzel', 'serif'],
+        body: ['Crimson Pro', 'serif'],
+        label: ['Crimson Pro', 'serif'],
         cinzel: ['Cinzel', 'serif'],
         crimson: ['Crimson Pro', 'serif'],
       },

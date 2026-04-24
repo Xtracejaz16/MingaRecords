@@ -295,6 +295,42 @@ button {
   padding: 2rem;
 }
 
+.auth-card-shell {
+  background: #231b08;
+}
+
+.font-headline {
+  font-family: 'Cinzel', serif;
+}
+
+.font-body,
+.font-label {
+  font-family: 'Crimson Pro', serif;
+}
+
+.auth-hero {
+  text-align: center;
+}
+
+.auth-hero h1 {
+  margin: 0;
+  font-family: 'Cinzel', serif;
+  color: #ffb950;
+  line-height: 0.95;
+}
+
+.auth-hero p {
+  margin: 0.75rem 0 0;
+  color: #efe2c2;
+  font-style: italic;
+}
+
+.auth-emblem {
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem 0 0.5rem;
+}
+
 .auth-card__head h1 {
   font-size: clamp(2rem, 4vw, 3.5rem);
   margin-bottom: 0.75rem;
@@ -332,7 +368,7 @@ button {
 
 .tab-button {
   padding: 0.9rem 0 1rem;
-  color: rgba(239, 226, 194, 0.68);
+  color: rgba(239, 226, 194, 0.55);
   border-bottom: 2px solid transparent;
 }
 
@@ -359,6 +395,7 @@ button {
   background: rgba(24, 19, 3, 0.65);
   border: 1px solid rgba(158, 142, 123, 0.22);
   cursor: pointer;
+  min-height: 96px;
 }
 
 .role-card input {
@@ -376,14 +413,11 @@ button {
 .field > span,
 .auth-side__tile h2,
 .home-hero__panel h2 {
-  font-family: 'Cinzel', serif;
   text-transform: uppercase;
-  letter-spacing: 0.09em;
 }
 
 .role-card__meta {
   color: rgba(239, 226, 194, 0.65);
-  font-size: 0.92rem;
 }
 
 .field {
@@ -393,7 +427,6 @@ button {
 }
 
 .field > span {
-  font-size: 0.72rem;
   color: #ffb950;
 }
 
@@ -432,8 +465,6 @@ button {
 
 .link-button {
   color: #ffb950;
-  text-decoration: underline;
-  text-underline-offset: 0.25rem;
 }
 
 .auth-side {
