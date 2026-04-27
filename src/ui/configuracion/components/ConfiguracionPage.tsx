@@ -14,7 +14,7 @@ export function ConfiguracionPage() {
   return (
     <main className="page-shell page-shell--dashboard min-h-screen bg-obsidian font-body text-koguiCream mineral-grain">
       <TopNavBar />
-      <SideNavBar />
+      <SideNavBar currentRoute="configuracion" />
 
       <div className="page-shell__grain" />
       <div className="page-shell__pattern" />
