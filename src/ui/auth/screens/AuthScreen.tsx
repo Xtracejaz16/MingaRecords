@@ -1,10 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import type { CSSProperties } from 'react';
-import type { AuthDraft, AuthResult, AuthSession, AuthTab } from '../../../domain/auth/entities/auth';
+import { EyeIcon, EyeOffIcon, Music2, Waves } from 'lucide-react';
+import type { AuthDraft, AuthResult, AuthTab } from '../../../domain/auth/entities/auth';
+import { BrandLogo } from '../../shared/components/BrandLogo';
 
 interface AuthScreenProps {
   initialTab: AuthTab;
-  session: AuthSession | null;
   onBackHome: () => void;
   onSubmit: (mode: AuthTab, draft: AuthDraft) => AuthResult;
   notice?: string;
@@ -18,7 +18,7 @@ const emptyDraft: AuthDraft = {
   remember: true,
 };
 
-export function AuthScreen({ initialTab, session, onBackHome, onSubmit, notice }: AuthScreenProps) {
+export function AuthScreen({ initialTab, onBackHome, onSubmit, notice }: AuthScreenProps) {
   const [tab, setTab] = useState<AuthTab>(initialTab);
   const [draft, setDraft] = useState<AuthDraft>(emptyDraft);
   const [showPassword, setShowPassword] = useState(false);
@@ -62,160 +62,159 @@ export function AuthScreen({ initialTab, session, onBackHome, onSubmit, notice }
       <div className="auth-orb" />
 
       <nav className="topbar topbar--auth">
-        <div>
-          <p className="topbar__eyebrow">MingaRecords</p>
-          <strong className="topbar__brand">Bienvenido al origen</strong>
-        </div>
+        <BrandLogo />
 
         <button className="ghost-button" type="button" onClick={onBackHome}>
           Volver al inicio
         </button>
       </nav>
 
-      <main className="auth-layout">
-        <section className="auth-card">
-          <div className="auth-card__head">
-            <p className="eyebrow">Entrada ritual</p>
-            <h1>Conectate sin esperar backend.</h1>
-            <p>
-              Login y registro funcionan con una capa local, validaciones suaves y estructura lista para la próxima API.
-            </p>
-          </div>
+      <main className="min-h-screen flex items-center justify-center pt-24 px-4">
+        <section className="w-full max-w-lg mx-auto rounded-none auth-card-shell p-10 shadow-[0_0_40px_rgba(69,43,0,0.15)] border border-muiscaGold/20">
+          <div className="space-y-5">
+              {notice ? <div className="auth-feedback auth-feedback--neutral font-body text-xs">{notice}</div> : null}
 
-          {notice ? <div className="auth-feedback auth-feedback--neutral">{notice}</div> : null}
+              <header className="auth-hero">
+              <h1 className="font-headline text-3xl md:text-4xl font-bold tracking-widest uppercase">BIENVENIDO AL ORIGEN</h1>
+              <p className="font-body text-base font-light italic tracking-wide">Únete al tejido digital de la música ancestral</p>
+            </header>
 
-          {session ? <div className="session-banner">Sesión activa: {session.alias}</div> : null}
+            <div className="flex gap-5 border-b border-muiscaGold/20">
+                <button
+                  className={tab === 'login' ? 'tab-button is-active w-full font-headline text-sm font-normal uppercase tracking-widest' : 'tab-button w-full font-headline text-sm font-normal uppercase tracking-widest'}
+                  type="button"
+                  onClick={() => setTab('login')}
+                >
+                Entrar
+              </button>
+                <button
+                  className={tab === 'register' ? 'tab-button is-active w-full font-headline text-sm font-normal uppercase tracking-widest' : 'tab-button w-full font-headline text-sm font-normal uppercase tracking-widest'}
+                  type="button"
+                  onClick={() => setTab('register')}
+                >
+                Unirme a la Minga
+              </button>
+            </div>
 
-          <div className="auth-tabs" role="tablist" aria-label="Autenticación" style={{ '--active-tab': tab } as CSSProperties}>
-            <button
-              className={tab === 'login' ? 'tab-button is-active' : 'tab-button'}
-              type="button"
-              onClick={() => setTab('login')}
-            >
-              Entrar
-            </button>
-            <button
-              className={tab === 'register' ? 'tab-button is-active' : 'tab-button'}
-              type="button"
-              onClick={() => setTab('register')}
-            >
-              Unirme a la Minga
-            </button>
-          </div>
+            <div className="auth-emblem" aria-hidden="true">
+              <svg viewBox="0 0 64 64" className="h-9 w-9 text-[#8b6a2a]" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="32" cy="12" r="4" />
+                <circle cx="32" cy="52" r="4" />
+                <circle cx="12" cy="32" r="4" />
+                <circle cx="52" cy="32" r="4" />
+                <circle cx="21" cy="21" r="4" />
+                <circle cx="43" cy="21" r="4" />
+                <circle cx="21" cy="43" r="4" />
+                <circle cx="43" cy="43" r="4" />
+                <path d="M32 16v12M32 36v12M16 32h12M36 32h12M24 24l6 6M40 24l-6 6M24 40l6-6M40 40l-6-6" />
+              </svg>
+            </div>
 
-          <form className="auth-form" onSubmit={handleSubmit}>
-            {tab === 'register' ? (
-              <div className="role-grid">
-                <label className={draft.role === 'producer' ? 'role-card is-selected' : 'role-card'}>
-                  <input
-                    checked={draft.role === 'producer'}
-                    name="role"
-                    type="radio"
-                    value="producer"
-                    onChange={() => handleChange('role', 'producer')}
-                  />
-                  <span className="role-card__title">Soy productor</span>
-                  <span className="role-card__meta">Beatmaker / Sello / Creador</span>
-                </label>
+            <form className="space-y-5" onSubmit={handleSubmit}>
+              {tab === 'register' ? (
+                <div className="mb-8 grid grid-cols-2 gap-4">
+                  <label className="group relative cursor-pointer">
+                    <input
+                      checked={draft.role === 'producer'}
+                      className="peer hidden"
+                      name="role"
+                      type="radio"
+                      value="producer"
+                      onChange={() => handleChange('role', 'producer')}
+                    />
+                    <div className="rounded-none border border-muiscaGold/30 p-4 text-center transition-all duration-300 peer-checked:border-muiscaGold peer-checked:bg-muiscaGold/5">
+                      <Waves className="mx-auto mb-2 h-5 w-5 text-koguiCream/70 transition-colors peer-checked:text-muiscaGold" />
+                      <span className="font-headline block text-[10px] uppercase tracking-tighter">SOY PRODUCTOR</span>
+                    </div>
+                  </label>
 
-                <label className={draft.role === 'artist' ? 'role-card is-selected' : 'role-card'}>
-                  <input
-                    checked={draft.role === 'artist'}
-                    name="role"
-                    type="radio"
-                    value="artist"
-                    onChange={() => handleChange('role', 'artist')}
-                  />
-                  <span className="role-card__title">Soy artista</span>
-                  <span className="role-card__meta">Buscador / Oyente / Curador</span>
-                </label>
-              </div>
-            ) : null}
+                  <label className="group relative cursor-pointer">
+                    <input
+                      checked={draft.role === 'artist'}
+                      className="peer hidden"
+                      name="role"
+                      type="radio"
+                      value="artist"
+                      onChange={() => handleChange('role', 'artist')}
+                    />
+                    <div className="rounded-none border border-muiscaGold/30 p-4 text-center transition-all duration-300 peer-checked:border-muiscaGold peer-checked:bg-muiscaGold/5">
+                      <Music2 className="mx-auto mb-2 h-5 w-5 text-koguiCream/70 transition-colors peer-checked:text-muiscaGold" />
+                      <span className="font-headline block text-[10px] uppercase tracking-tighter">SOY ARTISTA</span>
+                    </div>
+                  </label>
+                </div>
+              ) : null}
 
-            <label className="field">
-              <span>Nombre de usuario o email</span>
-              <input
-                value={draft.identifier}
-                onChange={(event) => handleChange('identifier', event.target.value)}
-                placeholder="Ej: guerrero_zenu"
-                type="text"
-              />
-            </label>
-
-            {tab === 'register' ? (
-              <label className="field">
-                <span>Alias del proyecto</span>
+              <label className="field font-headline text-[10px] font-normal uppercase tracking-widest">
+                <span>Nombre de usuario o email</span>
                 <input
-                  value={draft.alias}
-                  onChange={(event) => handleChange('alias', event.target.value)}
-                  placeholder="Tu nombre artístico"
+                  className="w-full font-body text-base font-normal placeholder:italic placeholder:opacity-30"
+                  value={draft.identifier}
+                  onChange={(event) => handleChange('identifier', event.target.value)}
+                  placeholder="Ej: guerrero_zenu"
                   type="text"
                 />
               </label>
-            ) : null}
 
-            <label className="field field--password">
-              <span>Contraseña sagrada</span>
-              <input
-                value={draft.password}
-                onChange={(event) => handleChange('password', event.target.value)}
-                placeholder="••••••••"
-                type={showPassword ? 'text' : 'password'}
-              />
-              <button className="field__toggle" type="button" onClick={() => setShowPassword((current) => !current)}>
-                {showPassword ? 'Ocultar' : 'Ver'}
-              </button>
-            </label>
+              {tab === 'register' ? (
+                  <label className="field font-headline text-[10px] font-normal uppercase tracking-widest">
+                    <span>Alias del proyecto</span>
+                    <input
+                      className="w-full font-body text-base font-normal placeholder:italic placeholder:opacity-30"
+                      value={draft.alias}
+                      onChange={(event) => handleChange('alias', event.target.value)}
+                      placeholder="Tu nombre artístico"
+                    type="text"
+                  />
+                </label>
+              ) : null}
 
-            <div className="auth-row">
-              <label className="checkbox">
+              <label className="field field--password font-headline text-[10px] font-normal uppercase tracking-widest">
+                <span>Contraseña sagrada</span>
                 <input
-                  checked={draft.remember}
-                  type="checkbox"
-                  onChange={(event) => handleChange('remember', event.target.checked)}
+                  className="w-full pr-12 font-body text-base font-normal placeholder:italic placeholder:opacity-30"
+                  value={draft.password}
+                  onChange={(event) => handleChange('password', event.target.value)}
+                  placeholder="••••••••"
+                  type={showPassword ? 'text' : 'password'}
                 />
-                <span>Recordar mi esencia</span>
+                <button className="field__toggle flex h-8 w-8 items-center justify-center" type="button" onClick={() => setShowPassword((current) => !current)}>
+                  {showPassword ? <EyeOffIcon className="h-5 w-5 text-muiscaGold" /> : <EyeIcon className="h-5 w-5 text-muiscaGold" />}
+                </button>
               </label>
 
-              <button className="link-button" type="button" onClick={() => setFeedback('Recuperación todavía pendiente para la fase API.') }>
-                ¿Olvidaste tu llave?
-              </button>
-            </div>
+              <div className="flex items-center justify-between gap-5">
+                <label className="checkbox">
+                  <input
+                    checked={draft.remember}
+                    type="checkbox"
+                    onChange={(event) => handleChange('remember', event.target.checked)}
+                  />
+                  <span className="font-body text-xs font-normal italic">Recordar mi esencia</span>
+                </label>
 
-            {feedback ? <div className={`auth-feedback auth-feedback--${feedbackTone}`}>{feedback}</div> : null}
+                <button className="link-button font-body text-xs font-normal underline underline-offset-4" type="button" onClick={() => setFeedback('Recuperación todavía pendiente para la fase API.') }>
+                  ¿Olvidaste tu llave?
+                </button>
+              </div>
 
-            <div className="auth-actions">
-              <button className="primary-button primary-button--wide" type="submit">
-                {tab === 'login' ? 'Ingresar' : 'Registrarme'}
-              </button>
-              <button
-                className="secondary-button primary-button--wide"
-                type="button"
-                onClick={() => setTab((current) => (current === 'login' ? 'register' : 'login'))}
-              >
-                {tab === 'login' ? 'Crear cuenta' : 'Ya tengo cuenta'}
-              </button>
-            </div>
+              {feedback ? <div className={`auth-feedback auth-feedback--${feedbackTone}`}>{feedback}</div> : null}
 
-            <div className="auth-hint">
-              <strong>Demo:</strong> demo@mingarecords.com / minga123
-            </div>
-          </form>
+              <div className="grid gap-5">
+                <button className="primary-button primary-button--wide font-headline text-sm font-bold uppercase tracking-[0.2em]" type="submit">
+                  {tab === 'login' ? 'Ingresar' : 'Registrarme'}
+                </button>
+                <button
+                  className="secondary-button primary-button--wide font-headline text-sm font-normal uppercase tracking-[0.2em]"
+                  type="button"
+                  onClick={() => setTab((current) => (current === 'login' ? 'register' : 'login'))}
+                >
+                  {tab === 'login' ? 'Crear cuenta' : 'Ya tengo cuenta'}
+                </button>
+              </div>
+            </form>
+          </div>
         </section>
-
-        <aside className="auth-side">
-          <div className="auth-side__tile">
-            <p className="panel-label">Estructura ADR</p>
-            <h2>Dominio, aplicación e infraestructura</h2>
-            <p>El login queda listo para crecer sin atarse a la capa visual ni a un proveedor concreto.</p>
-          </div>
-
-          <div className="auth-side__tile auth-side__tile--accent">
-            <p className="panel-label">Back to home</p>
-            <h2>Siempre volvés al centro</h2>
-            <p>El botón superior devuelve a la página principal sin perder la sesión activa.</p>
-          </div>
-        </aside>
       </main>
     </section>
   );

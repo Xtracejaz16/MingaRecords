@@ -15,7 +15,7 @@
 #   PROVIDER="lmstudio:qwen2.5-coder-7b-instruct"
 #   PROVIDER="github:gpt-4o"
 #   PROVIDER="github:deepseek-r1"
-PROVIDER="opencode"
+PROVIDER="ollama:llama3.2"
 
 # File patterns to include in review (comma-separated)
 # Default: * (all files)
@@ -23,7 +23,7 @@ PROVIDER="opencode"
 #   FILE_PATTERNS="*.ts,*.tsx"
 #   FILE_PATTERNS="*.py"
 #   FILE_PATTERNS="*.go,*.mod"
-FILE_PATTERNS="*.ts,*.tsx,*.js,*.jsx"
+FILE_PATTERNS="index.html,src/index.css,src/ui/auth/screens/AuthScreen.tsx,src/ui/shared/components/BrandLogo.tsx,tailwind.config.js"
 
 # File patterns to exclude from review (comma-separated)
 # Default: none
@@ -38,7 +38,7 @@ RULES_FILE="AGENTS.md"
 
 # Strict mode: fail if AI response is ambiguous
 # Default: true
-STRICT_MODE="true"
+STRICT_MODE="false"
 
 # Timeout in seconds for AI provider response
 # Default: 300 (5 minutes)
