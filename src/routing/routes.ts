@@ -1,6 +1,6 @@
 import type { AuthTab } from '../domain/auth/entities/auth';
 
-export type AppRouteKey = 'home' | 'login' | 'register' | 'panel';
+export type AppRouteKey = 'home' | 'login' | 'register' | 'panel' | 'beats' | 'ganancias' | 'analisis' | 'actualizaciones' | 'configuracion';
 export type ResolvedRouteKind = 'public' | 'private' | 'notFound';
 
 interface RouteDefinition {
@@ -44,6 +44,36 @@ const ROUTES: Record<AppRouteKey, RouteDefinition> = {
     kind: 'private',
     canonicalHash: '#/panel',
     aliases: ['dashboard'],
+  },
+  beats: {
+    key: 'beats',
+    kind: 'private',
+    canonicalHash: '#/beats',
+    aliases: ['lista-beats'],
+  },
+  ganancias: {
+    key: 'ganancias',
+    kind: 'private',
+    canonicalHash: '#/ganancias',
+    aliases: ['earnings'],
+  },
+  analisis: {
+    key: 'analisis',
+    kind: 'private',
+    canonicalHash: '#/analisis',
+    aliases: ['analytics'],
+  },
+  actualizaciones: {
+    key: 'actualizaciones',
+    kind: 'private',
+    canonicalHash: '#/actualizaciones',
+    aliases: ['updates'],
+  },
+  configuracion: {
+    key: 'configuracion',
+    kind: 'private',
+    canonicalHash: '#/configuracion',
+    aliases: ['settings', 'config'],
   },
 };
 
