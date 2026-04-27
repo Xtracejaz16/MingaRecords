@@ -14,6 +14,11 @@ export default {
         zenuCopper: '#B5651D',
         emberaNavy: '#1A2340',
         wayuuJade: '#1A7A6E',
+        surface: '#0F0A00',
+        primary: '#C8860A',
+        secondary: '#8B2500',
+        'on-background': '#F2E8D0',
+        outline: '#514535',
       },
       fontFamily: {
         headline: ['Cinzel', 'serif'],
