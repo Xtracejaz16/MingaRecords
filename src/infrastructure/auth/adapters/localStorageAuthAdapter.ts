@@ -19,6 +19,7 @@ function readStorage<T>(key: string): T | null {
   try {
     return JSON.parse(raw) as T;
   } catch {
+    window.localStorage.removeItem(key);
     return null;
   }
 }
