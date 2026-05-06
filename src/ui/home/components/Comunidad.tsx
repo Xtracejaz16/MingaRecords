@@ -8,7 +8,7 @@ export function Comunidad() {
         <h2 className="font-cinzel text-4xl font-bold text-muiscaGold">LA COMUNIDAD</h2>
         <div className="w-24 h-1 bg-zenuCopper mx-auto mt-4" />
       </div>
-      <div className="flex overflow-x-auto gap-12 px-6 pb-12 snap-x">
+      <div className="flex justify-center overflow-x-auto gap-12 px-6 pb-12 snap-x">
         {producers.map((producer) => (
           <ProducerCard key={producer.id} producer={producer} />
         ))}
