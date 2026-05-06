@@ -1,4 +1,3 @@
----
 # ADR 003: Estrategia de Comunicación entre Servicios
 
 - **Estado:** Aceptado

@@ -1,6 +1,13 @@
 import { SideNavBar } from '../../shared/components/SideNavBar';
 import { TopNavBar } from '../../shared/components/TopNavBar';
 
+const COP_FORMAT = new Intl.NumberFormat('es-CO', {
+  style: 'currency',
+  currency: 'COP',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
 const GANANCIAS_DATA = {
   total: 2847.50,
   pendientes: 423.00,
@@ -44,7 +51,7 @@ export function GananciasPage() {
           </div>
           <div className="stone-tablet tunjo-clip p-6">
             <p className="text-sm uppercase tracking-wider text-koguiCream/70">Este Mes</p>
-            <p className="font-headline text-4xl text-koguiCream">{GANANCIAS_DATA.mes[0].monto}</p>
+            <p className="font-headline text-4xl text-koguiCream">{COP_FORMAT.format(GANANCIAS_DATA.mes[0].monto)}</p>
           </div>
         </div>
 

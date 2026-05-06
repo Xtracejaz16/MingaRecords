@@ -18,7 +18,7 @@ function App() {
       <AuthScreen
         initialTab="login"
         onBackHome={goHome}
-        onSubmit={handleSubmit('panel')}
+        onSubmit={handleSubmit(resolvedRoute.key ?? 'panel')}
         notice="Necesitás iniciar sesión para entrar al panel privado."
       />
     );
@@ -42,7 +42,7 @@ function App() {
       <AuthScreen
         initialTab="login"
         onBackHome={goHome}
-        onSubmit={handleSubmit('panel')}
+        onSubmit={handleSubmit(resolvedRoute.key ?? 'panel')}
         notice="Necesitás iniciar sesión para entrar al panel privado."
       />
     );
