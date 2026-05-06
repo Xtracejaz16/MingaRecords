@@ -69,8 +69,6 @@ it('lets authenticated users enter the private panel', () => {
 });
 
 describe('Private route access', () => {
-  const privateRoutes = ['beats', 'ganancias', 'analisis', 'actualizaciones', 'configuracion'];
-
   beforeEach(() => {
     window.localStorage.clear();
     setHash('#/');
