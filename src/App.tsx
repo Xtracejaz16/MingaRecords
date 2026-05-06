@@ -1,3 +1,4 @@
+import type { AppRouteKey } from './routing/routes';
 import { useAppShell } from './ui/app/hooks/useAppShell';
 import { AuthScreen } from './ui/auth/screens/AuthScreen';
 import { DashboardPage } from './ui/dashboard/components/DashboardPage';
@@ -13,12 +14,12 @@ import './index.css';
 function App() {
   const { session, resolvedRoute, goHome, openAuth, handleSubmit } = useAppShell();
 
-  if (resolvedRoute.key === 'panel' && !session) {
+  if (resolvedRoute.kind === 'private' && !session) {
     return (
       <AuthScreen
         initialTab="login"
         onBackHome={goHome}
-        onSubmit={handleSubmit('panel')}
+        onSubmit={handleSubmit(resolvedRoute.key as AppRouteKey)}
         notice="Necesitás iniciar sesión para entrar al panel privado."
       />
     );
@@ -33,40 +34,12 @@ function App() {
     );
   }
 
-  if (resolvedRoute.key === 'panel' && session) {
-    return <DashboardPage />;
-  }
-
-  if ((resolvedRoute.key === 'beats' || resolvedRoute.key === 'ganancias' || resolvedRoute.key === 'analisis' || resolvedRoute.key === 'actualizaciones' || resolvedRoute.key === 'configuracion') && !session) {
-    return (
-      <AuthScreen
-        initialTab="login"
-        onBackHome={goHome}
-        onSubmit={handleSubmit('panel')}
-        notice="Necesitás iniciar sesión para entrar al panel privado."
-      />
-    );
-  }
-
-  if (resolvedRoute.key === 'beats' && session) {
-    return <BeatsPage />;
-  }
-
-  if (resolvedRoute.key === 'ganancias' && session) {
-    return <GananciasPage />;
-  }
-
-  if (resolvedRoute.key === 'analisis' && session) {
-    return <AnalisisPage />;
-  }
-
-  if (resolvedRoute.key === 'actualizaciones' && session) {
-    return <ActualizacionesPage />;
-  }
-
-  if (resolvedRoute.key === 'configuracion' && session) {
-    return <ConfiguracionPage />;
-  }
+  if (resolvedRoute.key === 'panel') return <DashboardPage />;
+  if (resolvedRoute.key === 'beats') return <BeatsPage />;
+  if (resolvedRoute.key === 'ganancias') return <GananciasPage />;
+  if (resolvedRoute.key === 'analisis') return <AnalisisPage />;
+  if (resolvedRoute.key === 'actualizaciones') return <ActualizacionesPage />;
+  if (resolvedRoute.key === 'configuracion') return <ConfiguracionPage />;
 
   if (resolvedRoute.key === 'login' || resolvedRoute.key === 'register') {
     return (
