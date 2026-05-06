@@ -1,4 +1,3 @@
-import type { AppRouteKey } from './routing/routes';
 import { useAppShell } from './ui/app/hooks/useAppShell';
 import { AuthScreen } from './ui/auth/screens/AuthScreen';
 import { DashboardPage } from './ui/dashboard/components/DashboardPage';
@@ -14,12 +13,12 @@ import './index.css';
 function App() {
   const { session, resolvedRoute, goHome, openAuth, handleSubmit } = useAppShell();
 
-  if (resolvedRoute.kind === 'private' && !session) {
+  if (resolvedRoute.kind === 'private' && resolvedRoute.key !== 'notFound' && !session) {
     return (
       <AuthScreen
         initialTab="login"
         onBackHome={goHome}
-        onSubmit={handleSubmit(resolvedRoute.key as AppRouteKey)}
+        onSubmit={handleSubmit(resolvedRoute.key)}
         notice="Necesitás iniciar sesión para entrar al panel privado."
       />
     );

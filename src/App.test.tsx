@@ -92,7 +92,7 @@ describe('Private route access', () => {
   ];
 
   privateRoutes.forEach(({ hash, label }) => {
-    it(`blocks ${label} without session and preserves deep-link target`, () => {
+    it(`blocks ${label} without session and shows auth notice`, () => {
       setHash(hash);
 
       render(<App />);
