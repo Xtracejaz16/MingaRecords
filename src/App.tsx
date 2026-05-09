@@ -47,7 +47,7 @@ function App() {
       <AuthScreen
         initialTab={resolvedRoute.authTab ?? 'login'}
         onBackHome={goHome}
-        onSubmit={handleSubmit('home')}
+        onSubmit={handleSubmit('panel')}
       />
     );
   }
