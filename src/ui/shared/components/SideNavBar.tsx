@@ -1,13 +1,13 @@
 const NAV_ITEMS = [
-  { label: 'Dashboard', icon: 'dashboard', active: true },
-  { label: 'My Beats', icon: 'music_note', active: false },
-  { label: 'Earnings', icon: 'payments', active: false },
-  { label: 'Analytics', icon: 'insights', active: false },
+  { label: 'Dashboard', icon: 'dashboard', route: '#/panel', active: true },
+  { label: 'My Beats', icon: 'music_note', route: '#/beats', active: false },
+  { label: 'Earnings', icon: 'payments', route: '#/ganancias', active: false },
+  { label: 'Analytics', icon: 'insights', route: '#/analisis', active: false },
 ] as const;
 
 const FOOTER_ITEMS = [
-  { label: 'Settings', icon: 'settings' },
-  { label: 'Support', icon: 'contact_support' },
+  { label: 'Settings', icon: 'settings', route: '#/configuracion' },
+  { label: 'Support', icon: 'contact_support', route: '#/soporte' },
 ] as const;
 
 export function SideNavBar() {
@@ -39,7 +39,7 @@ export function SideNavBar() {
             className={item.active
               ? 'flex items-center gap-3 border-r-4 border-muiscaGold bg-taironaTerracotta/20 px-6 py-4 text-xs font-bold uppercase tracking-widest text-muiscaGold'
               : 'flex items-center gap-3 px-6 py-4 text-xs uppercase tracking-widest text-koguiCream/50 transition-all hover:bg-taironaTerracotta/10 hover:text-koguiCream'}
-            href="#"
+            href={item.route}
           >
             <span className="material-symbols-outlined text-sm">{item.icon}</span>
             {item.label}
@@ -52,7 +52,7 @@ export function SideNavBar() {
           <a
             key={item.label}
             className="flex items-center gap-3 px-6 py-3 text-[10px] uppercase tracking-widest text-koguiCream/40 transition-colors hover:text-muiscaGold"
-            href="#"
+            href={item.route}
           >
             <span className="material-symbols-outlined text-xs">{item.icon}</span>
             {item.label}
