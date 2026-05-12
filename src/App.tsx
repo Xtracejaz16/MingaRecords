@@ -3,6 +3,7 @@ import { AuthScreen } from './ui/auth/screens/AuthScreen';
 import { DashboardPage } from './ui/dashboard/components/DashboardPage';
 import { HomeScreen } from './ui/home/screens/HomeScreen';
 import { NotFoundScreen } from './ui/app/screens/NotFoundScreen';
+import { PanelDeniedScreen } from './ui/app/screens/PanelDeniedScreen';
 import { BeatsPage } from './ui/beats/components/BeatsPage';
 import { GananciasPage } from './ui/ganancias/components/GananciasPage';
 import { AnalisisPage } from './ui/analisis/components/AnalisisPage';
@@ -20,6 +21,15 @@ function App() {
         onBackHome={goHome}
         onSubmit={handleSubmit(resolvedRoute.key)}
         notice="Necesitás iniciar sesión para entrar al panel privado."
+      />
+    );
+  }
+
+  if (resolvedRoute.key === 'panel' && session?.role === 'artist') {
+    return (
+      <PanelDeniedScreen
+        onGoHome={goHome}
+        onGoLogin={() => openAuth('login')}
       />
     );
   }
@@ -45,7 +55,7 @@ function App() {
       <AuthScreen
         initialTab={resolvedRoute.authTab ?? 'login'}
         onBackHome={goHome}
-        onSubmit={handleSubmit('home')}
+        onSubmit={handleSubmit('panel')}
       />
     );
   }

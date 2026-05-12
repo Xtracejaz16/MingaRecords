@@ -5,6 +5,8 @@ import { clearSession } from '../clearSession';
 import { loadSession } from '../loadSession';
 import { login } from '../login';
 import { register } from '../register';
+import { ensureDemoUsersSeeded } from '../../seedDemoUsers';
+import { DEMO_USERS } from '../../../../domain/auth/entities/auth';
 
 function createRepository(initialUsers: AuthUser[] = [], initialSession: AuthSession | null = null): AuthRepository {
   let users = [...initialUsers];
@@ -67,6 +69,67 @@ describe('auth use cases', () => {
 
     expect(result.ok).toBe(true);
     expect(loadSession(repository)?.alias).toBe('Artista Minga');
+  });
+
+  it('seeds exactly the two demo credentials', () => {
+    ensureDemoUsersSeeded(repository);
+
+    expect(repository.listUsers()).toHaveLength(2);
+    expect(repository.listUsers().map((user) => user.identifier).sort()).toEqual(
+      DEMO_USERS.map((user) => user.identifier).sort(),
+    );
+  });
+
+  it('keeps valid stored sessions and removes malformed ones', () => {
+    const validSession: AuthSession = {
+      id: 'producer-1',
+      identifier: DEMO_USERS[0].identifier,
+      alias: DEMO_USERS[0].alias,
+      role: 'producer',
+      createdAt: '2026-04-30T00:00:00.000Z',
+    };
+
+    repository = createRepository([
+      {
+        id: validSession.id,
+        identifier: validSession.identifier,
+        password: DEMO_USERS[0].password,
+        alias: validSession.alias,
+        role: validSession.role,
+        createdAt: validSession.createdAt,
+      },
+      {
+        id: 'artist-1',
+        identifier: DEMO_USERS[1].identifier,
+        password: DEMO_USERS[1].password,
+        alias: DEMO_USERS[1].alias,
+        role: 'artist',
+        createdAt: '2026-04-30T00:00:00.000Z',
+      },
+    ], validSession);
+
+    expect(loadSession(repository)).toMatchObject(validSession);
+
+    repository = createRepository([], {
+      id: 'orphan',
+      identifier: 'ghost@mingarecords.com',
+      alias: 'Ghost',
+      role: 'producer',
+      createdAt: '2026-04-30T00:00:00.000Z',
+    });
+
+    expect(loadSession(repository)).toBeNull();
+
+    repository = createRepository([], {
+      id: 'broken',
+      identifier: 'ghost@mingarecords.com',
+      alias: 'Ghost',
+      role: 'producer',
+      createdAt: '2026-04-30T00:00:00.000Z',
+    });
+
+    expect(loadSession(repository)).toBeNull();
+    expect(repository.loadSession()).toBeNull();
   });
 
   it('clears the session on logout', () => {
