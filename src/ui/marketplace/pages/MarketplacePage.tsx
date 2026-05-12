@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import '../marketplace.css';
 import { TopNavBar } from '../components/TopNavBar';
 import { SideNavBar } from '../components/SideNavBar';
@@ -35,6 +35,7 @@ export function MarketplacePage() {
   const [releases, setReleases] = useState<Release[]>([]);
   const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<number | null>(null);
 
   const {
     searchQuery,
@@ -60,6 +61,11 @@ export function MarketplacePage() {
         setReleases(r);
         setLoading(false);
       }
+    }).catch(() => {
+      if (!cancelled) {
+        setLoading(false);
+        setToastMessage('No pudimos cargar el marketplace. Probá de nuevo.');
+      }
     });
 
     return () => {
@@ -67,57 +73,62 @@ export function MarketplacePage() {
     };
   }, []);
 
-  const handleSearchChange = useCallback(
-    async (query: string) => {
-      setSearchQuery(query);
-      if (query.trim() === '') {
-        const allBeats = await getBeatsUC.execute();
-        setBeats(allBeats);
-      } else {
-        const results = await searchBeatsUC.execute(query);
-        setBeats(results);
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current !== null) {
+        window.clearTimeout(toastTimeoutRef.current);
       }
-    },
-    [setSearchQuery],
-  );
-
-  const handleGenreSelect = useCallback(
-    async (genre: string | null) => {
-      setSelectedGenre(genre);
-      if (genre === null) {
-        const allBeats = await getBeatsUC.execute();
-        setBeats(allBeats);
-      } else {
-        const filtered = await filterByGenreUC.execute(genre);
-        setBeats(filtered);
-      }
-    },
-    [setSelectedGenre],
-  );
-
-  const handleToggleFavorite = useCallback(
-    (beatId: string) => {
-      toggleFavorite(beatId);
-      setToastMessage('Añadido a tus Favoritos');
-      setTimeout(() => setToastMessage(null), 3000);
-    },
-    [toggleFavorite],
-  );
-
-  const handlePlay = useCallback(
-    (beat: Beat) => {
-      playBeat(beat);
-    },
-    [playBeat],
-  );
-
-  const handlePurchase = useCallback((beat: Beat) => {
-    console.log('Purchase beat:', beat.id);
-    alert(`Función de compra próximamente: ${beat.title}`);
+    };
   }, []);
 
+  const handleSearchChange = async (query: string) => {
+    setSearchQuery(query);
+    if (query.trim() === '') {
+      const allBeats = await getBeatsUC.execute();
+      setBeats(allBeats);
+    } else {
+      const results = await searchBeatsUC.execute(query);
+      setBeats(results);
+    }
+  };
+
+  const handleGenreSelect = async (genre: string | null) => {
+    setSelectedGenre(genre);
+    if (genre === null) {
+      const allBeats = await getBeatsUC.execute();
+      setBeats(allBeats);
+    } else {
+      const filtered = await filterByGenreUC.execute(genre);
+      setBeats(filtered);
+    }
+  };
+
+  const handleToggleFavorite = (beatId: string) => {
+    const willBeFavorite = !isFavorite(beatId);
+    toggleFavorite(beatId);
+    setToastMessage(
+      willBeFavorite ? 'Añadido a tus Favoritos' : 'Eliminado de tus Favoritos',
+    );
+    if (toastTimeoutRef.current !== null) {
+      window.clearTimeout(toastTimeoutRef.current);
+    }
+    toastTimeoutRef.current = window.setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handlePlay = (beat: Beat) => {
+    playBeat(beat);
+  };
+
+  const handlePurchase = (beat: Beat) => {
+    setToastMessage(`Función de compra próximamente: ${beat.title}`);
+    if (toastTimeoutRef.current !== null) {
+      window.clearTimeout(toastTimeoutRef.current);
+    }
+    toastTimeoutRef.current = window.setTimeout(() => setToastMessage(null), 3000);
+  };
+
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-[#0F0A00] font-body text-[#efe2c2] selection:bg-[#ffb950] selection:text-[#452b00]">
+    <div className="marketplace-shell h-screen flex flex-col overflow-hidden bg-obsidian font-body text-koguiCream selection:bg-muiscaGold selection:text-taironaTerracotta">
       {/* Background overlays */}
       <div className="fixed inset-0 marketplace-pattern z-0 pointer-events-none"></div>
       <div className="fixed inset-0 marketplace-grain z-0 pointer-events-none"></div>
@@ -157,7 +168,7 @@ export function MarketplacePage() {
                     <h3 className="font-display text-3xl font-bold tracking-widest text-on-surface uppercase pr-6">
                       La Cosecha
                     </h3>
-                    <div className="h-[1px] flex-1 bg-gradient-to-r from-[#1A7A6E]/20 via-[#C8860A]/40 to-[#B5651D]/20"></div>
+                    <div className="h-[1px] flex-1 bg-gradient-to-r from-wayuuJade/20 via-muiscaGold/40 to-zenuCopper/20"></div>
                   </div>
                   <a
                     className="text-primary font-display text-xs tracking-widest underline decoration-secondary ml-10"
@@ -186,7 +197,7 @@ export function MarketplacePage() {
                   <h3 className="font-display text-2xl font-bold tracking-widest text-on-surface uppercase">
                     La Minga Activity
                   </h3>
-                  <div className="h-[1px] flex-1 bg-gradient-to-r from-[#1A7A6E]/20 via-[#C8860A]/40 to-[#B5651D]/20"></div>
+                  <div className="h-[1px] flex-1 bg-gradient-to-r from-wayuuJade/20 via-muiscaGold/40 to-zenuCopper/20"></div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {activities.map((activity) => (
@@ -224,7 +235,7 @@ export function MarketplacePage() {
 
       {/* Toast */}
       {toastMessage && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[60] pointer-events-none">
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[60]">
           <ToastNotification
             message={toastMessage}
             onClose={() => setToastMessage(null)}

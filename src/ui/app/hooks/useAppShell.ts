@@ -43,7 +43,12 @@ export function useAppShell() {
     const result = submitAuth(mode, draft);
 
     if (result.ok && result.user) {
-      const targetRoute = result.user.role === 'artist' ? 'marketplace' : nextRoute;
+      const targetRoute =
+        result.user.role === 'artist'
+          ? 'marketplace'
+          : result.user.role === 'producer'
+            ? 'panel'
+            : nextRoute;
       navigateTo(targetRoute);
     }
 

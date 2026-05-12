@@ -17,12 +17,14 @@ function App() {
   const { session, resolvedRoute, goHome, openAuth, handleSubmit } = useAppShell();
 
   if (resolvedRoute.kind === 'private' && resolvedRoute.key !== 'notFound' && !session) {
+    const targetLabel = resolvedRoute?.key === 'marketplace' ? 'entrar al marketplace' : 'entrar al panel privado';
+
     return (
       <AuthScreen
         initialTab="login"
         onBackHome={goHome}
         onSubmit={handleSubmit(resolvedRoute.key)}
-        notice="Necesitás iniciar sesión para entrar al panel privado."
+        notice={`Necesitás iniciar sesión para ${targetLabel}.`}
       />
     );
   }
