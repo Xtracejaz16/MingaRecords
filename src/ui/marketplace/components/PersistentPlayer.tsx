@@ -15,8 +15,6 @@ export function PersistentPlayer() {
     volume,
     pauseBeat,
     resumeBeat,
-    setProgress,
-    setVolume,
   } = usePlayerStore();
 
   if (!currentBeat) return null;

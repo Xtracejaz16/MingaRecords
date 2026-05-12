@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&amp;family=Crimson+Pro:ital,wght@0,400;0,600;1,400&amp;family=Newsreader:opsz,wght@6..72,400;6..72,700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-container": "#4ca295",
+                        "surface-bright": "#403923",
+                        "surface-tint": "#ffb950",
+                        "on-surface": "#efe2c2",
+                        "secondary-container": "#892400",
+                        "on-secondary-fixed": "#3a0a00",
+                        "on-error": "#690005",
+                        "background": "#0F0A00",
+                        "secondary": "#ffb59f",
+                        "on-primary-fixed-variant": "#633f00",
+                        "surface-container-high": "#302915",
+                        "surface-container-lowest": "#130e01",
+                        "tertiary-fixed": "#9df2e3",
+                        "surface-container-highest": "#3b341f",
+                        "inverse-primary": "#825500",
+                        "on-surface-variant": "#d6c4af",
+                        "on-primary-container": "#3f2700",
+                        "on-secondary-container": "#ffa084",
+                        "on-background": "#efe2c2",
+                        "primary-fixed-dim": "#ffb950",
+                        "on-tertiary-container": "#00332d",
+                        "surface-dim": "#181303",
+                        "outline": "#9e8e7b",
+                        "on-secondary": "#5e1600",
+                        "inverse-on-surface": "#37301b",
+                        "secondary-fixed": "#ffdbd1",
+                        "secondary-fixed-dim": "#ffb59f",
+                        "on-tertiary-fixed": "#00201c",
+                        "tertiary": "#81d6c7",
+                        "surface-variant": "#3b341f",
+                        "error-container": "#93000a",
+                        "on-tertiary-fixed-variant": "#005047",
+                        "tertiary-fixed-dim": "#81d6c7",
+                        "surface-container-low": "#211b08",
+                        "surface-container": "#251f0b",
+                        "primary-fixed": "#ffddb3",
+                        "primary-container": "#c8860a",
+                        "on-secondary-fixed-variant": "#852300",
+                        "outline-variant": "#514535",
+                        "surface": "#0F0A00",
+                        "on-primary": "#452b00",
+                        "inverse-surface": "#efe2c2",
+                        "error": "#ffb4ab",
+                        "on-tertiary": "#003731",
+                        "on-error-container": "#ffdad6",
+                        "primary": "#ffb950",
+                        "on-primary-fixed": "#291800"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Cinzel", "serif"],
+                        "display": ["Cinzel", "serif"],
+                        "body": ["Crimson Pro", "serif"],
+                        "label": ["Newsreader", "serif"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24
+        }
+        .grain-overlay {
+            background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuDbEdLCOimx8vQACULOOb24Hi7yBuBHofXLe6Qc80ofWNFpscLMF5-chBhkTuFXYkRfYWajv-huL_Ub2hzTXcsUvdkVUV28dY7lCTnVrEpNQKZ_ROpqqj_JwQwS1QklQSzltb2DXKDCTICKgkXQdQD5QikBQI7zJ42NPPJyMUYHuFKp0VALCp4vKitC_gLX9z2gsw71CGghYioeyxSAH99BNiyhefAFI0GpOONgxhLrqZE_xnyJZ6_2zdDcFZKh7Zmlc73jrPLGv40);
+            opacity: 0.03;
+            pointer-events: none
+        }
+        .pattern-vueltiao {
+            background-image: radial-gradient(#c8860a 0.5px, transparent 0.5px);
+            background-size: 24px 24px;
+            opacity: 0.05
+        }
+        ::-webkit-scrollbar {
+            width: 4px
+        }
+        ::-webkit-scrollbar-track {
+            background: #0F0A00
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c8860a
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface selection:bg-primary selection:text-on-primary min-h-screen overflow-x-hidden">
+<div class="fixed inset-0 pattern-vueltiao z-0"></div>
+<div class="fixed inset-0 grain-overlay z-0"></div>
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-2xl shadow-[0_20px_50px_rgba(69,43,0,0.15)] h-20 flex justify-between items-center px-12 border-b border-outline-variant/10">
+<div class="flex items-center gap-8">
+<h1 class="text-2xl font-display font-bold tracking-[0.1em] flex items-center">
+<span class="text-primary">MINGA</span>
+<span class="text-secondary ml-2">RECORDS</span>
+</h1>
+<nav class="hidden md:flex gap-8 font-display text-sm tracking-widest uppercase">
+<a class="text-primary border-b-2 border-primary pb-1" href="#">MARKETPLACE</a>
+<a class="text-on-surface-variant hover:text-[#1A7A6E] transition-colors" href="#">LIBRARY</a>
+<a class="text-on-surface-variant hover:text-[#B5651D] transition-colors" href="#">MINGA UPDATES</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<button class="bg-primary text-on-primary px-6 py-2 font-display text-sm font-bold tracking-widest active:scale-95 transition-transform">
+                EXPLORAR BEATS
+            </button>
+<div class="relative group cursor-pointer">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary">notifications</span>
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-[#8B2500] rounded-full"></span>
+</div>
+<div class="w-10 h-10 border border-primary/30 flex items-center justify-center bg-surface-container-high overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A portrait of a contemporary Latin American artist in a music studio, with warm golden lighting accentuating the professional equipment in the background. The aesthetic is clean and high-end, aligning with a premium obsidian and gold color palette. The mood is creative and focused, with a sophisticated, cinematic shallow depth of field." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4d2HwAiAMj3jt-x1bd12jL3zaCoN94319-sf0ms2U1HaYRAP3ugaBOwhE8T3QF_qbO3y9pChVTgI55fnj4PWe34ZwxpJaLw2Nen59QhXvrnJ2y5nkX224V5HcxW7JiNXaByiIGLe1EPZALmJ5f5AdfwjkyA_XeTDN8MPDSYHXFt_M1hokNfouHRiLeDQB9_J8rSuXiw3j6h2qepbcQWiX7qMmXYQ42QoPFYTtB_ea9yeY6iBrHvZiqkfmZ1Q1DhZBae5ldHYNSPQ"/>
+</div>
+</div>
+</header>
+<div class="flex pt-20 pb-24 min-h-screen">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-20 h-[calc(100vh-160px)] w-64 bg-surface-container-low border-r border-outline-variant/5 flex flex-col py-8 z-40">
+<div class="px-6 mb-10 flex items-center gap-4">
+<div class="w-12 h-12 border border-secondary/50 p-1">
+<img class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all" data-alt="Close up profile picture of a male musician with a serious, artistic expression. The lighting is warm and dramatic, highlighting golden skin tones against a dark, textured background. High-end editorial photography style consistent with an ancestral and modern aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLDQNHqxHuLiY-kz6UxK_luTEuwkvP8s0wePUIS155rm0d2AhCUkLeFo3evbZpzJeQJVKCshk67D_QUggvXSM4c2e1WtlBLwKBFWj7pspjpjxXH7yDpUnoKYdQE-vXROEJzvqz9itkmuUOA98_b3gajHSY0ogZ0guBEs5onIZCx_zPgQnbbHMRlVrbGWC0-zek5eJ-dzELtBw3u7ZfRCFo9WO2nvEWSUh6c6MuIt2V9nskKGjSPbLLpVEom2ZC_kFGwbfdm-9aZeI"/>
+</div>
+<div>
+<p class="font-display text-sm font-bold text-primary tracking-tighter">ARTISTA ELITE</p>
+<p class="font-body text-xs text-on-surface-variant italic">Minga Gold Member</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-4 px-6 py-3 text-white bg-[#8B2500]/30 border-l-4 border-[#8B2500] font-display text-sm tracking-widest uppercase" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">storefront</span>
+<span>Marketplace</span>
+</a>
+<a class="flex items-center gap-4 px-6 py-3 text-on-surface-variant hover:bg-surface-container-highest/20 hover:text-[#1A7A6E] group transition-all font-display text-sm tracking-widest uppercase" href="#">
+<span class="material-symbols-outlined group-hover:text-[#1A7A6E]">shopping_bag</span>
+<span>Mis Compras</span>
+</a>
+<a class="flex items-center gap-4 px-6 py-3 text-on-surface-variant hover:bg-surface-container-highest/20 hover:text-[#B5651D] group transition-all font-display text-sm tracking-widest uppercase" href="#"><span class="material-symbols-outlined group-hover:text-[#B5651D]">favorite</span>
+<span>Favoritos</span>
+<span class="ml-auto bg-[#8B2500] text-white text-[10px] px-1.5 py-0.5 rounded-full hidden" id="favorites-badge">0</span></a>
+<a class="flex items-center gap-4 px-6 py-3 text-on-surface-variant hover:bg-surface-container-highest/20 hover:text-[#C8860A] group transition-all font-display text-sm tracking-widest uppercase" href="#">
+<span class="material-symbols-outlined group-hover:text-[#C8860A]">person</span>
+<span>Mi Perfil</span>
+</a>
+</nav>
+<div class="mt-auto px-6 space-y-2">
+<a class="flex items-center gap-4 py-2 text-[#F2E8D0]/40 hover:text-[#F2E8D0] transition-colors text-xs font-display tracking-widest uppercase" href="#">
+<span class="material-symbols-outlined text-sm">tune</span>
+<span>Ajustes</span>
+</a>
+<a class="flex items-center gap-4 py-2 text-[#F2E8D0]/40 hover:text-[#F2E8D0] transition-colors text-xs font-display tracking-widest uppercase" href="#">
+<span class="material-symbols-outlined text-sm">logout</span>
+<span>Salir</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="ml-64 flex-1 px-12 py-12 relative z-10 max-w-7xl">
+<!-- Hero Header -->
+<section class="mb-16">
+<div class="flex items-center gap-3 mb-6">
+<span class="flex h-2 w-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="text-secondary font-display text-xs tracking-[0.3em] uppercase">Cosecha del Mes</span>
+</div>
+<h2 class="leading-none mb-4">
+<span class="block text-on-surface font-display text-6xl font-bold tracking-tight">ENCUENTRA TU</span>
+<span class="block text-primary font-display text-7xl font-black tracking-tighter italic">PRÓXIMO SONIDO</span>
+</h2>
+<p class="text-on-surface-variant font-body text-xl italic max-w-2xl leading-relaxed">
+                    Descubre ritmos ancestrales procesados para la eternidad. Una curaduría de beats que conectan el pasado muisca con el futuro digital.
+                </p>
+</section>
+<!-- Search & Filters -->
+<section class="mb-12 space-y-8">
+<div class="relative max-w-3xl">
+<span class="absolute left-6 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50">search</span>
+<input class="w-full bg-surface-container-low border border-primary/20 py-5 pl-16 pr-8 text-on-surface font-display tracking-widest text-sm focus:outline-none focus:border-primary transition-colors" placeholder="BUSCAR EN LA COSECHA..." type="text"/>
+</div>
+<div class="flex flex-wrap gap-3">
+<button class="px-6 py-2 bg-[#8B2500] text-white font-display text-xs tracking-widest font-bold">TODO</button>
+<button class="px-6 py-2 bg-[#1A7A6E] text-white font-display text-xs tracking-widest font-bold">AFROBEAT</button>
+<button class="px-6 py-2 bg-[#B5651D] text-[#0F0A00] font-display text-xs tracking-widest font-bold">CHAMPETA</button>
+<button class="px-6 py-2 bg-[#1A2340] border border-[#C8860A] text-on-surface font-display text-xs tracking-widest font-bold">CUMBIA</button>
+<button class="px-6 py-2 bg-surface-container-high border border-outline-variant/30 text-on-surface-variant font-display text-xs tracking-widest hover:bg-[#8B2500] hover:text-white transition-all">TRAP</button>
+<button class="px-6 py-2 bg-surface-container-high border border-outline-variant/30 text-on-surface-variant font-display text-xs tracking-widest hover:bg-[#1A7A6E] hover:text-white transition-all">R&amp;B</button>
+<button class="px-6 py-2 bg-surface-container-high border border-outline-variant/30 text-on-surface-variant font-display text-xs tracking-widest hover:bg-[#B5651D] hover:text-[#0F0A00] transition-all">VALLENATO</button>
+</div>
+</section>
+<!-- La Cosecha Grid -->
+<section class="mb-20">
+<div class="flex justify-between items-end mb-10">
+<div class="flex items-center gap-6 flex-1">
+<h3 class="font-display text-3xl font-bold tracking-widest text-on-surface uppercase pr-6">La Cosecha</h3>
+<div class="h-[1px] flex-1 bg-gradient-to-r from-[#1A7A6E]/20 via-[#C8860A]/40 to-[#B5651D]/20"></div>
+</div>
+<a class="text-primary font-display text-xs tracking-widest underline decoration-secondary ml-10" href="#">VER TODOS LOS BEATS</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Beat Card 1 (Cumbia) -->
+<div class="bg-surface-container-low border border-primary/20 p-4 group hover:border-[#C8860A] transition-all duration-500">
+<div class="relative aspect-square mb-6 overflow-hidden bg-surface-container-highest">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100" data-alt="..." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmQZHHhb47C0xVkK6ntKxj0FMu1P47ces9AYouxq8rsF4sCvB4K8nTS_Y3exIffm7rZ323PgtU5y7US2YzCz6uttWgga0Q2or21lk3Kg1IeHQp4YG5Ne4AdOCrvv5jIaMiaN6e_O4om0nB5CQwVmxXRjMllLnGlIDco-P-jtjDbPQBarYY6N4AFiarxbiaF7IvW_SvIzs6Pg63AJgHVJYyDN8lOoaDbIN_owna9IUBz4CSNtvpy7XTuW52Ul3B74RT5OxT37A-Jzw"/>
+<div class="absolute inset-0 bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<div class="w-16 h-16 rounded-full border-2 border-primary flex items-center justify-center text-primary bg-background/60 backdrop-blur-sm">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<button class="absolute top-4 right-4 z-10 bg-background/60 backdrop-blur-sm rounded-full p-2 transition-transform duration-300 active:scale-125" onclick="toggleFavorite(this)">
+<span class="material-symbols-outlined text-sm text-[#efe2c2]/40 flex transition-colors" style="font-variation-settings: 'FILL' 0;">favorite_border</span>
+</button></div>
+<div class="space-y-4">
+<div>
+<span class="bg-[#1A2340] border border-[#C8860A]/40 text-[#C8860A] text-[9px] px-2 py-0.5 font-display tracking-[0.2em] uppercase mb-2 inline-block">Cumbia Digital</span>
+<h4 class="text-on-surface font-display text-xl font-bold">Ancestral Pulse</h4>
+<p class="text-on-surface-variant/70 font-body text-xs tracking-[0.2em] uppercase">PROD BY KOGUI VIBES</p>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-outline-variant/10">
+<span class="font-display text-primary text-lg font-bold">$29.999</span>
+<button class="bg-primary/10 hover:bg-primary text-primary hover:text-on-primary px-4 py-2 text-xs font-display font-bold tracking-widest border border-primary/50 transition-all">ADQUIRIR</button>
+</div>
+</div>
+</div>
+<!-- Beat Card 2 (Afrobeat) -->
+<div class="bg-surface-container-low border border-primary/20 p-4 group hover:border-[#1A7A6E] transition-all duration-500">
+<div class="relative aspect-square mb-6 overflow-hidden bg-surface-container-highest">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100" data-alt="..." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7YpUEfW8zaBTqxrxzc1-c2fzflZHGxxX3BbhlqBLxVVFd2PQhftJvDNAVTAJQcBLan3zplUn9CRlFSwB18ZZiLi0lTTh0XjtlAlQQnIftJAFIXxFKYZuqud2F4lyvay53njgE_ntLEyROSWs6DgzjmXCuZhYDq8Flag8mEAlptqurmW9UdiCW4lRYTnWr-N6jpXxJe1d_QlN6oE-Faes9E8kG3Xz5O5YpLaQ5eLwn8zFxRBdnuiC1PqV3OFULOLCnpisxswsuT6M"/>
+<div class="absolute inset-0 bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<div class="w-16 h-16 rounded-full border-2 border-primary flex items-center justify-center text-primary bg-background/60 backdrop-blur-sm">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<button class="absolute top-4 right-4 z-10 bg-background/60 backdrop-blur-sm rounded-full p-2 transition-transform duration-300 active:scale-125" onclick="toggleFavorite(this)">
+<span class="material-symbols-outlined text-sm text-[#efe2c2]/40 flex transition-colors" style="font-variation-settings: 'FILL' 0;">favorite_border</span>
+</button></div>
+<div class="space-y-4">
+<div>
+<span class="bg-[#1A7A6E]/20 text-[#1A7A6E] text-[9px] px-2 py-0.5 font-display tracking-[0.2em] uppercase mb-2 inline-block">Afro-Riddim</span>
+<h4 class="text-on-surface font-display text-xl font-bold">Gold Dust Riddim</h4>
+<p class="text-on-surface-variant/70 font-body text-xs tracking-[0.2em] uppercase">PROD BY TIERRA SANTA</p>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-outline-variant/10">
+<span class="font-display text-primary text-lg font-bold">$34.999</span>
+<button class="bg-primary/10 hover:bg-primary text-primary hover:text-on-primary px-4 py-2 text-xs font-display font-bold tracking-widest border border-primary/50 transition-all">ADQUIRIR</button>
+</div>
+</div>
+</div>
+<!-- Beat Card 3 (Champeta) -->
+<div class="bg-surface-container-low border border-primary/20 p-4 group hover:border-[#B5651D] transition-all duration-500">
+<div class="relative aspect-square mb-6 overflow-hidden bg-surface-container-highest">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100" data-alt="..." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUutl8fHyqAQoMek6pdlRIHmbkePpDLWrxBoaB5dradU5Kv6tRHx2RBc4lXGMD4d6WM-l4y0YX4QQ8J9sj6yQ3z5y2Gxcc2Bp-TmZce5OAkJ5fJ_cKnO_jC36PmNcFm25ySxEI8BfqkPkGUEqS00tFCrRX6lGlBVeQCkwTl9JnbAIDitT_Od2ONrgsJ2CbMDH19CqfUw4QR0IPAf0F6ihmhH09-1WfUrLQJY4vXdF5qLB7wZmTS2B3Ah9L7NQlB5bnUDuHBjQb7HI"/>
+<div class="absolute inset-0 bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<div class="w-16 h-16 rounded-full border-2 border-primary flex items-center justify-center text-primary bg-background/60 backdrop-blur-sm">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<button class="absolute top-4 right-4 z-10 bg-background/60 backdrop-blur-sm rounded-full p-2 transition-transform duration-300 active:scale-125" onclick="toggleFavorite(this)">
+<span class="material-symbols-outlined text-sm text-[#efe2c2]/40 flex transition-colors" style="font-variation-settings: 'FILL' 0;">favorite_border</span>
+</button></div>
+<div class="space-y-4">
+<div>
+<span class="bg-[#B5651D]/20 text-[#B5651D] text-[9px] px-2 py-0.5 font-display tracking-[0.2em] uppercase mb-2 inline-block">Champeta Bass</span>
+<h4 class="text-on-surface font-display text-xl font-bold">Tierra Santa</h4>
+<p class="text-on-surface-variant/70 font-body text-xs tracking-[0.2em] uppercase">PROD BY EMBERA BEATS</p>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-outline-variant/10">
+<span class="font-display text-primary text-lg font-bold">$45.000</span>
+<button class="bg-primary/10 hover:bg-primary text-primary hover:text-on-primary px-4 py-2 text-xs font-display font-bold tracking-widest border border-primary/50 transition-all">ADQUIRIR</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- La Minga Activity -->
+<section class="mb-20">
+<div class="flex items-center gap-4 mb-10">
+<h3 class="font-display text-2xl font-bold tracking-widest text-on-surface uppercase">La Minga Activity</h3>
+<div class="h-[1px] flex-1 bg-gradient-to-r from-[#1A7A6E]/20 via-[#C8860A]/40 to-[#B5651D]/20"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Activity Card 1 -->
+<div class="bg-surface-container-low/40 p-6 flex items-start gap-6 border-l-4 border-[#1A7A6E]">
+<div class="w-12 h-12 bg-[#1A7A6E]/10 flex items-center justify-center text-[#1A7A6E] shrink-0">
+<span class="material-symbols-outlined">queue_music</span>
+</div>
+<div>
+<p class="text-[#1A7A6E] font-display text-xs tracking-widest mb-1 uppercase font-bold">Nuevo Beat</p>
+<p class="text-on-surface font-body text-lg italic leading-tight">"Kogui Vibes acaba de subir 3 beats nuevos a la colección privada."</p>
+</div>
+</div>
+<!-- Activity Card 2 -->
+<div class="bg-surface-container-low/40 p-6 flex items-start gap-6 border-l-4 border-[#C8860A]">
+<div class="w-12 h-12 bg-[#C8860A]/10 flex items-center justify-center text-[#C8860A] shrink-0">
+<span class="material-symbols-outlined">trending_up</span>
+</div>
+<div>
+<p class="text-[#C8860A] font-display text-xs tracking-widest mb-1 uppercase font-bold">Trending Alert</p>
+<p class="text-on-surface font-body text-lg italic leading-tight">"Tierra Santa lleva 48h en el top del circuito de ventas global."</p>
+</div>
+</div>
+<!-- Activity Card 3 -->
+<div class="bg-surface-container-low/40 p-6 flex items-start gap-6 border-l-4 border-[#8B2500]">
+<div class="w-12 h-12 bg-[#8B2500]/10 flex items-center justify-center text-[#8B2500] shrink-0">
+<span class="material-symbols-outlined">sell</span>
+</div>
+<div>
+<p class="text-[#8B2500] font-display text-xs tracking-widest mb-1 uppercase font-bold">Oferta Exclusiva</p>
+<p class="text-on-surface font-body text-lg italic leading-tight">"Gold Dust Riddim tiene 20% de descuento por las próximas 24 horas."</p>
+</div>
+</div>
+<!-- Activity Card 4 -->
+<div class="bg-surface-container-low/40 p-6 flex items-start gap-6 border-l-4 border-[#B5651D]">
+<div class="w-12 h-12 bg-[#B5651D]/10 flex items-center justify-center text-[#B5651D] shrink-0">
+<span class="material-symbols-outlined">auto_awesome</span>
+</div>
+<div>
+<p class="text-[#B5651D] font-display text-xs tracking-widest mb-1 uppercase font-bold">Recomendado</p>
+<p class="text-on-surface font-body text-lg italic leading-tight">"Basado en tus compras: Jaguar Sun de Embera Drum podría ser tu próximo hit."</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Secondary List Section -->
+<section class="mb-20">
+<div class="bg-surface-container-lowest border border-outline-variant/10 overflow-hidden">
+<div class="p-8 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container-low/30">
+<h4 class="font-display font-bold tracking-widest text-on-surface uppercase">Próximos Lanzamientos</h4>
+<span class="text-xs text-on-surface-variant font-body">ACTUALIZADO HACE 2 MINUTOS</span>
+</div>
+<div class="divide-y divide-outline-variant/5">
+<div class="p-6 flex items-center gap-6 group hover:bg-surface-container-high transition-colors">
+<div class="w-14 h-14 bg-surface-container-highest border border-primary/20 shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="..." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhNttpeIU4MUDUt145Z511v7t-zwK49EFmGwbuKgQWgFJC1CpU7RYCesU9WtiT9AnakmHCbN_xCT8W4BP4p_2yJjFnEPErVu_WwcJ44nM6_w_5g_GdicNztcKWPT92hCoVqNLgrYkxoP5qo9-kUFJiC-wrLuv7IF6_w5ZXonx9vp2NHK9Qmn-L3gVhzk4YMiFTzfmfru4w4nm4IhForWp-jPIT6QOdfiDTctM8cG1l-bPGfFjXL5bHTjtAOw-ANWcDjDb0m57o57k"/>
+</div>
+<div class="flex-1">
+<h5 class="text-on-surface font-display text-lg font-bold group-hover:text-primary transition-colors">Jaguar Sun</h5>
+<p class="text-on-surface-variant font-body text-sm italic">Embera Drum · Disponible en 2 días</p>
+</div>
+<div class="text-right">
+<span class="material-symbols-outlined text-primary/40 group-hover:text-primary transition-colors">calendar_today</span>
+</div>
+</div>
+<div class="p-6 flex items-center gap-6 group hover:bg-surface-container-high transition-colors">
+<div class="w-14 h-14 bg-surface-container-highest border border-primary/20 shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="..." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHHO6it3_Whtm1cS2VGb4fAWotppUfH__EUO4hATeHmf0_OyZ8HAv1BQUdCcg2mYhlDQYoeWUqvLc7CNy-bopM7Vn2nPvxmtYcPUecxSczppeOG8gJImuBoBNdp7yNXhPV54xDxsH6ByZRSLg5bhOSYgqr0ihsae4pdRKWhWyLTN6Lu4jI-SNH6HnFBMC7INyU9m-yIA2BZfUZaJtUa8nwoB7fhD2YtHFeP10_ZP5rSjTGW5Iyn5AcjA8KHaEb_HZROyS_T4Ti0x4"/>
+</div>
+<div class="flex-1">
+<h5 class="text-on-surface font-display text-lg font-bold group-hover:text-primary transition-colors">Sierra Nevada Flow</h5>
+<p class="text-on-surface-variant font-body text-sm italic">Tayrona Beats · Disponible en 5 días</p>
+</div>
+<div class="text-right">
+<span class="material-symbols-outlined text-primary/40 group-hover:text-primary transition-colors">calendar_today</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="mt-20 py-12 border-t border-outline-variant/10 text-center space-y-6">
+<div class="flex justify-center gap-8 font-display text-[10px] tracking-[0.4em] text-on-surface-variant uppercase">
+<a class="hover:text-primary transition-colors" href="#">Minga License</a>
+<span class="text-outline-variant/30">|</span>
+<a class="hover:text-primary transition-colors" href="#">Support Portal</a>
+</div>
+<p class="text-on-surface-variant/40 font-body text-xs tracking-widest uppercase">
+                    © 2024 MINGA RECORDS · Ancestral Audio Solutions
+                </p>
+</footer>
+</main>
+</div>
+<!-- El Eco Persistent Player -->
+<div class="fixed bottom-0 w-full h-24 z-50 bg-surface/90 backdrop-blur-xl border-t border-primary/20 flex items-center px-8 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+<div class="flex items-center gap-4 w-1/4">
+<div class="w-14 h-14 border border-secondary shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="..." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQGivFRYBcAPv34L7vQRSfkycTvNevGfij6tOHkz2sVu4BuwythAjaMFVRTH4BU29FzmOmfA3AA4QkhE-6R8r5iNM1k2nZgQf53sxYM-4qOr-_wD92H7m71edOV-Y_IxP6Dteq0nzSUlOEFxb79CPpbt5I3iENXVCLeQnGXabJXC76KAPv3-iV49TuzWRRjv_pTGlGUoXNALh60HMaXEznYGnR2qWlghhquaCSKLQvYGSnB39Xqx6xkoN6ldin1cNFAvygupZ_bXA"/>
+</div>
+<div>
+<p class="text-primary font-display text-sm font-bold tracking-tight">Ancestral Pulse</p>
+<p class="text-[#1A7A6E] font-body text-[10px] tracking-[0.2em] uppercase">KOGUI VIBES</p>
+</div>
+</div>
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="flex items-center gap-8">
+<button class="text-[#F2E8D0]/60 hover:text-[#C8860A] transition-colors">
+<span class="material-symbols-outlined">shuffle</span>
+</button>
+<button class="text-[#F2E8D0]/60 hover:text-[#C8860A] transition-colors">
+<span class="material-symbols-outlined">skip_previous</span>
+</button>
+<button class="w-10 h-10 bg-[#C8860A] text-on-primary flex items-center justify-center rounded-full hover:scale-105 transition-transform active:scale-95">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pause</span>
+</button>
+<button class="text-[#F2E8D0]/60 hover:text-[#C8860A] transition-colors">
+<span class="material-symbols-outlined">skip_next</span>
+</button>
+<button class="text-[#F2E8D0]/60 hover:text-[#C8860A] transition-colors">
+<span class="material-symbols-outlined">repeat</span>
+</button>
+</div>
+<div class="w-full max-w-xl flex items-center gap-3">
+<span class="text-[10px] text-on-surface-variant font-body">01:45</span>
+<div class="flex-1 h-1 bg-surface-container-highest relative">
+<div class="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-[#B5651D] to-[#C8860A]"></div>
+<div class="absolute -right-[calc(66.6%-4px)] top-1/2 -translate-y-1/2 w-3 h-3 bg-[#C8860A] border-2 border-on-primary"></div>
+</div>
+<span class="text-[10px] text-on-surface-variant font-body">03:22</span>
+</div>
+</div>
+<div class="w-1/4 flex justify-end items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#F2E8D0]/60 text-lg">volume_up</span>
+<div class="w-24 h-1 bg-surface-container-highest">
+<div class="h-full w-2/3 bg-[#C8860A]/40"></div>
+</div>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2 font-display text-xs font-bold tracking-widest active:scale-95 transition-transform">ADQUIRIR</button>
+</div>
+</div>
+<div class="fixed top-24 left-1/2 -translate-x-1/2 z-[60] pointer-events-none" id="toast-container"></div>
+<script>
+    function toggleFavorite(btn) {
+        const heart = btn.querySelector('.material-symbols-outlined');
+        const isFavorite = heart.innerText === 'favorite';
+        const badge = document.getElementById('favorites-badge');
+        let count = parseInt(badge.innerText) || 0;
+
+        // Toggle heart icon and color
+        if (isFavorite) {
+            heart.innerText = 'favorite_border';
+            heart.classList.remove('text-[#8B2500]', 'fill-1');
+            heart.classList.add('text-[#efe2c2]/40');
+            count = Math.max(0, count - 1);
+        } else {
+            heart.innerText = 'favorite';
+            heart.classList.add('text-[#8B2500]', 'fill-1');
+            heart.classList.remove('text-[#efe2c2]/40');
+            count++;
+            showToast();
+        }
+
+        badge.innerText = count;
+        badge.classList.toggle('hidden', count === 0);
+
+        // Pulse animation
+        btn.classList.add('scale-125');
+        setTimeout(() => btn.classList.remove('scale-125'), 300);
+    }
+
+    function showToast() {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'bg-[#0F0A00] border border-[#8B2500]/40 px-6 py-3 flex items-center gap-3 shadow-2xl animate-bounce mb-4 transition-opacity duration-300';
+        toast.innerHTML = `
+            <span class="material-symbols-outlined text-[#8B2500] text-sm" style="font-variation-settings: 'FILL' 1">favorite</span>
+            <span class="font-display text-xs text-[#8B2500] tracking-widest uppercase">Añadido a tus Favoritos</span>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    }
+</script></body></html>
