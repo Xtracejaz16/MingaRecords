@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import '../marketplace.css';
 import { TopNavBar } from '../components/TopNavBar';
 import { SideNavBar } from '../components/SideNavBar';
@@ -12,30 +12,21 @@ import { PersistentPlayer } from '../components/PersistentPlayer';
 import { ToastNotification } from '../components/ToastNotification';
 import { useUIStore } from '../store/uiStore';
 import { usePlayerStore } from '../store/playerStore';
-import { GetBeatsUseCase } from '../../../application/marketplace/GetBeatsUseCase';
-import { GetActivitiesUseCase } from '../../../application/marketplace/GetActivitiesUseCase';
-import { GetUpcomingReleasesUseCase } from '../../../application/marketplace/GetUpcomingReleasesUseCase';
-import { SearchBeatsUseCase } from '../../../application/marketplace/SearchBeatsUseCase';
-import { FilterBeatsByGenreUseCase } from '../../../application/marketplace/FilterBeatsByGenreUseCase';
-import { MockMarketplaceRepository } from '../../../infrastructure/marketplace/MockMarketplaceRepository';
+import { useMarketplace } from '../hooks/useMarketplace';
 import type { Beat } from '../../../domain/marketplace/Beat';
-import type { ActivityItem } from '../../../domain/marketplace/ActivityItem';
-import type { Release } from '../../../domain/marketplace/Release';
-
-const mockRepo = new MockMarketplaceRepository();
-const getBeatsUC = new GetBeatsUseCase(mockRepo);
-const getActivitiesUC = new GetActivitiesUseCase(mockRepo);
-const getReleasesUC = new GetUpcomingReleasesUseCase(mockRepo);
-const searchBeatsUC = new SearchBeatsUseCase(mockRepo);
-const filterByGenreUC = new FilterBeatsByGenreUseCase(mockRepo);
 
 export function MarketplacePage() {
-  const [beats, setBeats] = useState<Beat[]>([]);
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [releases, setReleases] = useState<Release[]>([]);
-  const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
+
+  const {
+    activities,
+    releases,
+    loading,
+    error,
+    searchBeats,
+    filterByGenre,
+  } = useMarketplace();
 
   const {
     searchQuery,
@@ -47,72 +38,36 @@ export function MarketplacePage() {
   } = useUIStore();
   const playBeat = usePlayerStore((s) => s.playBeat);
 
-  useEffect(() => {
-    let cancelled = false;
+  if (error !== null && toastMessage === null) {
+    setToastMessage(error);
+  }
 
-    Promise.all([
-      getBeatsUC.execute(),
-      getActivitiesUC.execute(),
-      getReleasesUC.execute(),
-    ]).then(([b, a, r]) => {
-      if (!cancelled) {
-        setBeats(b);
-        setActivities(a);
-        setReleases(r);
-        setLoading(false);
-      }
-    }).catch(() => {
-      if (!cancelled) {
-        setLoading(false);
-        setToastMessage('No pudimos cargar el marketplace. Probá de nuevo.');
-      }
-    });
+  const displayBeats = selectedGenre !== null
+    ? filterByGenre(selectedGenre)
+    : searchBeats(searchQuery);
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (toastTimeoutRef.current !== null) {
-        window.clearTimeout(toastTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const handleSearchChange = async (query: string) => {
+  const handleSearchChange = (query: string) => {
     setSearchQuery(query);
-    if (query.trim() === '') {
-      const allBeats = await getBeatsUC.execute();
-      setBeats(allBeats);
-    } else {
-      const results = await searchBeatsUC.execute(query);
-      setBeats(results);
-    }
   };
 
-  const handleGenreSelect = async (genre: string | null) => {
+  const handleGenreSelect = (genre: string | null) => {
     setSelectedGenre(genre);
-    if (genre === null) {
-      const allBeats = await getBeatsUC.execute();
-      setBeats(allBeats);
-    } else {
-      const filtered = await filterByGenreUC.execute(genre);
-      setBeats(filtered);
+  };
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    if (toastTimeoutRef.current !== null) {
+      window.clearTimeout(toastTimeoutRef.current);
     }
+    toastTimeoutRef.current = window.setTimeout(() => setToastMessage(null), 3000);
   };
 
   const handleToggleFavorite = (beatId: string) => {
     const willBeFavorite = !isFavorite(beatId);
     toggleFavorite(beatId);
-    setToastMessage(
-      willBeFavorite ? 'Añadido a tus Favoritos' : 'Eliminado de tus Favoritos',
+    showToast(
+      willBeFavorite ? 'Añadido a Favoritos' : 'Removido de Favoritos',
     );
-    if (toastTimeoutRef.current !== null) {
-      window.clearTimeout(toastTimeoutRef.current);
-    }
-    toastTimeoutRef.current = window.setTimeout(() => setToastMessage(null), 3000);
   };
 
   const handlePlay = (beat: Beat) => {
@@ -120,11 +75,7 @@ export function MarketplacePage() {
   };
 
   const handlePurchase = (beat: Beat) => {
-    setToastMessage(`Función de compra próximamente: ${beat.title}`);
-    if (toastTimeoutRef.current !== null) {
-      window.clearTimeout(toastTimeoutRef.current);
-    }
-    toastTimeoutRef.current = window.setTimeout(() => setToastMessage(null), 3000);
+    showToast(`Función de compra próximamente: ${beat.title}`);
   };
 
   return (
@@ -170,15 +121,15 @@ export function MarketplacePage() {
                     </h3>
                     <div className="h-[1px] flex-1 bg-gradient-to-r from-wayuuJade/20 via-muiscaGold/40 to-zenuCopper/20"></div>
                   </div>
-                  <a
+                  <button
                     className="text-primary font-display text-xs tracking-widest underline decoration-secondary ml-10"
-                    href="#"
+                    type="button"
                   >
                     VER TODOS LOS BEATS
-                  </a>
+                  </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {beats.map((beat) => (
+                  {displayBeats.map((beat) => (
                     <BeatCard
                       key={beat.id}
                       beat={beat}
@@ -214,13 +165,19 @@ export function MarketplacePage() {
               {/* Footer */}
               <footer className="mt-20 py-12 border-t border-outline-variant/10 text-center space-y-6">
                 <div className="flex justify-center gap-8 font-display text-[10px] tracking-[0.4em] text-on-surface-variant uppercase">
-                  <a className="hover:text-primary transition-colors" href="#">
+                  <button
+                    className="hover:text-primary transition-colors"
+                    type="button"
+                  >
                     Minga License
-                  </a>
+                  </button>
                   <span className="text-outline-variant/30">|</span>
-                  <a className="hover:text-primary transition-colors" href="#">
+                  <button
+                    className="hover:text-primary transition-colors"
+                    type="button"
+                  >
                     Support Portal
-                  </a>
+                  </button>
                 </div>
                 <p className="text-on-surface-variant/40 font-body text-xs tracking-widest uppercase">
                   © 2024 MINGA RECORDS · Ancestral Audio Solutions

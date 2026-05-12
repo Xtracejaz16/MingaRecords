@@ -6,7 +6,7 @@ interface SearchBarProps {
 export function SearchBar({ value, onChange }: SearchBarProps) {
   return (
     <div className="relative max-w-3xl">
-      <span className="material-symbols-outlined absolute left-6 top-1/2 -translate-y-1/2 text-[#ffb950]/50">
+      <span className="material-symbols-outlined absolute left-6 top-1/2 -translate-y-1/2 text-brightGold/50">
         search
       </span>
       <input
@@ -14,7 +14,8 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="BUSCAR EN LA COSECHA..."
-        className="w-full bg-[#211b08] border border-[#ffb950]/20 py-5 pl-16 pr-8 text-[#efe2c2] font-display tracking-widest text-sm focus:outline-none focus:border-[#ffb950] transition-colors"
+        aria-label="Buscar beats"
+        className="w-full bg-deepObsidian border border-brightGold/20 py-5 pl-16 pr-8 text-paleCream font-display tracking-widest text-sm focus:outline-none focus:border-brightGold transition-colors"
       />
     </div>
   );

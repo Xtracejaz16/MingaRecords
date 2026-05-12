@@ -16,58 +16,58 @@ const GENRE_CHIPS: GenreChip[] = [
   {
     label: 'TODO',
     value: 'TODO',
-    activeBg: 'bg-[#8B2500]',
+    activeBg: 'bg-taironaTerracotta',
     activeText: 'text-white',
-    hoverBg: 'hover:bg-[#8B2500]',
+    hoverBg: 'hover:bg-taironaTerracotta',
     hoverText: 'hover:text-white',
   },
   {
     label: 'AFROBEAT',
     value: 'AFROBEAT',
-    activeBg: 'bg-[#1A7A6E]',
+    activeBg: 'bg-wayuuJade',
     activeText: 'text-white',
-    hoverBg: 'hover:bg-[#1A7A6E]',
+    hoverBg: 'hover:bg-wayuuJade',
     hoverText: 'hover:text-white',
   },
   {
     label: 'CHAMPETA',
     value: 'CHAMPETA',
-    activeBg: 'bg-[#B5651D]',
-    activeText: 'text-[#0F0A00]',
-    hoverBg: 'hover:bg-[#B5651D]',
-    hoverText: 'hover:text-[#0F0A00]',
+    activeBg: 'bg-zenuCopper',
+    activeText: 'text-obsidian',
+    hoverBg: 'hover:bg-zenuCopper',
+    hoverText: 'hover:text-obsidian',
   },
   {
     label: 'CUMBIA',
     value: 'CUMBIA',
-    activeBg: 'bg-[#1A2340]',
-    activeText: 'text-[#efe2c2]',
-    hoverBg: 'hover:bg-[#1A2340]',
-    hoverText: 'hover:text-[#efe2c2]',
+    activeBg: 'bg-emberaNavy',
+    activeText: 'text-paleCream',
+    hoverBg: 'hover:bg-emberaNavy',
+    hoverText: 'hover:text-paleCream',
   },
   {
     label: 'TRAP',
     value: 'TRAP',
-    activeBg: 'bg-[#8B2500]',
+    activeBg: 'bg-taironaTerracotta',
     activeText: 'text-white',
-    hoverBg: 'hover:bg-[#8B2500]',
+    hoverBg: 'hover:bg-taironaTerracotta',
     hoverText: 'hover:text-white',
   },
   {
     label: 'R&B',
     value: 'R&B',
-    activeBg: 'bg-[#1A7A6E]',
+    activeBg: 'bg-wayuuJade',
     activeText: 'text-white',
-    hoverBg: 'hover:bg-[#1A7A6E]',
+    hoverBg: 'hover:bg-wayuuJade',
     hoverText: 'hover:text-white',
   },
   {
     label: 'VALLENATO',
     value: 'VALLENATO',
-    activeBg: 'bg-[#B5651D]',
-    activeText: 'text-[#0F0A00]',
-    hoverBg: 'hover:bg-[#B5651D]',
-    hoverText: 'hover:text-[#0F0A00]',
+    activeBg: 'bg-zenuCopper',
+    activeText: 'text-obsidian',
+    hoverBg: 'hover:bg-zenuCopper',
+    hoverText: 'hover:text-obsidian',
   },
 ];
 
@@ -87,10 +87,10 @@ export function GenreFilterChips({ selectedGenre, onSelectGenre }: GenreFilterCh
             className={`px-6 py-2 font-display text-xs tracking-widest font-bold cursor-pointer transition-all ${
               isActive
                 ? `${chip.activeBg} ${chip.activeText} border border-transparent`
-                : `bg-[#302915] border border-[#514535]/30 text-[#d6c4af] ${chip.hoverBg} ${chip.hoverText}`
+                : `bg-darkMud border border-outline/30 text-mutedCream ${chip.hoverBg} ${chip.hoverText}`
             } ${
               chip.value === 'CUMBIA' && isActive
-                ? 'border border-[#C8860A]'
+                ? 'border border-muiscaGold'
                 : ''
             }`}
           >

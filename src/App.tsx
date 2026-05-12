@@ -17,7 +17,12 @@ function App() {
   const { session, resolvedRoute, goHome, openAuth, handleSubmit } = useAppShell();
 
   if (resolvedRoute.kind === 'private' && resolvedRoute.key !== 'notFound' && !session) {
-    const targetLabel = resolvedRoute?.key === 'marketplace' ? 'entrar al marketplace' : 'entrar al panel privado';
+    const targetLabel =
+      resolvedRoute.key === 'marketplace'
+        ? 'entrar al marketplace'
+        : resolvedRoute.key === 'panel'
+          ? 'entrar al panel privado'
+          : 'acceder a esta sección';
 
     return (
       <AuthScreen

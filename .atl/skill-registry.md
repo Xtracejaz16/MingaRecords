@@ -24,7 +24,7 @@ Updated: 2026-05-11 | SDD Init
 | Skill | Source | Rules |
 |-------|--------|-------|
 | `typescript` | user (`~/.config/opencode/skills/typescript/`) | Const types first (`STATUS = {...} as const` → `type Status = (typeof STATUS)[keyof...]`), flat interfaces, branded types for IDs, strict null checks. No `any`, no `as` casts except for JSON. |
-| `react-19` | **project** (`skill/react-19/`) | React Compiler NOT configured — useMemo/useCallback still needed for expensive computations. Named imports only. `ref` as prop (no forwardRef). |
+| `react-19` | **project** (`skill/react-19/`) | React 19 — no usar useMemo/useCallback manual. El compiler se encarga. Named imports only. `ref` as prop (no forwardRef). |
 | `tailwind-4` | user (`~/.config/opencode/skills/tailwind-4/`) | Never `var()` in className. Use `cn()` for conditional classes. Theme colors via Tailwind config, not inline hex. |
 
 **Note**: Tailwind v4 is installed (devDep) but the project uses Tailwind CDN in `index.html` for runtime utility classes. The build pipeline uses PostCSS + Autoprefixer. Custom CSS classes with Colombian-themed design tokens coexist with CDN-provided Tailwind utilities.

@@ -79,7 +79,7 @@ const ROUTES: Record<AppRouteKey, RouteDefinition> = {
     key: 'marketplace',
     kind: 'private',
     canonicalHash: '#/marketplace',
-    aliases: ['marketplace', 'tienda', 'beats'],
+    aliases: ['marketplace', 'tienda'],
   },
 };
 

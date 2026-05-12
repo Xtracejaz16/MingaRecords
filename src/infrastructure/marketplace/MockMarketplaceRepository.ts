@@ -92,16 +92,16 @@ const RELEASES: Release[] = [
 export class MockMarketplaceRepository implements MarketplaceRepository {
   async getBeats(): Promise<Beat[]> {
     await delay();
-    return BEATS;
+    return structuredClone(BEATS);
   }
 
   async getActivities(): Promise<ActivityItem[]> {
     await delay();
-    return ACTIVITIES;
+    return structuredClone(ACTIVITIES);
   }
 
   async getUpcomingReleases(): Promise<Release[]> {
     await delay();
-    return RELEASES;
+    return structuredClone(RELEASES);
   }
 }

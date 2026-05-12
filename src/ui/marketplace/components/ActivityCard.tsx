@@ -7,7 +7,7 @@ interface ActivityCardProps {
 export function ActivityCard({ activity }: ActivityCardProps) {
   return (
     <div
-      className="bg-[#211b08]/40 p-6 flex items-start gap-6 border-l-4"
+      className="bg-deepObsidian/40 p-6 flex items-start gap-6 border-l-4"
       style={{ borderLeftColor: activity.color }}
     >
       {/* Icon */}
@@ -29,7 +29,7 @@ export function ActivityCard({ activity }: ActivityCardProps) {
         >
           {activity.type.replace('_', ' ')}
         </p>
-        <p className="text-[#efe2c2] font-body text-lg italic leading-tight">
+        <p className="text-paleCream font-body text-lg italic leading-tight">
           {activity.description}
         </p>
       </div>

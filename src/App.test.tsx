@@ -20,6 +20,19 @@ function loginSession() {
   );
 }
 
+function loginArtistSession() {
+  window.localStorage.setItem(
+    'mingarecords.auth.session',
+    JSON.stringify({
+      id: '2',
+      identifier: 'artista@mingarecords.com',
+      alias: 'Minga Artista',
+      role: 'artist',
+      createdAt: new Date().toISOString(),
+    }),
+  );
+}
+
 describe('App routing', () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -142,7 +155,7 @@ describe('Private route access', () => {
 
       render(<App />);
 
-      expect(screen.getByText(/Necesitás iniciar sesión para entrar al panel privado/i)).toBeInTheDocument();
+      expect(screen.getByText(/Necesitás iniciar sesión para acceder a esta sección/i)).toBeInTheDocument();
     });
   });
 
@@ -189,5 +202,87 @@ describe('Private route access', () => {
     render(<App />);
 
     expect(screen.getByText(/Preferencias y Ajustes/i)).toBeInTheDocument();
+  });
+});
+
+describe('Marketplace access', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    setHash('#/');
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('bloquea #/marketplace sin sesión → muestra mensaje auth', () => {
+    setHash('#/marketplace');
+
+    render(<App />);
+
+    expect(screen.getByText(/Necesitás iniciar sesión para entrar al marketplace/i)).toBeInTheDocument();
+  });
+
+  it('permite acceso a #/marketplace con sesión artist', async () => {
+    loginArtistSession();
+    setHash('#/marketplace');
+
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByText(/Cosecha del Mes/i)).toBeInTheDocument());
+  });
+
+  it('deniega acceso a #/marketplace para role producer → MarketplaceDeniedScreen', () => {
+    loginSession();
+    setHash('#/marketplace');
+
+    render(<App />);
+
+    expect(screen.getByText(/Esa sesión no puede entrar al marketplace/i)).toBeInTheDocument();
+  });
+});
+
+describe('Post-login redirect by role', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    setHash('#/');
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('login artist redirige a #/marketplace', () => {
+    setHash('#/login');
+
+    render(<App />);
+
+    fireEvent.change(screen.getByLabelText(/Nombre de usuario o email/i), {
+      target: { value: 'artista@mingarecords.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/Contraseña sagrada/i), {
+      target: { value: 'minga123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Ingresar/i }));
+
+    expect(window.location.hash).toBe('#/marketplace');
+  });
+
+  it('login producer redirige a #/panel', () => {
+    setHash('#/login');
+
+    render(<App />);
+
+    fireEvent.change(screen.getByLabelText(/Nombre de usuario o email/i), {
+      target: { value: 'demo@mingarecords.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/Contraseña sagrada/i), {
+      target: { value: 'minga123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Ingresar/i }));
+
+    expect(window.location.hash).toBe('#/panel');
   });
 });
