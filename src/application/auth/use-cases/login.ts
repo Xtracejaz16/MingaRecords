@@ -1,10 +1,10 @@
 import { toSession, type AuthDraft, type AuthResult } from '../../../domain/auth/entities/auth';
 import type { AuthRepository } from '../../../domain/auth/ports/AuthRepository';
 import { normalizeIdentifier, validateDraft } from '../../../domain/auth/value-objects/authValidation';
-import { ensureDemoUserSeeded } from '../seedDemoUser';
+import { ensureDemoUsersSeeded } from '../seedDemoUsers';
 
 export function login(repository: AuthRepository, draft: AuthDraft): AuthResult {
-  ensureDemoUserSeeded(repository);
+  ensureDemoUsersSeeded(repository);
 
   const validationError = validateDraft('login', draft);
   if (validationError) {

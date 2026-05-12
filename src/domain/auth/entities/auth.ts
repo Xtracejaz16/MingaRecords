@@ -32,12 +32,30 @@ export interface AuthResult {
   user?: AuthSession;
 }
 
-export const DEMO_CREDENTIALS = {
-  identifier: 'demo@mingarecords.com',
-  password: 'minga123',
-  alias: 'Kogui Demo',
-  role: 'producer' as const,
-};
+export interface DemoCredential {
+  identifier: string;
+  password: string;
+  alias: string;
+  role: AuthRole;
+  createdAt: string;
+}
+
+export const DEMO_USERS = [
+  {
+    identifier: 'demo@mingarecords.com',
+    password: 'minga123',
+    alias: 'Kogui Demo',
+    role: 'producer',
+    createdAt: '2026-04-30T00:00:00.000Z',
+  },
+  {
+    identifier: 'artista@mingarecords.com',
+    password: 'minga123',
+    alias: 'Minga Artista',
+    role: 'artist',
+    createdAt: '2026-04-30T00:00:00.000Z',
+  },
+] as const satisfies readonly DemoCredential[];
 
 export function createUser(input: AuthDraft, normalizedIdentifier: string): AuthUser {
   return {

@@ -3,11 +3,14 @@ import { AuthScreen } from './ui/auth/screens/AuthScreen';
 import { DashboardPage } from './ui/dashboard/components/DashboardPage';
 import { HomeScreen } from './ui/home/screens/HomeScreen';
 import { NotFoundScreen } from './ui/app/screens/NotFoundScreen';
+import { PanelDeniedScreen } from './ui/app/screens/PanelDeniedScreen';
+import { MarketplaceDeniedScreen } from './ui/app/screens/MarketplaceDeniedScreen';
 import { BeatsPage } from './ui/beats/components/BeatsPage';
 import { GananciasPage } from './ui/ganancias/components/GananciasPage';
 import { AnalisisPage } from './ui/analisis/components/AnalisisPage';
 import { ActualizacionesPage } from './ui/actualizaciones/components/ActualizacionesPage';
 import { ConfiguracionPage } from './ui/configuracion/components/ConfiguracionPage';
+import { MarketplacePage } from './ui/marketplace/pages/MarketplacePage';
 import './index.css';
 
 function App() {
@@ -20,6 +23,24 @@ function App() {
         onBackHome={goHome}
         onSubmit={handleSubmit(resolvedRoute.key)}
         notice="Necesitás iniciar sesión para entrar al panel privado."
+      />
+    );
+  }
+
+  if (resolvedRoute.key === 'panel' && session?.role === 'artist') {
+    return (
+      <PanelDeniedScreen
+        onGoHome={goHome}
+        onGoLogin={() => openAuth('login')}
+      />
+    );
+  }
+
+  if (resolvedRoute.key === 'marketplace' && session?.role === 'producer') {
+    return (
+      <MarketplaceDeniedScreen
+        onGoHome={goHome}
+        onGoLogin={() => openAuth('login')}
       />
     );
   }
@@ -39,13 +60,14 @@ function App() {
   if (resolvedRoute.key === 'analisis') return <AnalisisPage />;
   if (resolvedRoute.key === 'actualizaciones') return <ActualizacionesPage />;
   if (resolvedRoute.key === 'configuracion') return <ConfiguracionPage />;
+  if (resolvedRoute.key === 'marketplace') return <MarketplacePage />;
 
   if (resolvedRoute.key === 'login' || resolvedRoute.key === 'register') {
     return (
       <AuthScreen
         initialTab={resolvedRoute.authTab ?? 'login'}
         onBackHome={goHome}
-        onSubmit={handleSubmit('home')}
+        onSubmit={handleSubmit('panel')}
       />
     );
   }
