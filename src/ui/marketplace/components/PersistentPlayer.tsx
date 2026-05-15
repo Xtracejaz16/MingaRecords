@@ -19,12 +19,8 @@ export function PersistentPlayer() {
   } = usePlayerStore();
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  if (!currentBeat) return null;
-
-  const progressPercent = duration > 0 ? (progress / duration) * 100 : 0;
-
   // Integrate a real <audio> element to play beats so the player actually emits audio
+  // Hook must be declared unconditionally before any early return.
   useEffect(() => {
     if (!audioRef.current) return;
     const audio = audioRef.current;
@@ -37,7 +33,11 @@ export function PersistentPlayer() {
     } else {
       audio.pause();
     }
-  }, [isPlaying]);
+  }, [isPlaying, currentBeat]);
+
+  if (!currentBeat) return null;
+
+  const progressPercent = duration > 0 ? (progress / duration) * 100 : 0;
 
   return (
     <div className="h-24 w-full flex-shrink-0 z-50 bg-obsidian/90 backdrop-blur-xl border-t border-brightGold/20 flex items-center px-8 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">

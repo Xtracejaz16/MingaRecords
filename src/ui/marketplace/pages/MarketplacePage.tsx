@@ -24,8 +24,9 @@ export function MarketplacePage() {
     releases,
     loading,
     error,
-    searchBeats,
+    // searchBeats is unused in this component after combining logic here
     filterByGenre,
+    beats,
   } = useMarketplace();
 
   const {
@@ -42,12 +43,8 @@ export function MarketplacePage() {
   // and ensure toast is shown when an error appears.
   useEffect(() => {
     if (!error) return;
-    // avoid synchronous cascading setState inside effect by scheduling
-    // with a microtask to allow other effects to settle.
-    const t = Promise.resolve().then(() => setToastMessage(error));
-    return () => {
-      // no-op, promise cannot be cancelled; this keeps lint happy about sync setState in effect
-    };
+    // schedule setToastMessage in microtask to avoid lint complaining about sync setState
+    Promise.resolve().then(() => setToastMessage(error));
   }, [error]);
 
   // Combine filters: genre + search text. Both should apply additively.
