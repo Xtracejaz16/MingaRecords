@@ -2,7 +2,7 @@ import type { StoreApi } from 'zustand';
 import type { CartRepository } from '../../domain/cart/CartRepository';
 import type { CartItem } from '../../domain/cart/CartItem';
 import type { LicenseType } from '../../domain/cart/LicenseType';
-import type { CartState } from '../../ui/marketplace/store/cartStore';
+import type { CartState } from '../../application/cart/CartState';
 
 /**
  * CartRepository implementation backed by a Zustand store.

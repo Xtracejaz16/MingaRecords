@@ -1,12 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { create } from 'zustand';
 import { ZustandCartRepository } from './ZustandCartRepository';
-import type { CartState } from '../../ui/marketplace/store/cartStore';
+import type { CartState } from '../../application/cart/CartState';
 import type { CartItem } from '../../domain/cart/CartItem';
 
 function createTestStore() {
   return create<CartState>((set, get) => ({
     items: [],
+    selectedBeat: null,
+    setSelectedBeat: (beat) => set({ selectedBeat: beat }),
     addItem: (item) => {
       const { items } = get();
       const existing = items.find((i) => i.beatId === item.beatId);

@@ -23,5 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# Design assets (Stitch exports)
+# Stitch generated design artifacts
 stitch_generated_screen/
+

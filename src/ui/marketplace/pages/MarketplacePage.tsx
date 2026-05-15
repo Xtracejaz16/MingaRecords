@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import '../marketplace.css';
-import { TopNavBar } from '../components/TopNavBar';
+import { TopNavBar } from '../../shared/components/TopNavBar';
 import { SideNavBar } from '../components/SideNavBar';
 import { HeroHeader } from '../components/HeroHeader';
 import { SearchBar } from '../components/SearchBar';
@@ -73,16 +73,16 @@ export function MarketplacePage() {
     toastTimeoutRef.current = window.setTimeout(() => setToastMessage(null), 3000);
   };
 
+  const handlePlay = (beat: Beat) => {
+    playBeat(beat);
+  };
+
   const handleToggleFavorite = (beatId: string) => {
     const willBeFavorite = !isFavorite(beatId);
     toggleFavorite(beatId);
     showToast(
       willBeFavorite ? 'Añadido a Favoritos' : 'Removido de Favoritos',
     );
-  };
-
-  const handlePlay = (beat: Beat) => {
-    playBeat(beat);
   };
 
   const handlePurchase = (beat: Beat) => {
