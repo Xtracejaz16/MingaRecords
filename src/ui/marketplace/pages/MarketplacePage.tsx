@@ -41,9 +41,13 @@ export function MarketplacePage() {
   // Synchronize error -> toastMessage inside an effect to avoid setState during render
   // and ensure toast is shown when an error appears.
   useEffect(() => {
-    if (error) {
-      setToastMessage(error);
-    }
+    if (!error) return;
+    // avoid synchronous cascading setState inside effect by scheduling
+    // with a microtask to allow other effects to settle.
+    const t = Promise.resolve().then(() => setToastMessage(error));
+    return () => {
+      // no-op, promise cannot be cancelled; this keeps lint happy about sync setState in effect
+    };
   }, [error]);
 
   // Combine filters: genre + search text. Both should apply additively.

@@ -11,8 +11,6 @@ export function useMarketplace(repository = new MockMarketplaceRepository()) {
   const getBeats = new GetBeatsUseCase(repository);
   const getActivities = new GetActivitiesUseCase(repository);
   const getUpcomingReleases = new GetUpcomingReleasesUseCase(repository);
-
-export function useMarketplace() {
   const [beats, setBeats] = useState<Beat[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [releases, setReleases] = useState<Release[]>([]);

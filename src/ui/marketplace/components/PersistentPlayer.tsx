@@ -18,13 +18,13 @@ export function PersistentPlayer() {
     resumeBeat,
   } = usePlayerStore();
 
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   if (!currentBeat) return null;
 
   const progressPercent = duration > 0 ? (progress / duration) * 100 : 0;
 
   // Integrate a real <audio> element to play beats so the player actually emits audio
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
   useEffect(() => {
     if (!audioRef.current) return;
     const audio = audioRef.current;
