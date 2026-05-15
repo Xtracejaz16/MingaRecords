@@ -2,7 +2,11 @@ import type { ActivityItem } from '../../domain/dashboard/ActivityItem';
 import type { DashboardRepository } from '../../domain/dashboard/DashboardRepository';
 
 export class GetActivityUseCase {
-  constructor(private readonly repository: DashboardRepository) {}
+  private readonly repository: DashboardRepository;
+
+  constructor(repository: DashboardRepository) {
+    this.repository = repository;
+  }
 
   async execute(): Promise<ActivityItem[]> {
     const activity = await this.repository.getActivity();
