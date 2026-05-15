@@ -2,7 +2,11 @@ import type { AuthSession } from '../../domain/auth/entities/auth';
 import type { CartRepository } from '../../domain/cart/CartRepository';
 
 export class ProceedToCheckoutUseCase {
-  constructor(private readonly repo: CartRepository) {}
+  private readonly repo: CartRepository;
+
+  constructor(repo: CartRepository) {
+    this.repo = repo;
+  }
 
   execute(session: AuthSession | null): { success: boolean; total: number } {
     if (!session) {
