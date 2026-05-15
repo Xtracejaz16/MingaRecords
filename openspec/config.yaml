@@ -1,0 +1,31 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Vite 7.3.1, React 19.2.0, TypeScript 5.9.3, Tailwind CSS 4.2.2 (CDN + PostCSS)
+  Architecture: Hexagonal frontend (domain → application → infrastructure → ui), hash-based routing
+  Testing: Vitest 3.2.4 (jsdom), @testing-library/react 16.3.0, strict_tdd: true
+  Style: Custom CSS design system with Colombian indigenous theming (Muisca, Tairona, Wayuu, etc.)
+  Package manager: pnpm 10.32.1
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    - Follow existing hexagonal patterns (domain → application → infrastructure → ui)
+    - tdd: true
+    - test_command: "pnpm test:run"
+  verify:
+    test_command: "pnpm test:run"
+    build_command: "pnpm build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
