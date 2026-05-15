@@ -1,7 +1,7 @@
 import { DEMO_USERS, type AuthUser } from '../../domain/auth/entities/auth';
 import type { AuthRepository } from '../../domain/auth/ports/AuthRepository';
 
-const DEMO_USER_IDS = new Set(DEMO_USERS.map((user) => user.identifier));
+const DEMO_USER_IDS = new Set<string>(DEMO_USERS.map((user) => user.identifier));
 
 function createDemoUser(identifier: string, alias: string, password: string, role: AuthUser['role']): AuthUser {
   return {

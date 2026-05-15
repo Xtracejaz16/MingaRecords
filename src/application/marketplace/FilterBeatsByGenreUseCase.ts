@@ -2,7 +2,11 @@ import type { MarketplaceRepository } from '../../domain/marketplace/Marketplace
 import type { Beat } from '../../domain/marketplace/Beat';
 
 export class FilterBeatsByGenreUseCase {
-  constructor(private readonly repository: MarketplaceRepository) {}
+  private readonly repository: MarketplaceRepository;
+
+  constructor(repository: MarketplaceRepository) {
+    this.repository = repository;
+  }
 
   async execute(genreId: string): Promise<Beat[]> {
     const beats = await this.repository.getBeats();

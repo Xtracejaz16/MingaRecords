@@ -12,14 +12,20 @@ import type { CartState } from '../../ui/marketplace/store/cartStore';
  * (infrastructure must not import ui).
  */
 export class ZustandCartRepository implements CartRepository {
+  private readonly store: StoreApi<CartState>;
+  private readonly defaultLicenseType: LicenseType;
+
   /**
    * @param store - Zustand StoreApi holding the cart state
    * @param defaultLicenseType - License applied when addItem omits it (default: 'raiz')
    */
   constructor(
-    private readonly store: StoreApi<CartState>,
-    private readonly defaultLicenseType: LicenseType = 'raiz',
-  ) {}
+    store: StoreApi<CartState>,
+    defaultLicenseType: LicenseType = 'raiz',
+  ) {
+    this.store = store;
+    this.defaultLicenseType = defaultLicenseType;
+  }
 
   /** Returns all cart items as CartItem[]. No mapping — store holds CartItem directly. */
   getItems(): CartItem[] {
