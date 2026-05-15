@@ -16,7 +16,7 @@ export interface CartState {
 
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
-  addItem: (beat) => {
+  addItem: (beat: Beat) => {
     const { items } = get();
     const existing = items.find((item) => item.beat.id === beat.id);
     if (existing) {
@@ -29,9 +29,9 @@ export const useCartStore = create<CartState>((set, get) => ({
       set({ items: [...items, { beat, quantity: 1 }] });
     }
   },
-  removeItem: (beatId) => {
+  removeItem: (beatId: string) => {
     set({ items: get().items.filter((item) => item.beat.id !== beatId) });
   },
-  getTotal: () => get().items.reduce((sum, item) => sum + item.beat.price * item.quantity, 0),
-  getItemCount: () => get().items.reduce((sum, item) => sum + item.quantity, 0),
+  getTotal: () => get().items.reduce((sum: number, item: CartItem) => sum + item.beat.price * item.quantity, 0),
+  getItemCount: () => get().items.reduce((sum: number, item: CartItem) => sum + item.quantity, 0),
 }));
