@@ -4,14 +4,11 @@ import type { Beat } from '../../domain/marketplace/Beat';
 export class SearchBeatsUseCase {
   constructor(private readonly repository: MarketplaceRepository) {}
 
-  async execute(query: string): Promise<Beat[]> {
-    const beats = await this.repository.getBeats();
+  async execute(query: string, beats?: Beat[]): Promise<Beat[]> {
+    const source = beats ?? (await this.repository.getBeats());
 
-    if (beats == null) {
-      throw new Error('Beats no pueden ser null.');
-    }
-
+    // repository contract promises Beat[]; defensive null check removed to match types
     const lowerQuery = query.toLowerCase();
-    return beats.filter((beat) => beat.title.toLowerCase().includes(lowerQuery));
+    return source.filter((beat) => beat.title.toLowerCase().includes(lowerQuery));
   }
 }

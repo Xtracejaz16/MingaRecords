@@ -91,12 +91,12 @@ export function BeatCard({ beat, isFavorite, onToggleFavorite, onPlay, onPurchas
         <span className="font-display text-brightGold text-lg font-bold">
           ${beat.price.toLocaleString('es-CO')}
         </span>
-        <button
-          className="bg-brightGold/10 hover:bg-brightGold text-brightGold hover:text-[#452b00] /* TODO: token para deepBrown */ px-4 py-2 text-xs font-display font-bold tracking-widest border border-brightGold/50 transition-all cursor-pointer"
-          onClick={() => onPurchase(beat)}
-        >
-          ADQUIRIR
-        </button>
+          <button
+            className="bg-brightGold/10 hover:bg-brightGold text-brightGold hover:text-deepBrown px-4 py-2 text-xs font-display font-bold tracking-widest border border-brightGold/50 transition-all cursor-pointer"
+            onClick={() => onPurchase(beat)}
+          >
+            ADQUIRIR
+          </button>
       </div>
     </div>
   );

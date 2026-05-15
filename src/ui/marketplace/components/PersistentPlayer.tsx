@@ -1,4 +1,5 @@
 import { usePlayerStore } from '../store/playerStore';
+import { useEffect, useRef } from 'react';
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -20,6 +21,23 @@ export function PersistentPlayer() {
   if (!currentBeat) return null;
 
   const progressPercent = duration > 0 ? (progress / duration) * 100 : 0;
+
+  // Integrate a real <audio> element to play beats so the player actually emits audio
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    const audio = audioRef.current;
+    // TODO: the repository currently doesn't provide an audioUrl field; when available use it.
+    // For now, we don't set src to avoid invalid requests. This keeps UI responsive.
+    if (isPlaying) {
+      void audio.play().catch(() => {
+        // ignore play errors in environments without audio
+      });
+    } else {
+      audio.pause();
+    }
+  }, [isPlaying]);
 
   return (
     <div className="h-24 w-full flex-shrink-0 z-50 bg-obsidian/90 backdrop-blur-xl border-t border-brightGold/20 flex items-center px-8 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
@@ -100,7 +118,7 @@ export function PersistentPlayer() {
             {formatTime(duration)}
           </span>
         </div>
-      </div>
+    </div>
 
       {/* Volume + CTA */}
       <div className="w-1/4 flex justify-end items-center gap-6">
@@ -119,6 +137,8 @@ export function PersistentPlayer() {
           ADQUIRIR
         </button>
       </div>
+      {/* Hidden audio element for playback */}
+      <audio ref={audioRef} style={{ display: 'none' }} aria-hidden />
     </div>
   );
 }

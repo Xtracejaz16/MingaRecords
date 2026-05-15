@@ -7,10 +7,10 @@ import type { Beat } from '../../../domain/marketplace/Beat';
 import type { Release } from '../../../domain/marketplace/Release';
 import { MockMarketplaceRepository } from '../../../infrastructure/marketplace/MockMarketplaceRepository';
 
-const repository = new MockMarketplaceRepository();
-const getBeats = new GetBeatsUseCase(repository);
-const getActivities = new GetActivitiesUseCase(repository);
-const getUpcomingReleases = new GetUpcomingReleasesUseCase(repository);
+export function useMarketplace(repository = new MockMarketplaceRepository()) {
+  const getBeats = new GetBeatsUseCase(repository);
+  const getActivities = new GetActivitiesUseCase(repository);
+  const getUpcomingReleases = new GetUpcomingReleasesUseCase(repository);
 
 export function useMarketplace() {
   const [beats, setBeats] = useState<Beat[]>([]);

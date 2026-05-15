@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import '../marketplace.css';
 import { TopNavBar } from '../components/TopNavBar';
 import { SideNavBar } from '../components/SideNavBar';
@@ -38,13 +38,23 @@ export function MarketplacePage() {
   } = useUIStore();
   const playBeat = usePlayerStore((s) => s.playBeat);
 
-  if (error !== null && toastMessage === null) {
-    setToastMessage(error);
-  }
+  // Synchronize error -> toastMessage inside an effect to avoid setState during render
+  // and ensure toast is shown when an error appears.
+  useEffect(() => {
+    if (error) {
+      setToastMessage(error);
+    }
+  }, [error]);
 
-  const displayBeats = selectedGenre !== null
-    ? filterByGenre(selectedGenre)
-    : searchBeats(searchQuery);
+  // Combine filters: genre + search text. Both should apply additively.
+  const displayBeats = (() => {
+    const byGenre = selectedGenre ? filterByGenre(selectedGenre) : undefined;
+    const candidates = byGenre ?? beats; // start from all beats when no genre selected
+    const q = searchQuery?.trim() ?? '';
+    if (q === '') return candidates;
+    const lowerQ = q.toLowerCase();
+    return candidates.filter((b) => b.title.toLowerCase().includes(lowerQ));
+  })();
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
