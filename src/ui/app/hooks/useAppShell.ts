@@ -65,6 +65,7 @@ export function useAppShell() {
   return {
     session,
     resolvedRoute,
+    navigateTo,
     goHome,
     openAuth,
     handleSubmit,
