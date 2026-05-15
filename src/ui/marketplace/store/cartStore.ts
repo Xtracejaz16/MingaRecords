@@ -1,37 +1,36 @@
 import { create } from 'zustand';
-import type { Beat } from '../../../domain/marketplace/Beat';
-
-interface CartItem {
-  beat: Beat;
-  quantity: number;
-}
+import type { CartItem } from '../../../domain/cart/CartItem';
 
 export interface CartState {
   items: CartItem[];
-  addItem: (beat: Beat) => void;
+  addItem: (item: CartItem) => void;
   removeItem: (beatId: string) => void;
+  clearCart: () => void;
   getTotal: () => number;
   getItemCount: () => number;
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
-  addItem: (beat) => {
+  addItem: (item) => {
     const { items } = get();
-    const existing = items.find((item) => item.beat.id === beat.id);
+    const existing = items.find((i) => i.beatId === item.beatId);
     if (existing) {
       set({
-        items: items.map((item) =>
-          item.beat.id === beat.id ? { ...item, quantity: item.quantity + 1 } : item
+        items: items.map((i) =>
+          i.beatId === item.beatId ? { ...i, quantity: i.quantity + 1 } : i
         ),
       });
     } else {
-      set({ items: [...items, { beat, quantity: 1 }] });
+      set({ items: [...items, item] });
     }
   },
   removeItem: (beatId) => {
-    set({ items: get().items.filter((item) => item.beat.id !== beatId) });
+    set({ items: get().items.filter((item) => item.beatId !== beatId) });
   },
-  getTotal: () => get().items.reduce((sum, item) => sum + item.beat.price * item.quantity, 0),
+  clearCart: () => {
+    set({ items: [] });
+  },
+  getTotal: () => get().items.reduce((sum, item) => sum + item.price * item.quantity, 0),
   getItemCount: () => get().items.reduce((sum, item) => sum + item.quantity, 0),
 }));
