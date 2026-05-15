@@ -1,52 +1,57 @@
+import type { StoreApi } from 'zustand';
 import type { CartRepository } from '../../domain/cart/CartRepository';
 import type { CartItem } from '../../domain/cart/CartItem';
-import type { Beat } from '../../domain/marketplace/Beat';
-import { useCartStore } from '../../ui/marketplace/store/cartStore';
+import type { LicenseType } from '../../domain/cart/LicenseType';
+import type { CartState } from '../../ui/marketplace/store/cartStore';
 
+/**
+ * CartRepository implementation backed by a Zustand store.
+ *
+ * The store is injected via constructor — this class has NO direct import
+ * from the UI layer, preserving the hexagonal dependency rule
+ * (infrastructure must not import ui).
+ */
 export class ZustandCartRepository implements CartRepository {
+  /**
+   * @param store - Zustand StoreApi holding the cart state
+   * @param defaultLicenseType - License applied when addItem omits it (default: 'raiz')
+   */
+  constructor(
+    private readonly store: StoreApi<CartState>,
+    private readonly defaultLicenseType: LicenseType = 'raiz',
+  ) {}
+
+  /** Returns all cart items as CartItem[]. No mapping — store holds CartItem directly. */
   getItems(): CartItem[] {
-    const storeItems = useCartStore.getState().items;
-    return storeItems.map((storeItem, index) => ({
-      id: `cart-item-${index}`,
-      beatId: storeItem.beat.id,
-      beatTitle: storeItem.beat.title,
-      producerName: storeItem.beat.artist,
-      coverUrl: storeItem.beat.coverUrl,
-      price: storeItem.beat.price,
-      licenseType: 'raiz' as const,
-      quantity: storeItem.quantity,
-    }));
+    return this.store.getState().items;
   }
 
+  /** Adds a CartItem to the cart. If the beatId already exists, quantity is incremented. */
   addItem(item: CartItem): void {
-    const beat: Beat = {
-      id: item.beatId,
-      title: item.beatTitle,
-      artist: item.producerName,
-      genre: '',
-      genreColor: '',
-      price: item.price,
-      coverUrl: item.coverUrl,
+    const resolved: CartItem = {
+      ...item,
+      licenseType: item.licenseType ?? this.defaultLicenseType,
     };
-    useCartStore.getState().addItem(beat);
+    this.store.getState().addItem(resolved);
   }
 
+  /** Removes the cart entry matching the given beatId. */
   removeItem(beatId: string): void {
-    useCartStore.getState().removeItem(beatId);
+    this.store.getState().removeItem(beatId);
   }
 
+  /** Empties the cart in a single atomic Zustand update. */
   clearCart(): void {
-    const state = useCartStore.getState();
-    state.items.forEach((item) => {
-      state.removeItem(item.beat.id);
-    });
+    this.store.getState().clearCart();
   }
 
+  /** Returns the monetary total of all items in the cart. */
   getTotal(): number {
-    return useCartStore.getState().getTotal();
+    return this.store.getState().getTotal();
   }
 
+  /** Returns the sum of all item quantities. */
   getItemCount(): number {
-    return useCartStore.getState().getItemCount();
+    return this.store.getState().getItemCount();
   }
 }
