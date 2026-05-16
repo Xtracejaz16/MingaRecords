@@ -1,13 +1,14 @@
 services:
-    postgres:
+  postgres:
     image: postgres:16-alpine
     environment:
-        POSTGRES_USER: minga
-        POSTGRES_PASSWORD: minga_dev
-        POSTGRES_DB: mingarecords
+      POSTGRES_USER: minga
+      POSTGRES_PASSWORD: minga_dev
+      POSTGRES_DB: mingarecords
     ports:
-        - "5432:5432"
+      - "5432:5432"
     volumes:
-        - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
+
 volumes:
-    pgdata:
+  pgdata:
