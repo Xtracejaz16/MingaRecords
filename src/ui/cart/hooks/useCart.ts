@@ -12,6 +12,7 @@ export function useCart() {
   const selectLicense = useMemo(() => new SelectLicenseUseCase(repo), [repo]);
   const checkout = useMemo(() => new ProceedToCheckoutUseCase(repo), [repo]);
 
+  // Reactive reads — store now holds CartItem[], no mapping needed
   const items = useCartStore((state) => state.items);
   const itemCount = useCartStore((state) => state.getItemCount());
   const total = useCartStore((state) => state.getTotal());
