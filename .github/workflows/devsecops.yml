@@ -12,6 +12,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Install dependencies
-        run: npm install  # Asume package.json en React
+        run: pnpm install  
       - name: Lint Code
-        run: npx eslint . --ext .js,.jsx,.ts,.tsx  # Linting con ESLint para React
+        run: pnpx eslint . --ext .js,.jsx,.ts,.tsx  
