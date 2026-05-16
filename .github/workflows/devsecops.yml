@@ -12,6 +12,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Install dependencies
-        run: pnpm install  
+        run: npm install  
       - name: Lint Code
-        run: pnpx eslint . --ext .js,.jsx,.ts,.tsx  
+        run: npx eslint . --ext .js,.jsx,.ts,.tsx  
