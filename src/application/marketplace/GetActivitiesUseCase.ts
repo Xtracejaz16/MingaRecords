@@ -2,7 +2,11 @@ import type { MarketplaceRepository } from '../../domain/marketplace/Marketplace
 import type { ActivityItem } from '../../domain/marketplace/ActivityItem';
 
 export class GetActivitiesUseCase {
-  constructor(private readonly repository: MarketplaceRepository) {}
+  private readonly repository: MarketplaceRepository;
+
+  constructor(repository: MarketplaceRepository) {
+    this.repository = repository;
+  }
 
   async execute(): Promise<ActivityItem[]> {
     const activities = await this.repository.getActivities();

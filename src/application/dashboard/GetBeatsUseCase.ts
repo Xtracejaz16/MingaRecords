@@ -2,7 +2,11 @@ import type { DashboardRepository } from '../../domain/dashboard/DashboardReposi
 import type { Beat } from '../../domain/dashboard/Beat';
 
 export class GetBeatsUseCase {
-  constructor(private readonly repository: DashboardRepository) {}
+  private readonly repository: DashboardRepository;
+
+  constructor(repository: DashboardRepository) {
+    this.repository = repository;
+  }
 
   async execute(): Promise<Beat[]> {
     const beats = await this.repository.getBeats();
