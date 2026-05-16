@@ -42,10 +42,10 @@ export function IntercambioPage() {
 
   // Primary source: beat selected from MarketplacePage via cartStore
   // Fallback: first item already in cart (e.g. direct navigation)
-  const rawBeat = selectedBeat ?? (items.length > 0 ? items[0] : null);
+  const rawCartItem = items.length > 0 ? items[0] : null;
   const selectedCartItem: CartItem | null = selectedBeat
     ? buildCartItem(selectedBeat, selectedPlan ?? 'semilla')
-    : rawBeat;
+    : rawCartItem;
   const selectedPlanPrice = selectedPlan ? LICENSE_CONFIG[selectedPlan].price : 0;
 
 

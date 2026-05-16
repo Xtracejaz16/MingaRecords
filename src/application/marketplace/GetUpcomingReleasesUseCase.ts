@@ -2,7 +2,11 @@ import type { MarketplaceRepository } from '../../domain/marketplace/Marketplace
 import type { Release } from '../../domain/marketplace/Release';
 
 export class GetUpcomingReleasesUseCase {
-  constructor(private readonly repository: MarketplaceRepository) {}
+  private readonly repository: MarketplaceRepository;
+
+  constructor(repository: MarketplaceRepository) {
+    this.repository = repository;
+  }
 
   async execute(): Promise<Release[]> {
     const releases = await this.repository.getUpcomingReleases();

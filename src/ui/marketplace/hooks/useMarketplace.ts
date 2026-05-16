@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { GetBeatsUseCase } from '../../../application/marketplace/GetBeatsUseCase';
 import { GetActivitiesUseCase } from '../../../application/marketplace/GetActivitiesUseCase';
 import { GetUpcomingReleasesUseCase } from '../../../application/marketplace/GetUpcomingReleasesUseCase';
@@ -8,9 +8,8 @@ import type { Release } from '../../../domain/marketplace/Release';
 import { MockMarketplaceRepository } from '../../../infrastructure/marketplace/MockMarketplaceRepository';
 
 export function useMarketplace(repositoryParam?: MockMarketplaceRepository) {
-  // Keep repository stable across renders when not injected
-  const repositoryRef = useRef<MockMarketplaceRepository | null>(null);
-  const repository = repositoryParam ?? (repositoryRef.current ?? (repositoryRef.current = new MockMarketplaceRepository()));
+  const createdRepo = useMemo(() => new MockMarketplaceRepository(), []);
+  const repository = repositoryParam ?? createdRepo;
 
   const getBeats = useMemo(() => new GetBeatsUseCase(repository), [repository]);
   const getActivities = useMemo(() => new GetActivitiesUseCase(repository), [repository]);
