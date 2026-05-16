@@ -2,7 +2,11 @@ import type { DashboardRepository } from '../../domain/dashboard/DashboardReposi
 import type { ProducerStats } from '../../domain/dashboard/ProducerStats';
 
 export class GetStatsUseCase {
-  constructor(private readonly repository: DashboardRepository) {}
+  private readonly repository: DashboardRepository;
+
+  constructor(repository: DashboardRepository) {
+    this.repository = repository;
+  }
 
   async execute(): Promise<ProducerStats> {
     const stats = await this.repository.getStats();
