@@ -11,6 +11,7 @@ import { AnalisisPage } from './ui/analisis/components/AnalisisPage';
 import { ActualizacionesPage } from './ui/actualizaciones/components/ActualizacionesPage';
 import { ConfiguracionPage } from './ui/configuracion/components/ConfiguracionPage';
 import { MarketplacePage } from './ui/marketplace/pages/MarketplacePage';
+import { IntercambioPage } from './ui/cart/components/IntercambioPage';
 import './index.css';
 
 function App() {
@@ -52,6 +53,15 @@ function App() {
     );
   }
 
+  if (resolvedRoute.key === 'intercambio' && session?.role === 'producer') {
+    return (
+      <MarketplaceDeniedScreen
+        onGoHome={goHome}
+        onGoLogin={() => openAuth('login')}
+      />
+    );
+  }
+
   if (resolvedRoute.kind === 'notFound') {
     return (
       <NotFoundScreen
@@ -68,6 +78,7 @@ function App() {
   if (resolvedRoute.key === 'actualizaciones') return <ActualizacionesPage />;
   if (resolvedRoute.key === 'configuracion') return <ConfiguracionPage />;
   if (resolvedRoute.key === 'marketplace') return <MarketplacePage />;
+  if (resolvedRoute.key === 'intercambio') return <IntercambioPage />;
 
   if (resolvedRoute.key === 'login' || resolvedRoute.key === 'register') {
     return (

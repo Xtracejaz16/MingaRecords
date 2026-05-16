@@ -1,11 +1,15 @@
+import { useAppShell } from '../../app/hooks/useAppShell';
+
 export function Hero() {
+  const { navigateTo } = useAppShell();
+
   return (
     <section className="relative min-h-screen pt-32 pb-20 flex flex-col items-center justify-center text-center pattern-vueltiao overflow-hidden">
       {/* Rotating Muisca Emblem Background */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 pointer-events-none">
         <svg className="solar-emblem w-[600px] h-[600px]" fill="none" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <circle cx="50" cy="50" r="45" stroke="#C8860A" strokeDasharray="2 2" strokeWidth="0.5" />
-          <path d="M50 5 L55 45 L95 50 L55 55 L50 95 L45 55 L5 50 L45 45 Z" fill="#C8860A" />
+          <path d="M50  L55 45 L95 50 L55 55 L50 95 L45 55 L5 50 L45 45 Z" fill="#C8860A" />
           <circle cx="50" cy="50" r="10" stroke="#C8860A" strokeWidth="1" />
         </svg>
       </div>
@@ -21,12 +25,12 @@ export function Hero() {
           "Del territorio colombiano al mundo — beats con raíz"
         </p>
         <div className="flex flex-col md:flex-row gap-6 justify-center">
-          <a 
+          <button 
             className="px-10 py-4 bg-muiscaGold text-obsidian font-cinzel font-bold tracking-widest hover:bg-koguiCream transition-all duration-300 transform hover:-translate-y-1 shadow-[0_0_20px_rgba(200,134,10,0.3)] cursor-pointer"
-            href="#cosecha"
+            onClick={() => navigateTo('marketplace')}
           >
             EXPLORAR BEATS
-          </a>
+          </button>
           <a 
             className="px-10 py-4 border-2 border-wayuuJade text-wayuuJade font-cinzel font-bold tracking-widest hover:bg-wayuuJade hover:text-white transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
             href="#/ser-productor"

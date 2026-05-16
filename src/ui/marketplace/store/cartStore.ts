@@ -1,17 +1,13 @@
 import { create } from 'zustand';
-import type { CartItem } from '../../../domain/cart/CartItem';
+import type { CartState } from '../../../application/cart/CartState';
 
-export interface CartState {
-  items: CartItem[];
-  addItem: (item: CartItem) => void;
-  removeItem: (beatId: string) => void;
-  clearCart: () => void;
-  getTotal: () => number;
-  getItemCount: () => number;
-}
+// Re-export for backward compatibility during migration
+export type { CartState } from '../../../application/cart/CartState';
 
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
+  selectedBeat: null,
+  setSelectedBeat: (beat) => set({ selectedBeat: beat }),
   addItem: (item) => {
     const { items } = get();
     const existing = items.find((i) => i.beatId === item.beatId);
