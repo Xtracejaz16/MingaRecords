@@ -1,399 +1,288 @@
 # 11 — Observabilidad
 
-> **Versión:** 1.0 — **Fecha:** 12 de mayo de 2026
+> **Versión:** 2.0 — **Fecha:** 19 de mayo de 2026
 
 ---
 
-## 11.1 Principios de Observabilidad para 2 Developers
+## 11.1 Principios para el MVP de 1 Semana
+
+Somos 2 developers, 1 proceso, 1 deploy en EC2 t2.micro, presupuesto $0. No necesitamos observabilidad de empresa.
 
 | Principio | Qué significa |
 |-----------|---------------|
-| **Señal sobre ruido** | No alertar de todo. Solo alertar de lo que requiere acción inmediata. |
-| **Correlation IDs** | Cada request tiene un ID único que se propaga entre servicios. Sin esto, debuggear un error cross-service es imposible. |
-| **Logs estructurados** | JSON, no texto libre. Si no podés hacer `grep` por campo, no sirve. |
-| **Métricas de negocio** | No solo CPU y RAM. Beats vendidos, plays, revenue, conversion rate. |
-| **Free tier first** | Sentry (5K events/mes), Railway logs (incluido), Supabase logs (incluido). |
+| **Simple es suficiente** | `console.log` con timestamps anda perfecto para el MVP |
+| **Un solo health check** | Un endpoint que verifique la DB alcanza |
+| **Errores visibles** | Middleware de Express que loguee y devuelva RFC 7807 |
+| **Eventos de negocio** | Líneas de log para ventas, registros, etc. |
+
+### Qué NO necesitamos ahora
+
+- ~~Pino / logging estructurado JSON~~
+- ~~Correlation IDs~~ (un solo proceso, no hay cross-service)
+- ~~Distributed tracing / OpenTelemetry~~
+- ~~Sentry~~ (opcional, se puede agregar después)
+- ~~Dashboards de métricas / Grafana~~
+- ~~Alerting strategies~~
+- ~~Health checks por servicio~~ (es un monolito)
 
 ---
 
 ## 11.2 Logging
 
-### Formato: JSON Estructurado
+### Estrategia: `console.log` con timestamps
+
+Para un MVP de 1 semana, `console.log` con timestamps es suficiente. No hace falta Pino, Winston ni nada similar.
 
 ```typescript
-// packages/shared/src/middleware/request-logger.ts
-import pino from 'pino';
-
-export const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  transport: process.env.NODE_ENV === 'development'
-    ? { target: 'pino-pretty' }
-    : undefined,
-  formatters: {
-    level: (label) => ({ level: label.toUpperCase() }),
-  },
-  base: {
-    service: process.env.SERVICE_NAME,
-    version: process.env.npm_package_version || 'dev',
-    environment: process.env.NODE_ENV,
-  },
-});
-```
-
-### Log por Request
-
-```json
-{
-  "level": "INFO",
-  "time": "2026-05-12T15:30:00.123Z",
-  "service": "catalog",
-  "version": "1.0.0",
-  "environment": "production",
-  "correlationId": "corr-abc123def456",
-  "reqId": "req-789xyz",
-  "method": "GET",
-  "url": "/api/v1/beats?genre=trap&page=1",
-  "statusCode": 200,
-  "responseTime": 45,
-  "userId": "user-k8x2m4p1",
-  "userAgent": "Mozilla/5.0 ...",
-  "ip": "192.168.1.1"
+// src/shared/logger.ts
+export function log(level: 'info' | 'warn' | 'error', message: string, data?: Record<string, unknown>) {
+  const timestamp = new Date().toISOString();
+  const payload = data ? ` ${JSON.stringify(data)}` : '';
+  console[level](`[${timestamp}] ${level.toUpperCase()}: ${message}${payload}`);
 }
 ```
 
-### Log por Error
+### Uso
 
-```json
-{
-  "level": "ERROR",
-  "time": "2026-05-12T15:30:01.456Z",
-  "service": "payments",
-  "correlationId": "corr-def456ghi789",
-  "reqId": "req-456abc",
-  "method": "POST",
-  "url": "/api/v1/webhooks/stripe",
-  "statusCode": 500,
-  "error": {
-    "type": "StripeSignatureVerificationError",
-    "message": "No signatures found matching the expected signature",
-    "stack": "Error: No signatures found...\n    at webhookHandler..."
-  },
-  "userId": null,
-  "ip": "54.187.174.169"
-}
+```typescript
+import { log } from './shared/logger';
+
+log('info', 'Server started', { port: 3000 });
+log('info', 'User registered', { userId: 'abc123' });
+log('warn', 'Login failed', { email: 'user@example.com', reason: 'invalid_password' });
+log('error', 'Database connection failed', { error: err.message });
 ```
-
-### Niveles de Log por Entorno
-
-| Entorno | Nivel | Razón |
-|---------|-------|-------|
-| Desarrollo | `debug` | Ver todo para debuggear |
-| Staging | `info` | Comportamiento normal + warnings |
-| Producción | `warn` | Solo warnings y errores (reduce costos de log storage) |
 
 ### Qué Loguear
 
-| Evento | Nivel | Campos adicionales |
-|--------|-------|-------------------|
-| Request recibido | `debug` | method, url, correlationId |
-| Request completado | `info` | method, url, statusCode, responseTime |
-| Error manejado | `warn` | error type, message, url |
-| Error no manejado | `error` | error type, message, stack, url |
-| Login exitoso | `info` | userId, ip |
-| Login fallido | `warn` | email (no password!), ip, reason |
-| Pago completado | `info` | transactionId, amountCents, beatId |
-| Pago fallido | `warn` | transactionId, error, beatId |
-| Upload iniciado | `info` | beatId, fileSize, mimeType |
-| Upload fallido | `error` | beatId, error, fileSize |
-| Webhook recibido | `info` | eventType, eventId |
-| Webhook fallido | `error` | eventType, eventId, error |
+| Evento | Nivel | Ejemplo |
+|--------|-------|---------|
+| Server started | `info` | Puerto, entorno |
+| Request importante | `info` | Method, path (no todos, solo los clave) |
+| Venta completada | `info` | transactionId, amount |
+| Usuario registrado | `info` | userId, role |
+| Login fallido | `warn` | email (no password!), reason |
+| Error de DB | `error` | message |
+| Error no manejado | `error` | message, stack |
+| Webhook recibido | `info` | eventType |
 
 ### Qué NUNCA Loguear
 
 | Dato | Razón |
 |------|-------|
-| Passwords (ni en hash) | Seguridad básica |
-| JWT tokens completos | Podrían ser reutilizados si los logs se filtran |
-| Números de tarjeta de crédito | PCI DSS. Stripe los maneja, nosotros nunca los vemos |
-| Datos completos de transacciones | Solo loguear IDs y status, no montos ni datos del comprador |
+| Passwords | Seguridad básica |
+| JWT tokens | Podrían ser reutilizados |
 | Headers Authorization | Contiene el JWT |
 | Query params con tokens | Ej: `/auth/verify?token=abc123` |
 
 ---
 
-## 11.3 Correlation IDs
+## 11.3 Health Check
 
-### Cómo Funciona
-
-```
-CLIENTE                    CLOUDFLARE WORKER              AUTH SERVICE              CATALOG SERVICE
-  │                              │                            │                          │
-  │  X-Correlation-ID: corr-abc  │                            │                          │
-  │─────────────────────────────►│                            │                          │
-  │                              │  X-Correlation-ID: corr-abc│                          │
-  │                              │───────────────────────────►│                          │
-  │                              │                            │  X-Correlation-ID: corr-abc│
-  │                              │                            │──────────────────────────►│
-  │                              │                            │                          │
-  │                              │  TODOS los logs incluyen correlationId: corr-abc       │
-  │                              │  Para buscar: grep "corr-abc" en todos los servicios   │
-```
-
-### Implementación
+Un solo endpoint que verifica la conexión a la base de datos.
 
 ```typescript
-// packages/shared/src/middleware/correlation-id.ts
-import type { FastifyRequest, FastifyReply } from 'fastify';
-import { randomUUID } from 'node:crypto';
+// src/modules/health/health.route.ts
+import { Router } from 'express';
+import { prisma } from '../../shared/database';
 
-export async function correlationIdMiddleware(
-  request: FastifyRequest,
-  reply: FastifyReply,
-) {
-  // Usar el correlationId del cliente si existe, sino generar uno nuevo
-  const correlationId =
-    request.headers['x-correlation-id'] as string || randomUUID();
+const router = Router();
 
-  // Adjuntar al request para que los handlers lo lean
-  request.headers['x-correlation-id'] = correlationId;
+router.get('/health', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', uptime: process.uptime() });
+  } catch {
+    res.status(503).json({ status: 'degraded', uptime: process.uptime() });
+  }
+});
 
-  // Incluir en la respuesta
-  reply.header('x-correlation-id', correlationId);
+export default router;
+```
 
-  // Incluir en todos los logs de este request
-  request.log = request.log.child({ correlationId });
+### Respuestas
+
+| Status | Código | Significado |
+|--------|--------|-------------|
+| `ok` | 200 | Todo funciona |
+| `degraded` | 503 | La DB no responde |
+
+### Uso en AWS EC2
+
+Configurar un health check básico en el load balancer o un cron simple:
+
+```bash
+# Verificar cada 30 segundos
+curl -f http://localhost:3000/health || echo "UNHEALTHY" >> /var/log/minga-health.log
+```
+
+---
+
+## 11.4 Error Handling Middleware
+
+Un middleware global de Express que loguea el error y devuelve una respuesta RFC 7807.
+
+```typescript
+// src/shared/error-handler.ts
+import type { Request, Response, NextFunction } from 'express';
+import { log } from './logger';
+
+export function errorHandler(err: Error, req: Request, res: Response, _next: NextFunction) {
+  log('error', err.message, { stack: err.stack, path: req.path, method: req.method });
+
+  // Errores conocidos (validation, auth)
+  if (err.name === 'ZodError' || err.name === 'ValidationError') {
+    res.status(400).json({
+      type: 'validation-error',
+      title: 'Datos inválidos',
+      status: 400,
+    });
+    return;
+  }
+
+  // Error genérico
+  res.status(500).json({
+    type: 'internal-error',
+    title: 'Error interno',
+    status: 500,
+  });
 }
 ```
 
----
-
-## 11.4 Métricas
-
-### Métricas de Infraestructura (Railway — incluidas)
-
-| Métrica | Alerta si | Razón |
-|---------|-----------|-------|
-| CPU usage | > 80% por 5 min | Servicio sobrecargado |
-| Memory usage | > 85% por 5 min | Posible memory leak |
-| Request count | Drop > 50% vs promedio 1h | Servicio caído |
-| Response time (p95) | > 2s por 5 min | Degradación de performance |
-
-### Métricas de Negocio (custom — trackear en logs)
-
-| Métrica | Cómo trackear | Por qué importa |
-|---------|---------------|-----------------|
-| Beats subidos | Log info con `event: "beat.created"` | Crecimiento del catálogo |
-| Plays totales | Log info con `event: "beat.played"`, beatId | Engagement |
-| Ventas completadas | Log info con `event: "sale.completed"`, amountCents | Revenue |
-| Checkout abandonado | Log warn con `event: "checkout.abandoned"` | UX problem |
-| Usuarios registrados | Log info con `event: "user.registered"`, role | Growth |
-| Login fallidos | Log warn con `event: "login.failed"`, reason | Security |
-| Uploads fallidos | Log error con `event: "upload.failed"`, reason | UX problem |
-
-### Dashboard de Métricas (Railway)
-
-Railway incluye métricas básicas de CPU, RAM y requests. Para métricas de negocio, usar logs como fuente:
-
-```bash
-# Ejemplo: contar ventas del día en Railway logs
-grep 'event: "sale.completed"' | jq -r '.amountCents' | paste -sd+ | bc
-```
-
-Para v2, considerar un dashboard más robusto (Grafana Cloud free tier) si los logs de Railway no son suficientes.
-
----
-
-## 11.5 Tracing Distribuido
-
-### Estrategia MVP: Correlation IDs (suficiente para 4 servicios)
-
-No necesitamos Jaeger/Zipkin en MVP. Con correlation IDs + logs estructurados, podemos trazar un request completo:
-
-```bash
-# Buscar un request completo por correlationId
-grep "corr-abc123" railway-logs-auth.json railway-logs-catalog.json railway-logs-streaming.json railway-logs-payments.json
-```
-
-### v2: OpenTelemetry (cuando tengamos 6+ servicios)
-
-Cuando la cantidad de servicios haga que grep por correlationId sea impráctico:
-
-- OpenTelemetry SDK en cada servicio
-- Exporter a Grafana Cloud (free tier: 50GB traces/mes)
-- Visualización de traces en Grafana Tempo
-
----
-
-## 11.6 Health Checks
-
-### Endpoint por Servicio
-
-```
-GET /health → 200 OK
-```
+### Registro en la app
 
 ```typescript
-// Cada servicio implemente su propio health check
-fastify.get('/health', async () => {
-  const checks: Record<string, string> = {};
+// src/app.ts
+import express from 'express';
+import { errorHandler } from './shared/error-handler';
 
-  // Check DB
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    checks.database = 'connected';
-  } catch {
-    checks.database = 'disconnected';
-  }
+const app = express();
 
-  // Check Redis (si aplica)
-  try {
-    await redis.ping();
-    checks.cache = 'connected';
-  } catch {
-    checks.cache = 'disconnected';
-  }
+// ... routes ...
 
-  // Determinar status
-  const allHealthy = Object.values(checks).every((v) => v === 'connected');
-  const statusCode = allHealthy ? 200 : 503;
+// El middleware de error va SIEMPRE al final
+app.use(errorHandler);
+```
 
-  return {
-    status: allHealthy ? 'ok' : 'degraded',
-    service: process.env.SERVICE_NAME,
-    version: process.env.npm_package_version || 'dev',
-    uptime: process.uptime(),
-    checks,
-  };
+---
+
+## 11.5 Eventos de Negocio
+
+Loguear eventos clave del negocio como líneas simples. Esto permite hacer grep en los logs de producción si hace falta.
+
+```typescript
+import { log } from './shared/logger';
+
+// Venta completada
+log('info', 'sale.completed', {
+  transactionId: payment.id,
+  amount: payment.amount,
+  beatId: beat.id,
+  userId: user.id,
+});
+
+// Usuario registrado
+log('info', 'user.registered', {
+  userId: user.id,
+  role: user.role,
+});
+
+// Beat subido
+log('info', 'beat.created', {
+  beatId: beat.id,
+  userId: user.id,
+  genre: beat.genre,
+});
+
+// Webhook de MercadoPago recibido
+log('info', 'webhook.received', {
+  eventType: event.type,
+  eventId: event.id,
 });
 ```
 
-### Railway Health Check Config
+### Consultar logs en EC2
 
-```json
-// railway.json (por servicio)
-{
-  "healthcheckPath": "/health",
-  "healthcheckTimeout": 5000,
-  "restartPolicyType": "on_failure",
-  "restartPolicyMaxRetries": 3
-}
+```bash
+# Ventas del día
+grep 'sale.completed' /var/log/minga-app.log
+
+# Errores
+grep 'ERROR' /var/log/minga-app.log
+
+# Usuarios registrados hoy
+grep 'user.registered' /var/log/minga-app.log
 ```
-
-### Endpoints de Health por Servicio
-
-| Servicio | Endpoint | Checks Internos |
-|----------|----------|-----------------|
-| Auth | `GET /health` | DB (auth schema) |
-| Catalog | `GET /health` | DB (catalog schema), Redis |
-| Streaming | `GET /health` | DB (streaming schema), R2 connectivity |
-| Payments | `GET /health` | DB (payments schema), Stripe API |
 
 ---
 
-## 11.7 Error Tracking — Sentry
+## 11.6 Monitoreo Básico en AWS EC2
 
-### Setup
+En EC2 t2.micro, lo único que importa es que la instancia no se muera.
+
+| Métrica | Dónde verla | Alerta si |
+|---------|-------------|-----------|
+| CPU | CloudWatch (incluido) | > 80% sostenido |
+| Memoria | CloudWatch agent | > 85% |
+| Disco | CloudWatch agent | > 90% |
+| Uptime | `/health` endpoint | No responde |
+
+### CloudWatch (Free Tier)
+
+AWS incluye 10 métricas custom gratis. Con eso alcanza para monitorear CPU, memoria y disco de una sola instancia.
+
+```bash
+# Instalar CloudWatch agent en EC2
+sudo yum install amazon-cloudwatch-agent
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a start
+```
+
+---
+
+## 11.7 Qué NO Preocuparse Ahora
+
+| Concepto | Por qué no ahora |
+|----------|-----------------|
+| Distributed tracing | Un solo proceso, no hay cross-service |
+| Correlation IDs | No hay múltiples servicios que correlacionar |
+| Sentry | Se puede agregar en 5 minutos después, no es crítico |
+| Dashboards de métricas | CloudWatch básico alcanza |
+| Alerting complejo | Email de CloudWatch si la instancia se muere |
+| Logging estructurado JSON | `console.log` con timestamps es suficiente |
+
+### Sentry (Opcional)
+
+Si querés agregarlo después, son 5 minutos:
 
 ```typescript
-// En cada servicio, al inicio de index.ts
 import * as Sentry from '@sentry/node';
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   environment: process.env.NODE_ENV,
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-  beforeSend(event) {
-    // No enviar errores de validación (son esperados)
-    if (event.exception?.values?.[0]?.type === 'ZodError') {
-      return null;
-    }
-    // No enviar errores de auth fallida (son esperados)
-    if (event.message?.includes('Credenciales inválidas')) {
-      return null;
-    }
-    return event;
-  },
 });
 ```
 
-### Qué Enviar a Sentry
-
-| Tipo de Error | Enviar? | Razón |
-|---------------|---------|-------|
-| Error no manejado (500) | ✅ Sí | Bug en el código |
-| DB connection failed | ✅ Sí | Infraestructura |
-| Stripe webhook signature failed | ⚠️ Solo en producción | Podría ser ataque o config error |
-| Zod validation error | ❌ No | Esperado, no es bug |
-| Login fallido (credenciales incorrectas) | ❌ No | Esperado |
-| Rate limit exceeded | ❌ No | Esperado |
-| ffmpeg processing failed | ✅ Sí | Bug o archivo corrupto |
-| R2 upload failed | ✅ Sí | Infraestructura |
-
-### Free Tier de Sentry
-
-| Recurso | Free | Uso MVP |
-|---------|------|---------|
-| Events/mes | 5,000 | ~500-1,000 (filtrando validation errors) |
-| Team members | 1 | 2 devs (compartir cuenta) |
-| Data retention | 30 días | Suficiente |
-| Projects | Ilimitados | 1 proyecto "mingarecords-backend" |
+Free tier: 5,000 events/mes. No es prioritario para el MVP.
 
 ---
 
-## 11.8 Alerting Strategy
+## 11.8 Resumen
 
-### Qué Alertar (requiere acción inmediata)
+| Capa | Herramienta | Costo |
+|------|-------------|-------|
+| Logs | `console.log` con timestamps | $0 |
+| Health check | `GET /health` | $0 |
+| Errores | Express error middleware + RFC 7807 | $0 |
+| Eventos de negocio | Líneas de log con grep | $0 |
+| Monitoreo EC2 | CloudWatch (free tier) | $0 |
 
-| Alerta | Canal | Umbral | Acción |
-|--------|-------|--------|--------|
-| Servicio caído (health check fails 3x) | Email + SMS | 3 fallos consecutivos | Investigar y redeployar |
-| Error rate > 10% en 5 min | Email | 10% de requests con 5xx | Revertir deploy o hotfix |
-| DB connection pool agotado | Email | > 90% de conexiones usadas | Aumentar pool o investigar leak |
-| Stripe webhooks no procesados | Email | > 5 webhooks pendientes > 1h | Verificar webhook endpoint |
+### Setup en 5 Minutos
 
-### Qué NO Alertar (ruido)
+1. Crear `logger.ts` con `console.log` + timestamps
+2. Agregar `GET /health` que verifique DB
+3. Agregar `errorHandler` middleware al final de `app.ts`
+4. Loguear eventos de negocio clave (venta, registro, webhook)
+5. Configurar CloudWatch básico en EC2
 
-| Evento | Por qué no alertar |
-|--------|-------------------|
-| Login fallido individual | Es normal, los usuarios se equivocan |
-| Rate limit hit individual | Un usuario haciendo muchas requests no es incidente |
-| Upload fallido individual | El usuario puede reintentar |
-| Cache miss | Es el comportamiento normal de cache-aside |
-| Slow query individual | Si es consistente, se ve en métricas |
-
-### Implementación de Alertas
-
-Railway incluye alertas básicas por email. Para alertas más sofisticadas:
-
-```
-Railway native alerts → Email (incluido)
-Sentry alerts → Email (free tier)
-Custom alerts → Resend email (via script en cada servicio)
-```
-
-Para v2, considerar BetterStack (free tier) o Grafana Cloud alerts.
-
----
-
-## 11.9 Resumen de Observabilidad MVP
-
-| Capa | Herramienta | Costo | Qué cubre |
-|------|-------------|-------|-----------|
-| Logs | Railway logs + Pino JSON | Incluido | Todos los logs de los 4 servicios |
-| Métricas | Railway dashboard | Incluido | CPU, RAM, requests por servicio |
-| Health Checks | Endpoint `/health` + Railway | Incluido | Disponibilidad de cada servicio |
-| Error Tracking | Sentry (free tier) | $0 | Errores no manejados, bugs |
-| Correlation IDs | Header `x-correlation-id` | $0 | Tracing de requests entre servicios |
-| Métricas de Negocio | Logs estructurados (grep) | $0 | Beats, plays, ventas, revenue |
-
-### Setup en 15 Minutos
-
-1. Instalar `@sentry/node` en cada servicio
-2. Configurar `Sentry.init()` con DSN
-3. Agregar correlation ID middleware en cada servicio
-4. Configurar Pino logger con formato JSON
-5. Configurar health check endpoint en cada servicio
-6. Activar Railway health check en cada servicio
-7. Configurar alertas de email en Railway
-
-Total: ~15 minutos de setup, $0 costo.
+Total: ~5 minutos, $0 costo.
