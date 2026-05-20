@@ -90,6 +90,7 @@ backend/
   "name": "mingarecords-backend",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.0.0",
   "scripts": {
     "dev": "tsx watch src/app.ts",
     "build": "tsc",
@@ -370,19 +371,19 @@ app.listen(env.PORT, () => {
 
 ```bash
 # Instalar dependencias
-npm install
+pnpm install
 
 # Generar cliente de Prisma
-npm run db:generate
+pnpm db:generate
 
 # Aplicar migraciones (crea la DB si no existe)
-npm run db:migrate
+pnpm db:migrate
 
 # Levantar en modo desarrollo (con hot reload)
-npm run dev
+pnpm dev
 
 # En otra terminal, abrir Prisma Studio para ver la DB
-npm run db:studio
+pnpm db:studio
 ```
 
 **No se necesita Docker**. Supabase provee PostgreSQL en la nube y se conecta directamente con `DATABASE_URL`.
@@ -410,12 +411,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run type-check
-      - run: npm run test
+          node-version: 20
+          cache: 'pnpm'
+      - run: corepack enable
+      - run: pnpm install
+      - run: pnpm lint
+      - run: pnpm type-check
+      - run: pnpm test
 ```
 
 El deploy a EC2 se maneja fuera de CI (script manual o GitHub Actions separado con SSH). No hace falta container registry ni orquestación.

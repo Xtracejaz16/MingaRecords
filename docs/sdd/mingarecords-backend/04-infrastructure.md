@@ -22,11 +22,11 @@ Criterios de selección:
 ```
 Frontend (Vercel) → HTTPS → Backend (AWS EC2 t2.micro, Express :3000)
                                       │
-                    ┌───────────────────┼───────────────────┐
-                    ▼                   ▼                   ▼
-              Supabase DB         Cloudflare R2        MercadoPago
-              (PostgreSQL)        (Audio Storage)      (Payments)
-              Free: 500MB         Free: 10GB           ~5% comisión
+                    ┌───────────────────┼───────────────────┬──────────────┐
+                    ▼                   ▼                   ▼              ▼
+              Supabase DB         Cloudflare R2        MercadoPago    Resend
+              (PostgreSQL)        (Audio Storage)      (Payments)     (Email)
+              Free: 500MB         Free: 10GB           ~5% comisión   100 emails/día
 ```
 
 **Flujo simple:**
@@ -132,6 +132,31 @@ mingarecords-audio/
 - Webhooks para confirmación automática de pagos
 - Sin costo fijo mensual — solo pagás cuando vendés
 
+### 4.3.5 Resend — Email Transaccional
+
+| Recurso | Free Tier | Detalle |
+|---------|-----------|---------|
+| Emails/mes | 100/día (~3,000/mes) | Suficiente para MVP |
+| Dominios verificados | 1 | mingarecords.com |
+| API | REST + SDK Node.js | `resend` npm package |
+| Templates | Soportados | HTML + React |
+| Costo | **$0** | Free tier permanente |
+
+**Por qué Resend:**
+
+- Free tier generoso: 100 emails/día cubre verificación, licencias y password reset.
+- SDK oficial de Node.js, integración trivial con Express.
+- No hace falta configurar servidor SMTP ni gestionar reputación de IP.
+- Alternativa a SendGrid/Mailgun con mejor DX para developers.
+
+**Tipos de email en MVP:**
+
+| Tipo | Trigger | Desde módulo |
+|------|---------|-------------|
+| Verificación de email | Registro de usuario | Auth Module |
+| Licencia de compra | Pago aprobado | Payments Module |
+| Password reset | Solicitud de recuperación | Auth Module |
+
 ---
 
 ## 4.4 Formatos de Audio Soportados
@@ -171,11 +196,11 @@ CREATE TABLE auth.users (
 );
 
 -- ============================================
--- SCHEMA: catalog
+-- SCHEMA: beats
 -- ============================================
-CREATE SCHEMA IF NOT EXISTS catalog;
+CREATE SCHEMA IF NOT EXISTS beats;
 
-CREATE TABLE catalog.beats (
+CREATE TABLE beats.beats (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     producer_id     UUID NOT NULL,
     title           VARCHAR(255) NOT NULL,
@@ -197,9 +222,28 @@ CREATE TABLE catalog.beats (
     deleted_at      TIMESTAMPTZ
 );
 
-CREATE INDEX idx_beats_producer ON catalog.beats(producer_id);
-CREATE INDEX idx_beats_genre ON catalog.beats(genre);
-CREATE INDEX idx_beats_status ON catalog.beats(status) WHERE status = 'published';
+CREATE INDEX idx_beats_producer ON beats.beats(producer_id);
+CREATE INDEX idx_beats_genre ON beats.beats(genre);
+CREATE INDEX idx_beats_status ON beats.beats(status) WHERE status = 'published';
+
+-- ============================================
+-- SCHEMA: storage
+-- ============================================
+CREATE SCHEMA IF NOT EXISTS storage;
+
+CREATE TABLE storage.audio_files (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  beat_id UUID NOT NULL REFERENCES beats.beats(id) ON DELETE CASCADE,
+  original_url TEXT NOT NULL,
+  preview_url TEXT NOT NULL,
+  format VARCHAR(10) NOT NULL CHECK (format IN ('wav', 'mp3')),
+  size_bytes BIGINT NOT NULL,
+  duration_seconds INT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_audio_files_beat ON storage.audio_files(beat_id);
 
 -- ============================================
 -- SCHEMA: payments
@@ -274,6 +318,11 @@ MP_PUBLIC_KEY="APP_USR-..."
 MP_WEBHOOK_SECRET=""
 
 # ==========================================
+# Resend (Email Transaccional)
+# ==========================================
+RESEND_API_KEY="re_..."
+
+# ==========================================
 # Frontend URL (CORS)
 # ==========================================
 FRONTEND_URL="https://mingarecords.vercel.app"
@@ -296,6 +345,7 @@ const envSchema = z.object({
   R2_ENDPOINT: z.string().url(),
   MP_ACCESS_TOKEN: z.string().startsWith('APP_USR-'),
   MP_PUBLIC_KEY: z.string().startsWith('APP_USR-'),
+  RESEND_API_KEY: z.string().startsWith('re_'),
   FRONTEND_URL: z.string().url(),
 });
 
@@ -323,24 +373,27 @@ ssh -i ~/.ssh/mingarecords.pem ubuntu@<ec2-public-ip>
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
-# 5. Instalar PM2:
+# 5. Habilitar corepack (incluido con Node 20):
+sudo corepack enable
+
+# 6. Instalar PM2:
 sudo npm install -g pm2
 
-# 6. Clonar repo:
+# 7. Clonar repo:
 git clone <repo-url> mingarecords
 cd mingarecords
-npm ci --production
+pnpm install --prod
 
-# 7. Configurar .env:
+# 8. Configurar .env:
 cp .env.example .env
 nano .env  # completar variables
 
-# 8. Iniciar con PM2:
+# 9. Iniciar con PM2:
 pm2 start dist/index.js --name mingarecords
 pm2 save
 pm2 startup  # genera comando para ejecutar al boot
 
-# 9. (Opcional) Configurar Nginx como reverse proxy + SSL con Let's Encrypt
+# 10. (Opcional) Configurar Nginx como reverse proxy + SSL con Let's Encrypt
 ```
 
 ### 4.7.2 Supabase
@@ -383,6 +436,7 @@ npx prisma migrate deploy
 | Supabase | PostgreSQL (free tier) | $0 |
 | Cloudflare R2 | Audio storage (free tier) | $0 |
 | MercadoPago | Pagos | ~5% comisión por venta |
+| Resend | Email transaccional (free tier) | $0 |
 | Vercel | Frontend (hobby plan) | $0 |
 | Dominio | Namecheap (~$10/año) | $0.83 |
 | **TOTAL** | | **~$0.83/mes** |

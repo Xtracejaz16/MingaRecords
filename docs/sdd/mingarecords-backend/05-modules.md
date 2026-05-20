@@ -31,28 +31,28 @@
 | **Criticidad** | 🔴 CRÍTICA — Si Auth cae, nadie se registra ni loguea |
 | **Estado** | Stateless (JWT auto-contenido, refresh tokens en DB) |
 
-### 5.2.2 Catalog Module (MVP)
+### 5.2.2 Beats Module (MVP)
 
 | Atributo | Detalle |
 |----------|---------|
 | **Framework** | Express.js |
 | **Responsabilidad** | Gestión del catálogo de beats, búsqueda, filtrado, perfiles públicos, dashboard |
 | **Endpoints** | `GET /beats`, `GET /beats/:id`, `POST /beats`, `PATCH /beats/:id`, `DELETE /beats/:id`, `PATCH /beats/:id/audio-ready`, `PATCH /beats/:id/sold`, `GET /genres`, `GET /producers/:id`, `GET /producers/:id/beats`, `GET /dashboard` |
-| **Persistencia** | PostgreSQL schema `catalog` (beats, genres, producer_profiles) |
+| **Persistencia** | PostgreSQL schema `beats` (beats, genres, producer_profiles) |
 | **Dependencias externas** | Supabase (DB) |
-| **Criticidad** | 🔴 CRÍTICA — Si Catalog cae, no hay catálogo visible |
+| **Criticidad** | 🔴 CRÍTICA — Si Beats cae, no hay catálogo visible |
 | **Estado** | Stateless (datos en DB) |
 
-### 5.2.3 Streaming Module (MVP)
+### 5.2.3 Storage Module (MVP)
 
 | Atributo | Detalle |
 |----------|---------|
 | **Framework** | Express.js |
 | **Responsabilidad** | Subida, procesamiento, almacenamiento y streaming de audio |
-| **Endpoints** | `POST /audio/upload/:beatId`, `GET /audio/stream/:beatId`, `GET /audio/preview/:beatId`, `GET /audio/download/:licenseId`, `DELETE /audio/:beatId` |
-| **Persistencia** | PostgreSQL schema `streaming` (audio_files), Cloudflare R2 (archivos de audio) |
-| **Dependencias externas** | Cloudflare R2 (storage), ffmpeg (procesamiento), Catalog Module (llamada directa callback) |
-| **Criticidad** | 🔴 CRÍTICA — Si Streaming cae, no se pueden subir ni escuchar beats |
+| **Endpoints** | `POST /storage/upload/:beatId`, `GET /storage/stream/:beatId`, `GET /storage/preview/:beatId`, `GET /storage/download/:licenseId`, `DELETE /storage/:beatId` |
+| **Persistencia** | PostgreSQL schema `storage` (audio_files), Cloudflare R2 (archivos de audio) |
+| **Dependencias externas** | Cloudflare R2 (storage), ffmpeg (procesamiento), Beats Module (llamada directa callback) |
+| **Criticidad** | 🔴 CRÍTICA — Si Storage cae, no se pueden subir ni escuchar beats |
 | **Estado** | Semi-stateless (archivos temporales durante procesamiento, luego se suben a R2) |
 
 ### 5.2.4 Payments Module (MVP)
@@ -63,7 +63,7 @@
 | **Responsabilidad** | Checkout, procesamiento de pagos, entrega de licencias, historial de transacciones |
 | **Endpoints** | `POST /checkout`, `POST /webhooks/mercadopago`, `GET /transactions`, `GET /transactions/:id`, `POST /refunds/:transactionId`, `GET /earnings` |
 | **Persistencia** | PostgreSQL schema `payments` (transactions, licenses) |
-| **Dependencias externas** | MercadoPago (pagos), Catalog Module (llamada directa: GET beat metadata, PATCH sold), Auth Module (llamada directa: GET user email), Resend (email de licencia) |
+| **Dependencias externas** | MercadoPago (pagos), Beats Module (llamada directa: GET beat metadata, PATCH sold), Auth Module (llamada directa: GET user email), Resend (email de licencia) |
 | **Criticidad** | 🔴 CRÍTICA — Si Payments cae, no hay revenue. Pero el resto de la plataforma sigue funcionando |
 | **Estado** | Stateless (datos en DB) |
 
@@ -75,7 +75,7 @@
 | **Responsabilidad** | Perfiles extendidos, settings, follow system, actividad |
 | **Endpoints** | `GET /users/:id`, `PATCH /users/:id`, `POST /users/:id/avatar`, `POST /users/:id/follow`, `DELETE /users/:id/follow`, `GET /users/:id/followers`, `GET /users/:id/following`, `GET /users/:id/activity` |
 | **Persistencia** | PostgreSQL schema `users` (user_profiles, follows, activity_log) |
-| **Dependencias externas** | Supabase (DB), Cloudflare R2 (avatars), Catalog Module (beats del usuario) |
+| **Dependencias externas** | Supabase (DB), Cloudflare R2 (avatars), Beats Module (beats del usuario) |
 | **Criticidad** | 🟡 MEDIA — Si cae, los perfiles no se muestran, pero el catálogo y pagos siguen funcionando |
 | **Trigger de creación** | Cuando Auth Module tenga > 15 endpoints o el perfil crezca a features sociales (follow, likes, feed) |
 
@@ -98,8 +98,8 @@
 | Módulo | MVP? | DB Schema | Estado | Criticidad |
 |--------|------|-----------|------|------------|
 | Auth | ✅ | `auth` | Stateless | 🔴 Crítica |
-| Catalog | ✅ | `catalog` | Stateless | 🔴 Crítica |
-| Streaming | ✅ | `streaming` | Semi-stateless | 🔴 Crítica |
+| Beats | ✅ | `beats` | Stateless | 🔴 Crítica |
+| Storage | ✅ | `storage` | Semi-stateless | 🔴 Crítica |
 | Payments | ✅ | `payments` | Stateless | 🔴 Crítica |
 | User | ❌ v2 | `users` | Stateless | 🟡 Media |
 | Notification | ❌ v2 | `notifications` | Stateless | 🟢 Baja |
@@ -116,7 +116,7 @@
 | **Costo $0** | No hay infraestructura gratuita que soporte 4 servicios 24/7. 1 proceso en AWS free tier = $0. |
 | **Transacciones ACID** | Un pago puede actualizar ventas y generar licencia en 1 transacción. Imposible con microservicios. |
 | **Sin overhead de red** | Llamadas directas a casos de uso: sin serialización JSON, sin timeouts, sin circuit breakers. |
-| **Extracción trivial en v2** | Cada módulo ya tiene su `domain/`, `application/`, `infrastructure/`. Extraer = copiar módulo + agregar HTTP + deploy separado. |
+| **Extracción trivial en v2** | Cada módulo ya tiene su `routes.ts`, `service.ts`, `repository.ts` en una carpeta plana. Extraer = copiar módulo + agregar HTTP + deploy separado. |
 
 ### ¿Por qué NO 6 módulos en MVP?
 
@@ -135,10 +135,10 @@ En el monolito, la comunicación entre módulos es por **llamadas directas a cas
 
 | De | A | Caso de uso | Propósito |
 |----|---|-------------|-----------|
-| Streaming | Catalog | `updateBeatAudioUrls(beatId, urls)` | Notificar que el audio está procesado |
-| Streaming | Catalog | `deleteBeatAudio(beatId)` | Notificar que el audio fue eliminado |
-| Payments | Catalog | `getBeatById(beatId)` | Obtener metadata del beat para checkout |
-| Payments | Catalog | `markBeatAsSold(beatId)` | Notificar venta completada |
+| Storage | Beats | `updateBeatAudioUrls(beatId, urls)` | Notificar que el audio está procesado |
+| Storage | Beats | `deleteBeatAudio(beatId)` | Notificar que el audio fue eliminado |
+| Payments | Beats | `getBeatById(beatId)` | Obtener metadata del beat para checkout |
+| Payments | Beats | `markBeatAsSold(beatId)` | Notificar venta completada |
 | Payments | Auth | `getUserById(userId)` | Obtener email del comprador |
 
 ### Sin Service Key, sin HTTP interno
@@ -189,8 +189,8 @@ ESTADOS:
 | Módulo | Tablas | Schema | FK Lógicas |
 |--------|--------|--------|------------|
 | Auth | `users`, `refresh_tokens` | `auth` | — |
-| Catalog | `beats`, `genres`, `producer_profiles` | `catalog` | `beats.producer_id` → `auth.users.id` (lógica) |
-| Streaming | `audio_files` | `streaming` | `audio_files.beat_id` → `catalog.beats.id` (lógica) |
-| Payments | `transactions`, `licenses` | `payments` | `transactions.beat_id` → `catalog.beats.id` (lógica), `transactions.buyer_id` → `auth.users.id` (lógica), `transactions.producer_id` → `auth.users.id` (lógica) |
+| Beats | `beats`, `genres`, `producer_profiles` | `beats` | `beats.producer_id` → `auth.users.id` (lógica) |
+| Storage | `audio_files` | `storage` | `audio_files.beat_id` → `beats.beats.id` (lógica) |
+| Payments | `transactions`, `licenses` | `payments` | `transactions.beat_id` → `beats.beats.id` (lógica), `transactions.buyer_id` → `auth.users.id` (lógica), `transactions.producer_id` → `auth.users.id` (lógica) |
 
 **Nota**: Las FK son lógicas (no enforceadas por la DB) porque los schemas están separados. La integridad se mantiene a nivel de aplicación. En el monolito, un solo `PrismaClient` accede a todos los schemas, lo que permite transacciones ACID entre módulos. Esto facilita la migración a DBs separadas en v2 sin cambiar el código.

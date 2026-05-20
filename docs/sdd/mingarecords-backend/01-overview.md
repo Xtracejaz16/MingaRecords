@@ -56,8 +56,8 @@ Un solo proceso Express con módulos organizados por dominio. La comunicación e
 apps/backend/
 ├── src/modules/
 │   ├── auth/         → Registro, login, JWT, roles, perfil básico
-│   ├── catalog/      → CRUD beats, búsqueda, filtros, perfiles, dashboard
-│   ├── streaming/    → Subida audio, preview, R2, streaming
+│   ├── beats/        → CRUD beats, búsqueda, filtros, perfiles, dashboard
+│   ├── storage/      → Subida audio, preview, R2, streaming
 │   └── payments/     → Checkout MercadoPago, webhooks, licencias
 ├── src/shared/       → Middleware, tipos, utils compartidos
 └── src/app.ts        → Express app (registra todos los módulos)

@@ -26,8 +26,8 @@
 │  1 vCPU, 1 GB RAM               │
 │  Express (1 proceso)            │
 │  ├── Auth module                │
-│  ├── Catalog module             │
-│  ├── Streaming module           │
+│  ├── Beats module               │
+│  ├── Storage module             │
 │  └── Payments module            │
 └─────────────────────────────────┘
 ```
@@ -154,9 +154,9 @@ MercadoPago escala automáticamente — no hay infraestructura que gestionar. El
 ### Trigger Actual (MVP): Llamadas Directas en Monolito
 
 ```
-Payments ──direct──► Catalog (markBeatAsSold)
+Payments ──direct──► Beats (markBeatAsSold)
 Payments ──direct──► Auth    (getUserById)
-Streaming ──direct──► ffmpeg (process audio)
+Storage ──direct──► ffmpeg (process audio)
 ```
 
 ### Cuándo Cambiar a Colas
@@ -195,7 +195,7 @@ v2 (si BullMQ no alcanza):   RabbitMQ (CloudAMQP)
 | Evento | Prioridad | Razón |
 |--------|-----------|-------|
 | `sale.completed` → enviar email | Alta | No bloquea el flujo del usuario, puede ser async |
-| `sale.completed` → notificar Catalog | Media | Catalog puede esperar, no es crítico |
+| `sale.completed` → notificar Beats | Media | Beats puede esperar, no es crítico |
 | `audio.uploaded` → procesar con ffmpeg | Alta | Ya es async en MVP (202 Accepted), pero la cola mejora confiabilidad |
 | `beat.published` → notificar followers | Media | Para v2 con follows |
 | `user.registered` → enviar welcome email | Baja | En MVP ya es async (no bloquea response) |
@@ -237,8 +237,8 @@ v2 (si SSE no alcanza):  WebSockets (ws package en Express)
 ```
 Express App (1 proceso)
 ├── src/modules/auth/
-├── src/modules/catalog/
-├── src/modules/streaming/
+├── src/modules/beats/
+├── src/modules/storage/
 └── src/modules/payments/
 
 1 DB compartida (Supabase, schemas separados)
@@ -248,8 +248,8 @@ Express App (1 proceso)
 
 | Módulo | Trigger | Indicador |
 |--------|---------|-----------|
-| **Streaming** | ffmpeg processing bloquea la app | CPU del módulo > 80% mientras otros módulos están ociosos |
-| **Catalog** | > 10,000 beats en catálogo | Queries de búsqueda > 500ms consistentemente |
+| **Storage** | ffmpeg processing bloquea la app | CPU del módulo > 80% mientras otros módulos están ociosos |
+| **Beats** | > 10,000 beats en catálogo | Queries de búsqueda > 500ms consistentemente |
 | **Payments** | > 1,000 transacciones/mes | Necesidad de backups independientes, compliance PCI |
 | **Auth** | > 50,000 usuarios | Login queries > 200ms, necesidad de read replicas |
 
@@ -272,11 +272,11 @@ Paso 7: Eliminar schema viejo de la DB compartida
 Como cada módulo ya tiene su schema aislado:
 
 ```sql
--- Exportar solo el schema de Catalog
-pg_dump -d mingarecords -n catalog -f catalog_backup.sql
+-- Exportar solo el schema de Beats
+pg_dump -d mingarecords -n beats -f beats_backup.sql
 
 -- Importar en nueva DB
-psql -d catalog_db -f catalog_backup.sql
+psql -d beats_db -f beats_backup.sql
 ```
 
 No hay que filtrar tablas ni resolver dependencias. El schema es una unidad de migración natural.
@@ -396,7 +396,7 @@ FASE 1.5 (cuando duela — ~6 meses)
 └── R2 pay-as-you-go si storage > 10 GB ($0.015/GB)
 
 FASE 2 (v2 — ~12 meses)
-├── Extraer Streaming a proceso independiente (ffmpeg)
+├── Extraer Storage a proceso independiente (ffmpeg)
 ├── WebSockets para chat comprador ↔ productor
 ├── RabbitMQ si BullMQ no alcanza (~$10/mes)
 ├── DBs separadas para módulos con > 10GB
@@ -427,8 +427,8 @@ FASE 2 (v2 — ~12 meses)
 
 | Cuello de Botella | Servicio | Impacto | Mitigación |
 |-------------------|----------|---------|------------|
-| ffmpeg processing | Streaming | Si 5 usuarios suben audio simultáneamente, ffmpeg satura CPU en t2.micro | Cola de procesamiento (v1.5). En MVP, máximo 1-2 uploads simultáneos. |
-| Full-text search | Catalog | PostgreSQL tsvector puede ser lento con > 50,000 beats | Índice GIN ya configurado. Si crece, considerar Meilisearch (open source, self-hosted en EC2). |
+| ffmpeg processing | Storage | Si 5 usuarios suben audio simultáneamente, ffmpeg satura CPU en t2.micro | Cola de procesamiento (v1.5). En MVP, máximo 1-2 uploads simultáneos. |
+| Full-text search | Beats | PostgreSQL tsvector puede ser lento con > 50,000 beats | Índice GIN ya configurado. Si crece, considerar Meilisearch (open source, self-hosted en EC2). |
 | DB connection pool | Todos | 4 módulos × 8 conexiones = 32. Supabase free = 60 directas, 200 con PgBouncer | PgBouncer configurado. Holgura del 84%. |
 | MercadoPago webhook retries | Payments | Si nuestro endpoint está caído, MercadoPago reintenta | Idempotencia por event_id implementada. No hay riesgo de doble cobro. |
 
@@ -460,7 +460,7 @@ FASE 2 (v2 — ~12 meses)
 
 | # | Riesgo | Severidad | Acción Inmediata |
 |---|--------|-----------|-----------------|
-| 1 | **ffmpeg en Docker**: la imagen con ffmpeg pesa ~180MB y puede tener issues en Alpine | Alta | Validar Dockerfile de Streaming con ffmpeg en local antes de CI. Considerar Debian slim si Alpine da problemas. |
+| 1 | **ffmpeg en Docker**: la imagen con ffmpeg pesa ~180MB y puede tener issues en Alpine | Alta | Validar Dockerfile de Storage con ffmpeg en local antes de CI. Considerar Debian slim si Alpine da problemas. |
 | 2 | **MercadoPago webhook testing**: requiere URL pública para recibir webhooks | Alta | Usar MercadoPago CLI o ngrok para desarrollo local. |
 | 3 | **Prisma multi-schema**: Supabase + Prisma con múltiples schemas puede tener edge cases | Media | Testear `prisma migrate dev` con los 4 schemas en día 1 de setup. Si falla, usar 4 instancias de PrismaClient. |
 | 4 | **Monorepo + Docker build**: build context de Docker puede ser lento | Media | Usar `.dockerignore` agresivo. Build context debe ser < 50MB. |

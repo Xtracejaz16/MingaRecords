@@ -32,8 +32,8 @@ src/
 │   │   └── routes.ts      # router para /api/v1/beats/*
 │   ├── payments/
 │   │   └── routes.ts      # router para /api/v1/payments/*
-│   └── audio/
-│       └── routes.ts      # router para /api/v1/audio/*
+│   └── storage/
+│       └── routes.ts      # router para /api/v1/storage/*
 └── shared/
     ├── middleware/
     │   ├── jwt-guard.ts   # Middleware de autenticación
@@ -52,7 +52,7 @@ import express from 'express';
 import authRoutes from './modules/auth/routes';
 import beatsRoutes from './modules/beats/routes';
 import paymentsRoutes from './modules/payments/routes';
-import audioRoutes from './modules/audio/routes';
+import storageRoutes from './modules/storage/routes';
 
 const app = express();
 
@@ -60,7 +60,7 @@ app.use(express.json());
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/beats', beatsRoutes);
 app.use('/api/v1/payments', paymentsRoutes);
-app.use('/api/v1/audio', audioRoutes);
+app.use('/api/v1/storage', storageRoutes);
 
 // Error handler global (último middleware)
 app.use(errorHandler);
@@ -119,15 +119,15 @@ app.use(errorHandler);
 
 *\* Opcional: sin JWT devuelve datos públicos; con JWT incluye datos personalizados (favoritos, ownership).*
 
-### 6.4.3 Audio (`/api/v1/audio`)
+### 6.4.3 Storage (`/api/v1/storage`)
 
 | Método | Endpoint | Auth | Descripción |
 |--------|----------|------|-------------|
-| `POST` | `/audio/upload/:beatId` | JWT (producer) | Subir archivo de audio WAV/MP3 |
-| `GET` | `/audio/stream/:beatId` | Público | Streaming con Range Requests |
-| `GET` | `/audio/preview/:beatId` | Público | Preview 30s con Range Requests |
-| `GET` | `/audio/download/:licenseId` | JWT (comprador) | Descarga WAV original (licencia) |
-| `DELETE` | `/audio/:beatId` | JWT (dueño) | Eliminar archivos de audio |
+| `POST` | `/storage/upload/:beatId` | JWT (producer) | Subir archivo de audio WAV/MP3 |
+| `GET` | `/storage/stream/:beatId` | Público | Streaming con Range Requests |
+| `GET` | `/storage/preview/:beatId` | Público | Preview 30s con Range Requests |
+| `GET` | `/storage/download/:licenseId` | JWT (comprador) | Descarga WAV original (licencia) |
+| `DELETE` | `/storage/:beatId` | JWT (dueño) | Eliminar archivos de audio |
 
 ### 6.4.4 Pagos (`/api/v1/payments`)
 
@@ -185,11 +185,11 @@ export function jwtGuard(req: Request, res: Response, next: NextFunction) {
     const token = authHeader.slice(7);
     const payload = jwt.verify(
       token,
-      process.env.JWT_PUBLIC_KEY!,
-      { algorithms: ['RS256'] },
+      process.env.JWT_SECRET!,
+      { algorithms: ['HS256'] },
     ) as JwtPayload;
 
-    (req as any).user = payload;
+    (req as unknown as { user: JwtPayload }).user = payload;
     next();
   } catch {
     return res.status(401).json({
@@ -201,6 +201,8 @@ export function jwtGuard(req: Request, res: Response, next: NextFunction) {
   }
 }
 ```
+
+> **Nota**: Usamos HS256 (simétrico) para el MVP. Un solo `JWT_SECRET` compartido es suficiente para 1 proceso. En v2, si separamos módulos a microservicios, migrar a RS256 (asimétrico) para evitar compartir secretos entre servicios.
 
 ---
 
@@ -372,17 +374,17 @@ function getErrorType(status: number): string {
 |--------|--------|-----------------------------|
 | `200` | `GET`, `PATCH` | Operación exitosa, body con datos |
 | `201` | `POST` | Recurso creado, body con el recurso + header `Location` |
-| `202` | `POST /audio/upload` | Audio recibido, procesando |
+| `202` | `POST /storage/upload` | Audio recibido, procesando |
 | `204` | `DELETE` | Recurso eliminado, sin body |
-| `206` | `GET /audio/stream` | Partial Content (Range Request) |
+| `206` | `GET /storage/stream` | Partial Content (Range Request) |
 | `302` | `POST /payments/checkout` | Redirección a MercadoPago Checkout |
 | `400` | Todos | Body malformado o parámetros inválidos |
 | `401` | Todos | Falta token o token inválido/expirado |
 | `403` | Todos | Token válido pero sin permisos |
 | `404` | Todos | Recurso no existe |
 | `409` | `POST` | Conflicto (email duplicado, beat ya existente) |
-| `413` | `POST /audio/upload` | Archivo excede 100MB |
-| `415` | `POST /audio/upload` | MIME type no es audio/wav ni audio/mpeg |
+| `413` | `POST /storage/upload` | Archivo excede 100MB |
+| `415` | `POST /storage/upload` | MIME type no es audio/wav ni audio/mpeg |
 | `422` | `POST`, `PATCH` | Validación de campos fallida |
 | `429` | Todos | Rate limit excedido |
 | `500` | Todos | Error interno inesperado |
@@ -530,12 +532,12 @@ El frontend redirige al usuario a `checkoutUrl`. La confirmación de pago llega 
 }
 ```
 
-### 6.8.5 Subir Audio — `POST /api/v1/audio/upload/:beatId`
+### 6.8.5 Subir Audio — `POST /api/v1/storage/upload/:beatId`
 
 **Request** (`multipart/form-data`):
 
 ```
-POST /api/v1/audio/upload/beat_3f2a9b1c
+POST /api/v1/storage/upload/beat_3f2a9b1c
 Content-Type: multipart/form-data
 
 ------WebKitFormBoundary
@@ -603,8 +605,8 @@ Rate limiting en memoria con sliding window básico (sin Redis, presupuesto $0):
 | `POST /auth/register` | 5 req | 1 hora por IP | Prevenir spam de cuentas |
 | `GET /beats` | 120 req | 1 min por IP | Proteger DB de scraping |
 | `POST /beats` | 30 req | 1 hora por usuario | Prevenir spam de beats |
-| `POST /audio/upload` | 10 req | 1 hora por usuario | Evitar saturación de storage |
-| `GET /audio/stream` | 300 req | 1 min por IP | Streaming legítimo es alto |
+| `POST /storage/upload` | 10 req | 1 hora por usuario | Evitar saturación de storage |
+| `GET /storage/stream` | 300 req | 1 min por IP | Streaming legítimo es alto |
 | `POST /payments/checkout` | 10 req | 1 min por usuario | Prevenir abuso |
 
 **Nota MVP**: al ser in-memory, los límites se resetean al reiniciar el proceso. Para un MVP de 1 semana con presupuesto $0, esto es aceptable. Si escalamos, migraremos a Redis.
