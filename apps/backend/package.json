@@ -1,10 +1,28 @@
 {
   "name": "@mingarecords/backend",
   "private": true,
+
   "scripts": {
-    "dev": "echo 'backend dev — not implemented'",
-    "build": "echo 'backend build — not implemented'",
-    "lint": "echo 'backend lint — not implemented'",
-    "test": "echo 'backend test — not implemented'"
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "lint": "eslint .",
+    "test": "echo \"No tests yet\""
+  },
+
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.0"
+  },
+
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.3",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^24.3.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2"
   }
 }

@@ -3,11 +3,16 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+
     "strict": true,
     "esModuleInterop": true,
+
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+
+    "baseUrl": "./src"
   },
+
   "include": ["src"],
   "exclude": ["node_modules", "dist", "tests"]
 }
