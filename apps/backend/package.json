@@ -1,0 +1,10 @@
+{
+  "name": "@mingarecords/backend",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'backend dev — not implemented'",
+    "build": "echo 'backend build — not implemented'",
+    "lint": "echo 'backend lint — not implemented'",
+    "test": "echo 'backend test — not implemented'"
+  }
+}
