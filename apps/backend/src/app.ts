@@ -4,6 +4,7 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import { authRouter } from '@/modules/auth/route.js';
 import { env } from '@/config/env.js';
 
 const app = express();
@@ -21,6 +22,9 @@ app.use(express.json());
 
 // cookie-parser lee las cookies del header y las pone en req.cookies
 app.use(cookieParser());
+
+// Montamos el router de auth en /api/v1/auth
+app.use('/api/v1/auth', authRouter);
 
 // Ruta de salud — útil para monitoreo
 app.get('/health', (req, res) => {
