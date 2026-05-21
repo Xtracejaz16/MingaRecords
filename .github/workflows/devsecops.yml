@@ -11,7 +11,12 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
       - name: Install dependencies
-        run: npm install  # Asume package.json en React
+        run: pnpm install --frozen-lockfile
       - name: Lint Code
-        run: npx eslint . --ext .js,.jsx,.ts,.tsx  # Linting con ESLint para React
+        run: pnpm --filter @mingarecords/web lint  
