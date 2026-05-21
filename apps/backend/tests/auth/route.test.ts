@@ -275,3 +275,63 @@ describe('POST /api/v1/auth/refresh', () => {
         expect(res.body.error).toBe('INVALID_TOKEN');
     });
 });
+
+describe('Prisma error handling', () => {
+    it('should return 409 on P2002 duplicate entry', async () => {
+        const { Prisma } = await import('../../generated/prisma/client.js');
+        const error = new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+            code: 'P2002',
+            meta: { target: ['email'] },
+        });
+        vi.mocked(registerUser).mockRejectedValue(error);
+
+        const res = await request(app)
+            .post('/api/v1/auth/register')
+            .send({
+                email: 'dup@example.com',
+                password: 'Password123',
+                alias: 'dup',
+                role: 'artist',
+            });
+
+        expect(res.status).toBe(409);
+        expect(res.body.error).toBe('DUPLICATE_ENTRY');
+    });
+
+    it('should return 404 on P2025 record not found', async () => {
+        const { Prisma } = await import('../../generated/prisma/client.js');
+        const error = new Prisma.PrismaClientKnownRequestError('Record not found', {
+            code: 'P2025',
+            meta: undefined,
+        });
+        vi.mocked(logoutUser).mockRejectedValue(error);
+
+        const res = await request(app)
+            .post('/api/v1/auth/logout')
+            .set('Cookie', ['refreshToken=missing-token']);
+
+        expect(res.status).toBe(404);
+        expect(res.body.error).toBe('NOT_FOUND');
+    });
+
+    it('should return 400 on P2003 foreign key error', async () => {
+        const { Prisma } = await import('../../generated/prisma/client.js');
+        const error = new Prisma.PrismaClientKnownRequestError('Foreign key constraint failed', {
+            code: 'P2003',
+            meta: undefined,
+        });
+        vi.mocked(registerUser).mockRejectedValue(error);
+
+        const res = await request(app)
+            .post('/api/v1/auth/register')
+            .send({
+                email: 'fk@example.com',
+                password: 'Password123',
+                alias: 'fk',
+                role: 'artist',
+            });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toBe('FOREIGN_KEY_ERROR');
+    });
+});

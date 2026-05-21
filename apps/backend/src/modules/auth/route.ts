@@ -135,8 +135,8 @@ function handlePrismaError(error: Prisma.PrismaClientKnownRequestError, res: Res
 }
 
 function handleAuthError(error: unknown, res: Response): void {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (handlePrismaError(error, res)) return;
+    if (error instanceof Error && error.name === 'PrismaClientKnownRequestError') {
+        if (handlePrismaError(error as Prisma.PrismaClientKnownRequestError, res)) return;
     }
 
     if (error instanceof Error && error.name === 'ZodError') {
