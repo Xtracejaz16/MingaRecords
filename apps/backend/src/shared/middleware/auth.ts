@@ -2,7 +2,13 @@
     import type { Request, Response, NextFunction } from 'express';
     import { env } from '@/config/env.js';
 
-    import type { JWTPayload } from '@/modules/auth/types.js';
+    interface JWTPayload {
+    userId: string;
+    email: string;
+    role: 'producer' | 'artist';
+    iat: number;
+    exp: number;
+    }
 
     export function requireAuth(
     req: Request,

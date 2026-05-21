@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock modules before importing service
-vi.mock('./repository.js', () => ({
+vi.mock('@/modules/auth/repository.js', () => ({
     createUser: vi.fn(),
     getUserByEmail: vi.fn(),
     getUserById: vi.fn(),
@@ -55,7 +55,7 @@ import {
     refreshAccessToken,
     verifyEmail,
     getMe,
-} from './service.js';
+} from '@/modules/auth/service.js';
 
 import {
     createUser,
@@ -69,7 +69,7 @@ import {
     createVerificationToken,
     getVerificationToken,
     deleteVerificationToken,
-} from './repository.js';
+} from '@/modules/auth/repository.js';
 
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -208,7 +208,7 @@ describe('refreshAccessToken', () => {
         expect(rotateRefreshToken).toHaveBeenCalledWith('old-token', {
             token: 'mock-uuid-token',
             userId: 'user-1',
-            expect: expect.any(Date),
+            expiresAt: expect.any(Date),
         });
     });
 

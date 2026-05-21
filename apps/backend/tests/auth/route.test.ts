@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 
 // Mock service layer
-vi.mock('./service.js', () => ({
+vi.mock('@/modules/auth/service.js', () => ({
     registerUser: vi.fn(),
     loginUser: vi.fn(),
     logoutUser: vi.fn(),
@@ -46,7 +46,8 @@ vi.mock('../../generated/prisma/client.js', () => ({
     },
 }));
 
-import { app } from '../app.js';
+import express from 'express';
+import cookieParser from 'cookie-parser';
 import {
     registerUser,
     loginUser,
@@ -54,7 +55,13 @@ import {
     refreshAccessToken,
     verifyEmail,
     getMe,
-} from './service.js';
+} from '@/modules/auth/service.js';
+import { authRouter } from '@/modules/auth/route.js';
+
+const app = express();
+app.use(express.json());
+app.use(cookieParser());
+app.use('/api/v1/auth', authRouter);
 
 beforeEach(() => {
     vi.clearAllMocks();
