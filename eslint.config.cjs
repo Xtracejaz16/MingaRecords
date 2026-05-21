@@ -1,6 +1,7 @@
 module.exports = [
   {
-    files: ['**/*.{js,cjs,mjs,ts,tsx}'],
+    // Only lint TypeScript sources with the TypeScript parser and project
+    files: ['**/*.{ts,tsx}'],
     languageOptions: {
       parser: require('@typescript-eslint/parser'),
       parserOptions: { project: ['./tsconfig.json'] }
