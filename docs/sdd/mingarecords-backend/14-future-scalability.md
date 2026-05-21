@@ -1,6 +1,6 @@
 # 14 — Escalabilidad Futura
 
-> **Versión:** 1.0 — **Fecha:** 12 de mayo de 2026
+> **Versión:** 2.0 — **Fecha:** 19 de mayo de 2026
 
 ---
 
@@ -12,297 +12,432 @@
 | **Métricas sobre intuición** | No escalar porque "va a crecer". Escalar cuando las métricas lo exigen. |
 | **Un cambio a la vez** | No migrar DB + introducir colas + separar servicios en la misma semana. Un cambio, medir, estabilizar, siguiente. |
 | **Reversible siempre** | Cada cambio de infraestructura debe poder revertirse en < 1 hora. |
+| **2 devs, 1 semana** | Todo lo que agreguemos tiene que ser mantenible por 2 personas. Si no lo bancamos, no lo hacemos. |
 
 ---
 
-## 14.2 Cuándo Introducir Colas de Mensajes
+## 14.2 Escalado Vertical (AWS EC2)
 
-### Trigger Actual (MVP): HTTP Síncrono
+### Estado Actual (MVP): EC2 t2.micro
 
 ```
-Payments ──HTTP──► Catalog (PATCH /beats/:id/sold)
-Payments ──HTTP──► Auth    (GET /users/:id)
+┌─────────────────────────────────┐
+│  AWS EC2 t2.micro               │
+│  1 vCPU, 1 GB RAM               │
+│  Express (1 proceso)            │
+│  ├── Auth module                │
+│  ├── Beats module               │
+│  ├── Storage module             │
+│  └── Payments module            │
+└─────────────────────────────────┘
+```
+
+### Cuándo Escalar Verticalmente
+
+| Métrica | Threshold | Acción |
+|---------|-----------|--------|
+| CPU sostenida > 80% | Por más de 1 hora, consistentemente | t2.micro → t3.small (2 vCPU, 2 GB RAM) |
+| OOM killer activado | Proceso muere por falta de memoria | t2.micro → t3.small |
+| Response time p95 > 2s | No es la DB, es la app | t3.small → t3.medium (2 vCPU, 4 GB RAM) |
+| ffmpeg processing bloquea requests | CPU saturada con uploads | t3.medium → t3.large (2 vCPU, 8 GB RAM) |
+
+### Costos de Escalado EC2
+
+| Instancia | vCPU | RAM | Costo/mes (us-east-1) | Cuándo |
+|-----------|------|-----|----------------------|--------|
+| t2.micro | 1 | 1 GB | ~$8.50 | MVP (free tier 12 meses) |
+| t3.small | 2 | 2 GB | ~$15.20 | Cuando CPU > 80% sostenido |
+| t3.medium | 2 | 4 GB | ~$30.40 | Cuando RAM es cuello de botella |
+| t3.large | 2 | 8 GB | ~$60.80 | Cuando ffmpeg satura |
+
+**Nota**: El free tier de AWS cubre 750 horas/mes de t2.micro por 12 meses. Después del free tier, el costo es el mismo (~$8.50/mes).
+
+---
+
+## 14.3 Escalado de Base de Datos (Supabase)
+
+### Estado Actual (MVP): Supabase Free
+
+```
+Supabase Free
+├── 500 MB database
+├── 2 GB file storage
+├── 50,000 monthly active users
+├── 60 conexiones directas
+└── PgBouncer incluido (200 conexiones)
+```
+
+### Cuándo Escalar
+
+| Métrica | Threshold | Acción |
+|---------|-----------|--------|
+| DB size > 400 MB | 80% del límite free | Supabase Free → Supabase Pro ($25/mes) |
+| Conexiones > 150 | PgBouncer saturado | Supabase Pro (400 conexiones directas, 10K con PgBouncer) |
+| Backups point-in-time necesarios | Para compliance de pagos | Supabase Pro los incluye |
+| Necesidad de read replicas | Read/write ratio > 10:1 | Supabase Pro permite read replicas ($15/mes c/u) |
+
+### Supabase Pro ($25/mes)
+
+| Feature | Free | Pro |
+|---------|------|-----|
+| Database size | 500 MB | 8 GB |
+| File storage | 2 GB | 100 GB |
+| Monthly active users | 50,000 | Unlimited |
+| Direct connections | 60 | 400 |
+| PgBouncer connections | 200 | 10,000 |
+| Backups | 7 días | Point-in-time recovery |
+| Support | Community | Email |
+
+---
+
+## 14.4 Escalado de Storage (Cloudflare R2)
+
+### Estado Actual (MVP): R2 Free Tier
+
+```
+Cloudflare R2
+├── 10 GB storage (free)
+├── Egress gratuito (sin costo de transferencia)
+├── S3-compatible API
+└── Clase A operations: 1M/mes free
+```
+
+### Cuándo Escalar
+
+| Métrica | Threshold | Acción |
+|---------|-----------|--------|
+| Storage > 10 GB | Límite free superado | R2 pay-as-you-go: $0.015/GB/mes |
+| Operations > 1M/mes | Límite free de Class A | $4.50 por millón de operaciones |
+
+### Costos R2
+
+| Storage | Costo/mes |
+|---------|-----------|
+| 10 GB (free) | $0 |
+| 50 GB | $0.60 |
+| 100 GB | $1.35 |
+| 500 GB | $7.35 |
+| 1 TB | $14.85 |
+
+**Ventaja clave**: R2 tiene egress gratuito. A diferencia de S3 ($0.09/GB), no pagamos por las descargas de audio. Esto es crítico para un marketplace de beats.
+
+---
+
+## 14.5 Escalado de Pagos (MercadoPago)
+
+### Estado Actual
+
+```
+MercadoPago
+├── Sin costo fijo mensual
+├── Comisión por transacción (~5%)
+├── Split de pagos disponible
+└── Webhooks para notificaciones
+```
+
+### Cómo Escala
+
+MercadoPago escala automáticamente — no hay infraestructura que gestionar. El costo es proporcional al revenue:
+
+| Venta | Comisión (~5%) | Plataforma (15%) | Productor (80%) |
+|-------|---------------|------------------|-----------------|
+| $10 | $0.50 | $1.43 | $8.07 |
+| $29.99 | $1.50 | $4.27 | $24.22 |
+| $99.99 | $5.00 | $14.25 | $80.74 |
+
+**No hay acción de escalado necesaria**. MercadoPago absorbe cualquier volumen. El único límite es la comisión, que es proporcional y predecible.
+
+---
+
+## 14.6 Cuándo Introducir Procesamiento Async
+
+### Trigger Actual (MVP): Llamadas Directas en Monolito
+
+```
+Payments ──direct──► Beats (markBeatAsSold)
+Payments ──direct──► Auth    (getUserById)
+Storage ──direct──► ffmpeg (process audio)
 ```
 
 ### Cuándo Cambiar a Colas
 
 | Métrica | Threshold | Acción |
 |---------|-----------|--------|
-| Webhook processing time (p95) | > 5 segundos consistently | Introducir cola para procesamiento async de webhooks |
-| Cross-service call failures | > 5% de requests fallidos por timeout | Cola con retry automático |
+| Webhook processing time (p95) | > 5 segundos consistentemente | Cola para procesamiento async de webhooks |
+| Cross-module call failures | > 5% de requests fallidos por timeout | Cola con retry automático |
 | Email delivery latency | > 30 segundos desde pago hasta email | Cola de emails |
-| Concurrent webhook bursts | > 10 webhooks simultáneos (ej: Black Friday) | Cola para procesar secuencialmente |
+| ffmpeg processing bloquea uploads | CPU > 80% por encoding | Cola de procesamiento de audio |
 
-### Qué Usar: Redis Pub/Sub vs RabbitMQ vs Kafka
+### Qué Usar: BullMQ + PostgreSQL
 
 | Opción | Cuándo | Pros | Cons |
 |--------|--------|------|------|
-| **Redis Pub/Sub** (Upstash) | < 10K mensajes/día, MVP+ | Ya tenemos Redis, setup mínimo, free tier | No persistencia, mensajes perdidos si Redis cae |
-| **RabbitMQ** (CloudAMQP free) | 10K-100K mensajes/día, v2 | Persistencia, dead letter queues, retry policies | Infraestructura adicional, learning curve |
-| **Kafka** (Confluent Cloud free) | > 100K mensajes/día, v3 | Throughput masivo, replay de eventos, partitions | Complejidad operacional alta, overkill para MingaRecords |
+| **BullMQ + PostgreSQL** | < 50K jobs/día, v1.5 | Sin dependencia externa, usa la DB que ya tenemos, persistencia nativa | Limitado por throughput de PostgreSQL |
+| **RabbitMQ** (CloudAMQP free) | 50K-500K jobs/día, v2 | Persistencia, dead letter queues, retry policies | Infraestructura adicional, ~$10/mes |
 
-### Recomendación: Redis Pub/Sub primero
+### Recomendación
 
 ```
-v1 (MVP):     HTTP síncrono directo
-v1.5 (cuando duela):  Redis Pub/Sub (Upstash) para eventos async
-v2 (si Redis no alcanza):   RabbitMQ (CloudAMQP)
-v3 (si RabbitMQ no alcanza): Kafka (Confluent Cloud)
+v1 (MVP):     Llamadas directas en monolito
+v1.5 (cuando duela):  BullMQ con PostgreSQL como backend
+v2 (si BullMQ no alcanza):   RabbitMQ (CloudAMQP)
 ```
+
+**Por qué BullMQ + PostgreSQL primero**:
+- Ya tenemos PostgreSQL (Supabase), no agregamos dependencias
+- BullMQ soporta PostgreSQL como storage backend
+- Persistencia nativa: los jobs sobreviven reinicios
+- Retry policies, delayed jobs, job priorities incluidos
+- Setup: 1 tabla + 1 dependencia (`bullmq`)
 
 ### Eventos para Cola (prioridad de migración)
 
-| Evento | Prioridad de Migración | Razón |
-|--------|----------------------|-------|
+| Evento | Prioridad | Razón |
+|--------|-----------|-------|
 | `sale.completed` → enviar email | Alta | No bloquea el flujo del usuario, puede ser async |
-| `sale.completed` → notificar Catalog | Media | Catalog puede esperar, no es crítico |
+| `sale.completed` → notificar Beats | Media | Beats puede esperar, no es crítico |
+| `audio.uploaded` → procesar con ffmpeg | Alta | Ya es async en MVP (202 Accepted), pero la cola mejora confiabilidad |
 | `beat.published` → notificar followers | Media | Para v2 con follows |
-| `audio.uploaded` → procesar con ffmpeg | Alta | Ya es async en MVP (202 Accepted), pero la cola mejora la confiabilidad |
 | `user.registered` → enviar welcome email | Baja | En MVP ya es async (no bloquea response) |
 
 ---
 
-## 14.3 Cuándo Usar WebSockets
+## 14.7 Cuándo Agregar Tiempo Real
 
 ### Trigger Actual (MVP): No hay comunicación en tiempo real
 
-### Cuándo Introducir WebSockets
+### Cuándo Introducir
 
 | Caso de Uso | Trigger | Alternativa MVP |
 |-------------|---------|-----------------|
-| Chat comprador ↔ productor | > 50 productores piden chat activamente | Email "contactar productor" en perfil |
 | Notificaciones en tiempo real (nueva venta) | > 20 productores activos simultáneos | Email + polling cada 30s en frontend |
+| Chat comprador ↔ productor | > 50 productores piden chat activamente | Email "contactar productor" en perfil |
 | Live play count updates | > 1,000 plays simultáneos | Polling cada 60s |
-| Collaborative beat editing | Feature request específica | No en roadmap |
 
 ### Implementación Recomendada
 
 ```
 v1.5 (cuando duela):  Server-Sent Events (SSE) — más simple que WebSockets
-v2 (si SSE no alcanza):  WebSockets (ws package en Fastify)
-v3 (si WebSocket scale no alcanza):  Ably/Pusher (managed real-time)
+v2 (si SSE no alcanza):  WebSockets (ws package en Express)
 ```
 
 **Por qué SSE antes que WebSockets**:
 - SSE es unidireccional (server → client), que es exactamente lo que necesitamos para notificaciones
-- SSE funciona sobre HTTP (no requiere puerto adicional)
+- SSE funciona sobre HTTP (no requiere puerto adicional ni configuración especial en EC2)
 - SSE tiene reconexión automática nativa
 - WebSockets requiere manejo de conexión, heartbeat, reconexión manual
 - Para chat bidireccional sí necesitamos WebSockets, pero eso es v2
 
 ---
 
-## 14.4 Cuándo Separar Bases de Datos
+## 14.8 Cuándo Separar Módulos
 
-### Trigger Actual (MVP): Una DB compartida con schemas separados
+### Trigger Actual (MVP): Monolito Modular (1 proceso, 4 módulos)
 
 ```
-PostgreSQL (Supabase)
-├── schema: auth
-├── schema: catalog
-├── schema: streaming
-└── schema: payments
+Express App (1 proceso)
+├── src/modules/auth/
+├── src/modules/beats/
+├── src/modules/storage/
+└── src/modules/payments/
+
+1 DB compartida (Supabase, schemas separados)
 ```
 
 ### Cuándo Separar
 
-| Servicio | Trigger | Indicador |
-|----------|---------|-----------|
-| **Catalog** | > 10,000 beats en catálogo | Queries de búsqueda > 500ms consistentemente |
-| **Payments** | > 1,000 transacciones/mes | Necesidad de backups independientes, compliance |
-| **Streaming** | > 100,000 archivos de audio | Tabla audio_files crece más allá de 1GB |
+| Módulo | Trigger | Indicador |
+|--------|---------|-----------|
+| **Storage** | ffmpeg processing bloquea la app | CPU del módulo > 80% mientras otros módulos están ociosos |
+| **Beats** | > 10,000 beats en catálogo | Queries de búsqueda > 500ms consistentemente |
+| **Payments** | > 1,000 transacciones/mes | Necesidad de backups independientes, compliance PCI |
 | **Auth** | > 50,000 usuarios | Login queries > 200ms, necesidad de read replicas |
 
 ### Estrategia de Separación
 
 ```
-Paso 1: Crear nueva DB (Railway PostgreSQL, $10/mes)
-Paso 2: Configurar Prisma para apuntar a la nueva DB
-Paso 3: Migrar datos con pg_dump/pg_restore (schema por schema)
-Paso 4: Actualizar DATABASE_URL del servicio
-Paso 5: Verificar que todo funciona
-Paso 6: Eliminar schema viejo de la DB compartida
+Paso 1: Extraer módulo a proceso independiente (v2)
+Paso 2: Usar Supabase schema separado como DB propia
+Paso 3: Configurar Prisma del módulo para apuntar a su schema
+Paso 4: Migrar datos con pg_dump/pg_restore (schema por schema)
+Paso 5: Actualizar DATABASE_URL del módulo extraído
+Paso 6: Verificar que todo funciona
+Paso 7: Eliminar schema viejo de la DB compartida
 ```
 
-**Tiempo estimado**: 2-4 horas por servicio (con downtime de < 5 minutos si se hace bien).
+**Tiempo estimado**: 2-4 horas por módulo (con downtime de < 5 minutos si se hace bien).
 
 ### Por qué Schemas Separados Facilitan la Migración
 
-Como cada servicio ya tiene su schema aislado:
+Como cada módulo ya tiene su schema aislado:
 
 ```sql
--- Exportar solo el schema de Catalog
-pg_dump -d mingarecords -n catalog -f catalog_backup.sql
+-- Exportar solo el schema de Beats
+pg_dump -d mingarecords -n beats -f beats_backup.sql
 
 -- Importar en nueva DB
-psql -d catalog_db -f catalog_backup.sql
+psql -d beats_db -f beats_backup.sql
 ```
 
 No hay que filtrar tablas ni resolver dependencias. El schema es una unidad de migración natural.
 
----
+### Criterio de Extracción
 
-## 14.5 Cuándo Migrar Infraestructura
-
-### De Freemium a Paid
-
-| Proveedor | Trigger | Plan Siguiente | Costo |
-|-----------|---------|----------------|-------|
-| **Supabase** | > 350 MB DB usada | Supabase Pro | $25/mes |
-| **Railway** | Crédito $5 agotado | Pay-as-you-go | $5-20/servicio/mes |
-| **Upstash Redis** | > 7K requests/día | Upstash Pro | $10/mes |
-| **Resend** | > 70 emails/día | Resend Pro | $20/mes |
-| **Cloudflare R2** | > 7 GB storage | R2 pay-as-you-go | $0.015/GB |
-| **BunnyCDN** | Trial de 14 días termina | Pay-as-you-go | ~$0.22/mes (MVP) |
-| **Vercel** | > 70 GB bandwidth | Vercel Pro | $20/mes |
-| **Sentry** | > 3,500 events/mes | Sentry Team | $26/mes |
-
-### Cuándo Migrar de Proveedor
-
-| Proveedor Actual | Trigger | Alternativa | Razón |
-|-----------------|---------|-------------|-------|
-| Supabase → Railway PG | Supabase Pro ($25) más caro que Railway PG ($10) | Railway PostgreSQL | Mismo PostgreSQL, menor costo |
-| Railway → AWS/GCP | > 10 servicios, necesidad de VPC, compliance | AWS ECS o GCP Cloud Run | Infraestructura enterprise |
-| Cloudflare R2 → AWS S3 | Necesidad de features S3-specific (lifecycle policies avanzadas) | AWS S3 | R2 es S3-compatible, migración trivial |
-| BunnyCDN → CloudFront | Necesidad de features CloudFront-specific (Lambda@Edge) | CloudFront | Solo si las features justifican el costo 8.5× mayor |
-
----
-
-## 14.6 Cuándo Dividir Servicios
-
-### Servicios Actuales → Posibles Divisiones
-
-| Servicio Actual | Posible División | Trigger |
-|-----------------|-----------------|---------|
-| **Auth** (auth + perfiles) | Auth Service + User Service | > 15 endpoints en Auth, o features sociales (follow, likes) |
-| **Catalog** (beats + búsqueda + dashboard) | Catalog Service + Search Service | Búsqueda full-text consume > 50% de CPU del servicio |
-| **Streaming** (upload + processing + delivery) | Upload Service + Processing Service + CDN Service | ffmpeg processing bloquea uploads |
-| **Payments** (checkout + webhooks + licencias) | Payments Service + Licensing Service | Licencias se vuelven complejas (múltiples tipos, términos personalizados) |
-
-### Criterio de División
-
-Un servicio se divide cuando **TODAS** estas condiciones se cumplen:
+Un módulo se extrae a proceso independiente cuando **TODAS** estas condiciones se cumplen:
 
 1. Tiene > 20 endpoints o > 5,000 líneas de código
 2. Tiene 2+ responsabilidades claramente separadas
 3. Una responsabilidad tiene requerimientos de escalabilidad distintos a la otra
-4. El equipo puede mantener el servicio adicional sin burnout
+4. El equipo (2 devs) puede mantener el proceso adicional sin burnout
+5. Hay revenue que justifica el costo operacional adicional
 
 ---
 
-## 14.7 Riesgos Futuros y Mitigación
+## 14.9 Proyecciones de Costo
+
+### Fase 1: MVP (Gratis)
+
+| Servicio | Plan | Costo/mes |
+|----------|------|-----------|
+| AWS EC2 t2.micro | Free tier (12 meses) | $0 |
+| Supabase | Free | $0 |
+| Cloudflare R2 | Free tier (10 GB) | $0 |
+| MercadoPago | Sin costo fijo | $0 (comisión por venta) |
+| Sentry | Free (5K events) | $0 |
+| **Total** | | **$0** |
+
+### Fase 2: Crecimiento (~$35/mes)
+
+| Servicio | Plan | Costo/mes |
+|----------|------|-----------|
+| AWS EC2 t3.small | Pay-as-you-go | ~$15 |
+| Supabase | Pro | $25 |
+| Cloudflare R2 | Pay-as-you-go (50 GB) | ~$0.60 |
+| MercadoPago | Sin costo fijo | $0 (comisión por venta) |
+| Sentry | Free | $0 |
+| **Total** | | **~$40/mes** |
+
+**Trigger para esta fase**: DB > 400 MB o CPU > 80% sostenido.
+
+### Fase 3: Escala (~$100/mes)
+
+| Servicio | Plan | Costo/mes |
+|----------|------|-----------|
+| AWS EC2 t3.medium | Pay-as-you-go | ~$30 |
+| Supabase | Pro + read replica | $40 |
+| Cloudflare R2 | Pay-as-you-go (500 GB) | ~$7.35 |
+| CloudAMQP | RabbitMQ (Little Lemur) | ~$10 |
+| MercadoPago | Sin costo fijo | $0 (comisión por venta) |
+| Sentry | Team | $26 |
+| **Total** | | **~$113/mes** |
+
+**Trigger para esta fase**: > 50K jobs/día, > 10K beats, necesidad de chat en tiempo real.
+
+---
+
+## 14.10 Riesgos Futuros y Mitigación
 
 ### Riesgo 1: Audio Storage Crece Exponencialmente
 
 | Escenario | Impacto | Mitigación |
 |-----------|---------|------------|
-| 10,000 beats × 50MB WAV = 500GB | R2 free tier = 10GB. Costo: 490GB × $0.015 = $7.35/mes | Bajo costo, pero monitorear. Considerar compresión FLAC (50% menos). |
-| 100,000 beats × 50MB = 5TB | Costo: 5,000GB × $0.015 = $75/mes | Evaluar políticas de lifecycle: eliminar previews de beats sin plays en 6 meses. |
+| 10,000 beats × 50MB WAV = 500GB | R2: 490GB × $0.015 = $7.35/mes | Bajo costo. Considerar compresión FLAC (50% menos). |
+| 100,000 beats × 50MB = 5TB | R2: 5,000GB × $0.015 = $75/mes | Evaluar lifecycle: eliminar previews de beats sin plays en 6 meses. |
 
-### Riesgo 2: Streaming de Audio Satura la Infraestructura
-
-| Escenario | Impacto | Mitigación |
-|-----------|---------|------------|
-| 50,000 plays/día × 720KB = 36GB/día | BunnyCDN: $5.40/mes. R2 egress: $0. | CDN absorbe la mayoría del tráfico. R2 solo sirve misses de cache. |
-| 500,000 plays/día = 360GB/día | BunnyCDN: $54/mes. | Evaluar BunnyCDN Volume pricing ($0.005/GB). Costo: $18/mes. |
-
-### Riesgo 3: Stripe Fees Comen el Revenue
+### Riesgo 2: Streaming de Audio Satura EC2
 
 | Escenario | Impacto | Mitigación |
 |-----------|---------|------------|
-| Beat $29.99 → Stripe $1.17 (3.9%) | Plataforma gana $4.50 (15%). Productor $24.32. | Sostenible. Stripe fees son proporcionales al revenue. |
-| Beat $5 → Stripe $0.45 (9%) | Fee fijo de $0.30 impacta más en beats baratos. | Precio mínimo de $10 para beats. O fee fijo + % para beats baratos. |
+| 50,000 plays/día × 720KB = 36GB/día | R2 egress: $0 (gratuito). EC2 no sirve archivos directamente. | R2 absorbe todo el tráfico de descarga. EC2 solo sirve URLs firmadas. |
+| 500,000 plays/día = 360GB/día | R2 egress: $0. Sin impacto en costo. | Si latency es problema, agregar CloudFront (free tier 1TB/mes). |
+
+### Riesgo 3: MercadoPago Fees Comen el Revenue
+
+| Escenario | Impacto | Mitigación |
+|-----------|---------|------------|
+| Beat $29.99 → MercadoPago ~$1.50 (~5%) | Plataforma gana $4.50 (15%). Productor $24.22 (80%). | Sostenible. Fees proporcionales al revenue. |
+| Beat $5 → MercadoPago ~$0.25 (5%) | Fee proporcional. Margen bajo. | Precio mínimo de $10 para beats. |
 
 ### Riesgo 4: Vendor Lock-in
 
 | Proveedor | Lock-in Risk | Mitigación |
 |-----------|-------------|------------|
 | Supabase | Medio (PostgreSQL estándar) | Usar solo features PostgreSQL estándar. No usar Supabase Auth, Realtime, ni Edge Functions. |
-| Railway | Bajo (Docker containers) | Docker images son portables a cualquier plataforma. |
+| AWS EC2 | Bajo (Docker containers) | Docker images son portables a cualquier plataforma. |
 | Cloudflare R2 | Bajo (S3-compatible) | aws-sdk funciona con R2 y S3. Solo cambiar endpoint URL. |
-| Upstash Redis | Bajo (Redis protocol) | Cualquier Redis-compatible funciona. |
-| Resend | Medio (API específica) | Abstracción de email service en un puerto del domain. Swap fácil. |
-| Stripe | Alto (API específica) | No hay alternativa real. Stripe es el estándar. PayPal como backup. |
+| MercadoPago | Alto (API específica) | No hay alternativa real con misma cobertura en LATAM. El puerto `PaymentGateway` está aislado en el domain; cambiar a PayU solo requiere nuevo adaptador. |
 
-### Riesgo 5: Complejidad Operacional Crece con los Servicios
+### Riesgo 5: Complejidad Operacional
 
 | Escenario | Impacto | Mitigación |
 |-----------|---------|------------|
-| 4 servicios → 6 servicios (v2) | 2 devs manteniendo 6 servicios con deploys independientes | Automatizar TODO. Si hay un proceso manual, es un bug. |
-| 6 servicios → 10 servicios (v3) | Imposible para 2 devs | Considerar consolidar servicios relacionados. O contratar más devs. |
+| 1 monolito → 4 procesos (v2) | 2 devs manteniendo 4 procesos con deploys independientes | Automatizar TODO. Si hay un proceso manual, es un bug. |
+| 4 procesos → 8 procesos (v3) | Imposible para 2 devs | Consolidar procesos relacionados. O contratar más devs. |
 
 ---
 
-## 14.8 Roadmap de Escalabilidad
+## 14.11 Roadmap Simplificado
 
 ```
-FASE ACTUAL (MVP)
-├── 4 microservicios
-├── 1 DB compartida (schemas separados)
-├── HTTP síncrono
-├── Freemium infra
-└── Logging + Sentry básico
+FASE ACTUAL (MVP — Semana 1)
+├── 1 monolito modular (4 módulos en 1 proceso Express)
+├── 1 DB compartida (schemas separados, 1 PrismaClient)
+├── Llamadas directas entre módulos
+├── AWS EC2 t2.micro (free tier)
+├── Supabase Free
+├── Cloudflare R2 Free (10 GB)
+└── MercadoPago (sin costo fijo)
 
 FASE 1.5 (cuando duela — ~6 meses)
-├── Redis Pub/Sub para eventos async
+├── BullMQ + PostgreSQL para eventos async
 ├── SSE para notificaciones en tiempo real
-├── Supabase Pro ($25/mes) si DB crece
-├── Upstash Pro ($10/mes) si Redis crece
-└── Grafana Cloud free tier para dashboards
+├── EC2 t3.small si CPU > 80% sostenido (~$15/mes)
+├── Supabase Pro si DB > 400 MB ($25/mes)
+└── R2 pay-as-you-go si storage > 10 GB ($0.015/GB)
 
 FASE 2 (v2 — ~12 meses)
-├── 6 microservicios (user-service, notification-service)
-├── RabbitMQ (CloudAMQP) si Redis Pub/Sub no alcanza
-├── WebSockets para chat
-├── DBs separadas para servicios con > 10GB
-├── Stripe Connect para payouts automáticos
-└── Sentry Team ($26/mes)
-
-FASE 3 (v3 — ~24 meses)
-├── 8-10 microservicios (si justificado)
-├── Kafka si > 100K mensajes/día
-├── DB read replicas para Catalog
-├── CDN multi-región
-├── PWA con offline support
-└── Considerar migrar a AWS/GCP si > 10 servicios
+├── Extraer Storage a proceso independiente (ffmpeg)
+├── WebSockets para chat comprador ↔ productor
+├── RabbitMQ si BullMQ no alcanza (~$10/mes)
+├── DBs separadas para módulos con > 10GB
+├── MercadoPago Connect para payouts automáticos
+└── EC2 t3.medium si RAM es cuello de botella (~$30/mes)
 ```
 
 ---
 
-## 14.9 Auditoría Crítica del SDD Completo
+## 14.12 Auditoría Crítica del SDD Completo
 
 ### Inconsistencias Detectadas
 
 | # | Inconsistencia | Archivos Afectados | Resolución |
 |---|----------------|-------------------|------------|
 | 1 | File 06 usa RS256 en el middleware JWT, pero File 10 decide HS256 para MVP | 06-api-contracts.md vs 10-security.md | **Resuelto**: Usar HS256 en MVP (File 10 es la decisión final). File 06 debe actualizarse para reflejar HS256. |
-| 2 | File 04 estima ~$18/mes pero File 12 dice ~$17/mes | 04-infrastructure.md vs 12-roadmap.md | Diferencia de $1 por redondeo. No crítico, pero File 12 debe decir ~$18. |
-| 3 | File 02 dice Payments es serverless, File 04 dice $2/mes serverless, pero File 09 deploya Payments como Docker container en Railway | 02-system-architecture.md vs 04-infrastructure.md vs 09-devops-cicd.md | **Resuelto**: Payments corre como Docker en Railway con escala a cero (Railway soporta scale-to-zero). No es "serverless" en el sentido de AWS Lambda, pero escala a cero. |
+| 2 | File 04 estima costos con Railway/Upstash/BunnyCDN pero el stack actual es AWS/Supabase/R2 | 04-infrastructure.md vs este archivo | **Resuelto**: Este archivo refleja el stack actual. File 04 debe actualizarse. |
 
 ### Servicios Innecesarios en MVP
 
-| Servicio | Veredicto | Razón |
-|----------|-----------|-------|
-| User Service | ✅ Correcto postergar a v2 | En MVP son 3 endpoints de perfil en Auth. No justifica servicio propio. |
-| Notification Service | ✅ Correcto postergar a v2 | 3 tipos de email transaccional. Resend directo desde cada servicio es suficiente. |
-| API Gateway dedicado (Kong/Tyk) | ✅ Correcto no usar en MVP | Cloudflare Workers como proxy simple es suficiente para 4 servicios. |
+| Módulo | Veredicto | Razón |
+|--------|-----------|-------|
+| User Module | ✅ Correcto postergar a v2 | En MVP son 3 endpoints de perfil en Auth. No justifica módulo propio. |
+| Notification Module | ✅ Correcto postergar a v2 | 3 tipos de email transaccional. Resend directo desde cada módulo es suficiente. |
+| API Gateway dedicado (Kong/Tyk) | ✅ Correcto no usar en MVP | Express routing nativo es suficiente para 4 módulos en 1 proceso. |
 
 ### Posibles Cuellos de Botella
 
 | Cuello de Botella | Servicio | Impacto | Mitigación |
 |-------------------|----------|---------|------------|
-| ffmpeg processing | Streaming | Si 5 usuarios suben audio simultáneamente, ffmpeg satura CPU | Cola de procesamiento (v1.5). En MVP, máximo 1-2 uploads simultáneos. |
-| Full-text search | Catalog | PostgreSQL tsvector puede ser lento con > 50,000 beats | índice GIN ya configurado. Si crece, considerar Meilisearch (open source, self-hosted). |
-| DB connection pool | Todos | 4 servicios × 8 conexiones = 32. Supabase free = 60 directas, 200 con PgBouncer | PgBouncer configurado. Holgura del 84%. |
-| Stripe webhook retries | Payments | Si nuestro endpoint está caído, Stripe reintenta por 72h | Idempotencia por event_id implementada. No hay riesgo de doble cobro. |
+| ffmpeg processing | Storage | Si 5 usuarios suben audio simultáneamente, ffmpeg satura CPU en t2.micro | Cola de procesamiento (v1.5). En MVP, máximo 1-2 uploads simultáneos. |
+| Full-text search | Beats | PostgreSQL tsvector puede ser lento con > 50,000 beats | Índice GIN ya configurado. Si crece, considerar Meilisearch (open source, self-hosted en EC2). |
+| DB connection pool | Todos | 4 módulos × 8 conexiones = 32. Supabase free = 60 directas, 200 con PgBouncer | PgBouncer configurado. Holgura del 84%. |
+| MercadoPago webhook retries | Payments | Si nuestro endpoint está caído, MercadoPago reintenta | Idempotencia por event_id implementada. No hay riesgo de doble cobro. |
 
 ### Riesgos de Costos
 
 | Riesgo | Probabilidad | Impacto | Mitigación |
 |--------|-------------|---------|------------|
 | Audio storage excede 10GB R2 | Media (a los 6-12 meses) | $7.35/mes adicional | Bajo impacto. R2 es barato. |
-| CDN bandwidth excede trial BunnyCDN | Alta (día 15) | $0.22/mes | Bajo impacto. Pay-as-you-go es barato. |
-| Railway crédito $5 se agota | Media (mes 1) | $15-20/mes | Es el costo base esperado. No es un riesgo, es el presupuesto. |
+| EC2 free tier se agota (12 meses) | Baja (largo plazo) | $8.50/mes | Es el costo base esperado después del año gratis. |
 | Supabase excede 500MB | Baja (no en MVP) | $25/mes (Pro tier) | Mitigar con limpieza de datos de test. |
 | Sentry excede 5K events | Baja (con filtro de validation errors) | $26/mes (Team tier) | Filtrar errores esperados en `beforeSend`. |
 
@@ -310,35 +445,24 @@ FASE 3 (v3 — ~24 meses)
 
 | Problema | Impacto | Recomendación |
 |----------|---------|---------------|
-| Monorepo con 6+ servicios | CI/CD se vuelve lento, `pnpm dev` levanta demasiados procesos | Turborepo ya filtra por cambios. Si CI > 15 min, considerar separar repos. |
-| Shared package crece | `@mingarecords/shared` puede convertirse en un "god package" | Regla: si un código se usa en < 3 servicios, NO va en shared. Duplicar es mejor que acoplar. |
-| 4 Dockerfiles casi idénticos | Mantenimiento redundante | Crear Dockerfile base compartido o usar Docker build args para parametrizar. |
-| Prisma schemas separados | Migraciones deben correrse 4 veces | Script `migrate-all.sh` que corre migraciones en orden. Automatizar en CI. |
+| Monolito crece | Express app puede volverse difícil de navegar | Mantener módulos aislados. Si un archivo > 500 líneas, separar. |
+| Prisma schemas separados | Migraciones deben correrse por schema | Script `migrate-all.sh` que corre migraciones en orden. Automatizar en CI. |
 
 ### Recomendaciones de Simplificación
 
 | Recomendación | Ahorro | Impacto |
 |---------------|--------|---------|
-| **No usar Cloudflare Workers como gateway en MVP** | -1 componente | Usar CORS directo en cada servicio Fastify. Los 4 servicios pueden exponer sus URLs directamente. Cloudflare Workers agrega complejidad sin beneficio real con solo 4 servicios. |
-| **No implementar circuit breaker manual en MVP** | -50 líneas × 4 servicios | Con 4 servicios y 2 devs, si un servicio cae, se nota. El circuit breaker se implementa cuando hay 6+ servicios. |
-| **No usar Redis para rate limiting en MVP** | -1 dependencia (Upstash) | Rate limiting simple en memoria con sliding window por servicio. Se migra a Redis cuando hay múltiples instancias del mismo servicio. |
+| **No implementar circuit breaker en MVP** | -50 líneas × 4 módulos | Con 1 proceso y 2 devs, si un módulo falla, se nota. El circuit breaker se implementa cuando se extraen a procesos independientes. |
+| **No usar Redis para rate limiting en MVP** | -1 dependencia | Rate limiting simple en memoria con sliding window. Se migra a BullMQ/Redis cuando hay múltiples instancias. |
 | **No implementar refresh token rotation en MVP** | -1 día de desarrollo | Refresh tokens simples (sin rotation) son suficientes para MVP. Agregar rotation en v1.1. |
-
-### Recomendaciones de Evolución Futura
-
-| Recomendación | Cuándo | Por qué |
-|---------------|--------|---------|
-| **Introducir GraphQL como capa sobre REST** | v2, si el frontend necesita datos de múltiples servicios en una sola llamada | Evita N+1 de llamadas HTTP desde el frontend. Apollo Federation puede orquestar los 4 servicios. |
-| **Event sourcing para Payments** | v2, si hay disputas de pago o necesidad de auditoría completa | Cada cambio de estado de una transacción se registra como evento. Permite reconstruir el estado en cualquier punto del tiempo. |
-| **CQRS para Catalog** | v2, si read/write ratio es > 10:1 | Separar queries (lecturas optimizadas) de commands (escrituras). Mejora performance de lectura sin afectar escrituras. |
-| **Service mesh (Linkerd)** | v3, si hay 8+ servicios | mTLS automático, observabilidad built-in, load balancing inteligente. Overkill para < 6 servicios. |
 
 ### Riesgos Técnicos Prioritarios
 
 | # | Riesgo | Severidad | Acción Inmediata |
 |---|--------|-----------|-----------------|
-| 1 | **ffmpeg en Docker**: la imagen con ffmpeg pesa ~180MB y puede tener issues en Alpine | Alta | Validar Dockerfile de Streaming con ffmpeg en local antes de CI. Considerar Debian slim si Alpine da problemas. |
-| 2 | **Stripe webhook testing**: requiere URL pública para recibir webhooks | Alta | Usar Stripe CLI (`stripe listen --forward-to localhost:4004/webhooks/stripe`) en desarrollo. Ngrok para staging. |
+| 1 | **ffmpeg en Docker**: la imagen con ffmpeg pesa ~180MB y puede tener issues en Alpine | Alta | Validar Dockerfile de Storage con ffmpeg en local antes de CI. Considerar Debian slim si Alpine da problemas. |
+| 2 | **MercadoPago webhook testing**: requiere URL pública para recibir webhooks | Alta | Usar MercadoPago CLI o ngrok para desarrollo local. |
 | 3 | **Prisma multi-schema**: Supabase + Prisma con múltiples schemas puede tener edge cases | Media | Testear `prisma migrate dev` con los 4 schemas en día 1 de setup. Si falla, usar 4 instancias de PrismaClient. |
-| 4 | **Monorepo Turborepo + Docker build**: build context de Docker en monorepo puede ser lento | Media | Usar `.dockerignore` agresivo. Build context debe ser < 50MB. |
+| 4 | **Monorepo + Docker build**: build context de Docker puede ser lento | Media | Usar `.dockerignore` agresivo. Build context debe ser < 50MB. |
 | 5 | **Audio watermarking con ffmpeg**: puede ser complejo de implementar correctamente | Media | Dejar como P2. Preview con fade out y reducción de volumen (-8dB) es suficiente para MVP. |
+| 6 | **EC2 t2.micro CPU credits**: t2.micro usa CPU credits, se pueden agotar | Alta | Monitorear CPU credit balance. Si llega a 0, migrar a t3.small (no usa credits, unlimited mode). |

@@ -1,6 +1,6 @@
 # 02 — Arquitectura del Sistema
 
-> **Versión:** 1.1 — **Fecha:** 12 de mayo de 2026
+> **Versión:** 2.0 — **Fecha:** 19 de mayo de 2026
 
 ---
 
@@ -12,50 +12,44 @@
 │                    React 19 + Vite (existente)                           │
 │                 https://mingarecords.vercel.app                          │
 └──────────────────────────────┬──────────────────────────────────────────┘
-                                │ HTTPS
-                                ▼
+                               │ HTTPS
+                               ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                        API GATEWAY (opcional MVP)                        │
-│                    Nginx o Cloudflare Workers                            │
-│               Rate limiting, CORS, JWT validation inicial                │
-│                      https://api.mingarecords.com                        │
-└───────┬──────────────┬──────────────┬──────────────┬────────────────────┘
-        │              │              │              │
-        ▼              ▼              ▼              ▼
-┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐
-│   AUTH    │  │  CATALOG  │  │ STREAMING │  │  PAYMENTS │
-│  SERVICE  │  │  SERVICE  │  │  SERVICE  │  │  SERVICE  │
-│           │  │           │  │           │  │           │
-│ Fastify   │  │ Fastify   │  │ Fastify   │  │ Fastify   │
-│ :4001     │  │ :4002     │  │ :4003     │  │ :4004     │
-└─────┬─────┘  └─────┬─────┘  └─────┬─────┘  └─────┬─────┘
-      │              │              │              │
-      ▼              ▼              ▼              ▼
+│                    BACKEND — MONOLITO MODULAR                            │
+│                    Express.js :3000                                      │
+│                    AWS Free Tier (EC2 t2.micro)                          │
+│                                                                          │
+│  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐            │
+│  │   AUTH    │  │  CATALOG  │  │ STREAMING │  │  PAYMENTS │            │
+│  │  MODULE   │  │  MODULE   │  │  MODULE   │  │  MODULE   │            │
+│  │           │  │           │  │           │  │           │            │
+│  │ /auth/*   │  │ /beats/*  │  │ /audio/*  │  │ /payments/*│           │
+│  └─────┬─────┘  └─────┬─────┘  └─────┬─────┘  └─────┬─────┘            │
+│        │              │              │              │                    │
+│        └──────────────┴──────────────┴──────────────┘                    │
+│                    Llamadas directas entre módulos                       │
+│                    (sin HTTP, sin serialización)                         │
+└──────────────────────────────┬──────────────────────────────────────────┘
+                               ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                      INFRAESTRUCTURA COMPARTIDA                          │
 │                                                                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
-│  │  PostgreSQL   │  │  Cloudflare  │  │   BunnyCDN   │  │    Resend    │ │
-│  │  (Supabase)  │  │  R2 Storage  │  │  (Audio CDN) │  │  (Emails)    │ │
-│  │              │  │  (WAV/MP3)   │  │  (Streaming) │  │              │ │
-│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘ │
-│                                                                          │
-│  ┌──────────────┐  ┌──────────────┐                                     │
-│  │  Upstash      │  │    Stripe    │                                     │
-│  │  Redis        │  │  Payments    │                                     │
-│  │  (Cache/Rate) │  │  Gateway     │                                     │
-│  └──────────────┘  └──────────────┘                                     │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                   │
+│  │  PostgreSQL   │  │  Cloudflare  │  │ MercadoPago  │                   │
+│  │  (Supabase)  │  │  R2 Storage  │  │  Payments    │                   │
+│  │              │  │  (WAV/MP3)   │  │              │                   │
+│  └──────────────┘  └──────────────┘  └──────────────┘                   │
 └─────────────────────────────────────────────────────────────────────────┘
 
-        ▸ v2 (futuro): user-service (:4005) y notification-service (:4006)
-          se añaden como peers en la misma capa de microservicios.
+        ▸ v2 (futuro): cada módulo se extrae a su propio microservicio
+          con deploy independiente cuando haya revenue.
 ```
 
 ---
 
-## 2.2 Responsabilidades de Cada Microservicio
+## 2.2 Responsabilidades de Cada Módulo
 
-### 2.2.1 Auth Service (`:4001`) — MVP
+### 2.2.1 Auth Module — MVP
 **Responsabilidad única**: Identidad, autenticación y perfil básico de usuario.
 
 | Función | Descripción |
@@ -63,15 +57,12 @@
 | Registro | Crea usuario con email + password + rol (producer/artist) |
 | Login | Valida credenciales, emite JWT (access 1h) + refresh token (7d) |
 | Refresh | Renueva access token usando refresh token httpOnly |
-| Email verification | Envía email de verificación via Resend, activa cuenta |
-| Password reset | Solicitud + token + nueva password via email |
+| Password reset | Solicitud + token + nueva password |
 | Perfil básico | GET/PATCH del usuario autenticado (alias, avatar URL, bio) |
 
-**NO hace**: manejo de beats, licencias, pagos, ni almacenamiento de archivos. Solo identidad y perfil de usuario (en MVP).
+**NO hace**: manejo de beats, licencias, pagos, ni almacenamiento de archivos. Solo identidad y perfil de usuario.
 
-> **Nota v2**: En el futuro, los endpoints de perfil (`GET/PATCH /users/:id`) se extraerán a `user-service`. Auth Service se quedará exclusivamente con autenticación.
-
-### 2.2.2 Catalog Service (`:4002`) — MVP
+### 2.2.2 Catalog Module — MVP
 **Responsabilidad única**: Gestión del catálogo de beats y perfiles públicos.
 
 | Función | Descripción |
@@ -85,7 +76,7 @@
 
 **NO hace**: procesamiento de audio, pagos, entrega de archivos. Solo metadata.
 
-### 2.2.3 Streaming Service (`:4003`) — MVP
+### 2.2.3 Streaming Module — MVP
 **Responsabilidad única**: Procesamiento y entrega de audio.
 
 | Función | Descripción |
@@ -99,100 +90,64 @@
 
 **NO hace**: metadata del beat, precios, licencias. Solo bytes de audio.
 
-### 2.2.4 Payments Service (`:4004`) — MVP
+### 2.2.4 Payments Module — MVP
 **Responsabilidad única**: Procesamiento de pagos y entrega de licencias.
 
 | Función | Descripción |
 |---------|-------------|
-| Checkout | Crea sesión de pago Stripe con precio, descripción y webhook URL |
-| Webhook handler | Recibe eventos de Stripe (`payment_intent.succeeded`, `payment_intent.payment_failed`) |
-| Confirmación | Marca venta como completada, genera licencia, envía email de entrega vía Resend |
+| Checkout | Crea preferencia de pago MercadoPago con precio, descripción y callback URL |
+| Webhook handler | Recibe eventos de MercadoPago (`payment.updated` con status=approved) |
+| Confirmación | Marca venta como completada, genera licencia |
 | Historial | GET de transacciones del productor y del comprador |
-| Revenue split | Calcula ganancia neta (precio - 15% comisión plataforma - comisión Stripe) |
-| Refunds | Procesa reembolso via Stripe, revoca acceso a licencia |
+| Revenue split | Calcula ganancia neta (precio - 15% comisión plataforma - comisión MercadoPago) |
+| Refunds | Procesa reembolso via MercadoPago, revoca acceso a licencia |
 | Licencia | Genera y entrega archivo de licencia (PDF o texto) con términos |
 
 **NO hace**: catálogo de beats, perfiles, subida de audio. Solo dinero y licencias.
 
-### 2.2.5 User Service (`:4005`) — v2 (NO MVP)
-**Responsabilidad única**: Perfiles extendidos, settings, y características sociales.
-
-| Función | Descripción |
-|---------|-------------|
-| Perfil extendido | CRUD de perfil con redes sociales, ubicación, géneros preferidos |
-| Avatar upload | Subida y crop de avatar (a R2) |
-| Follow/Unfollow | Productores pueden seguir a otros productores |
-| Activity feed | Historial de actividad del usuario (beats subidos, compras, likes) |
-| Settings | Preferencias de notificación, privacidad, moneda, idioma |
-
-**NO hace**: autenticación (eso es Auth Service). Simplemente consume JWT validado.
-
-### 2.2.6 Notification Service (`:4006`) — v2 (NO MVP)
-**Responsabilidad única**: Orquestación de notificaciones multicanal.
-
-| Función | Descripción |
-|---------|-------------|
-| Email digests | Resúmenes diarios/semanales de actividad |
-| Push notifications | Web push API para notificaciones en navegador |
-| In-app notifications | Campanita de notificaciones en la UI |
-| Plantillas | Templates de notificación versionadas (venta nueva, nuevo follower, etc.) |
-| Preferencias | Por usuario: qué notificaciones recibe y por qué canal |
-
 ---
 
-## 2.3 Comunicación entre Servicios
+## 2.3 Comunicación entre Módulos
 
-Siguiendo ADR 003:
+En el monolito modular, la comunicación entre módulos es por **llamadas directas a casos de uso**, NO por HTTP. Todos los módulos corren en el mismo proceso Express, así que no hay serialización, timeouts, ni circuit breakers.
 
 ```
-                    ┌──────────────────────────────────────┐
-                    │         FLUJO DE COMUNICACIÓN         │
-                    └──────────────────────────────────────┘
+                     ┌──────────────────────────────────────┐
+                     │       COMUNICACIÓN EN MONOLITO        │
+                     └──────────────────────────────────────┘
 
     AUTH ──────────────────────────────────────────────► TODOS (JWT validation)
            Cada request incluye Header: Authorization: Bearer <jwt>
-           Auth NO es llamado en cada request; el JWT es auto-contenido.
-           Gateway o middleware valida firma y expiración sin llamar Auth.
+           El middleware de Express valida la firma sin llamar a Auth.
+           Los demás módulos importan el caso de uso de validación directamente.
 
-    CATALOG ──► STREAMING (HTTP POST /api/v1/audio/upload-url)
-              ──► STREAMING (HTTP GET  /api/v1/audio/stream/{beatId})
-              Catalog redirige al cliente a URLs de Streaming. 
-              Catalog NUNCA toca archivos de audio.
+    CATALOG ──► STREAMING (llamada directa a use-case)
+               Catalog invoca el caso de uso de Streaming para procesamiento de audio.
+               Catalog NUNCA toca archivos de audio.
 
-    PAYMENTS ──► CATALOG (HTTP PATCH /api/v1/beats/{id}/sold)
-              ──► CATALOG (HTTP GET  /api/v1/beats/{id}  — metadata para licencia)
-              ──► AUTH    (HTTP GET  /api/v1/users/{id} — email del comprador)
-              Cuando un pago se completa, Payments notifica a Catalog 
-              (incrementa contador de ventas) y consulta Auth (email para entrega).
+    PAYMENTS ──► CATALOG (llamada directa a use-case)
+               ──► AUTH    (llamada directa a use-case)
+               Cuando un pago se completa, Payments invoca casos de uso de Catalog
+               (incrementar contador de ventas) y Auth (obtener email del comprador).
 
-    STREAMING ──► CATALOG (HTTP POST /api/v1/beats/{id}/audio-ready)
-                ──► CATALOG (HTTP DELETE /api/v1/beats/{id}/audio — cleanup)
-                Cuando el preview está generado, notifica a Catalog 
-                para actualizar las URLs de streaming/preview.
-
-    ▸ v2: USER ──► integra con Auth (JWT), Catalog (beats del usuario)
-    ▸ v2: NOTIFICATION ──► escucha eventos de Payments ("venta completada"),
-                            Catalog ("nuevo beat de productor seguido"),
-                            User ("nuevo follower")
+    STREAMING ──► CATALOG (llamada directa a use-case)
+                 Cuando el preview está generado, invoca el caso de uso de Catalog
+                 para actualizar las URLs de streaming/preview.
 ```
 
-### Timeouts y Circuit Breaker
+### Sin HTTP, sin circuit breaker, sin timeouts
 
-- **Timeout default**: 5 segundos (ADR 003).
-- **Timeout streaming upload**: 30 segundos (archivos grandes).
-- **Circuit breaker**: Implementación manual simple:
-  ```typescript
-  // 3 fallos consecutivos → circuito abierto 30s → half-open → test request
-  // Sin librería externa en MVP. Menos de 50 líneas.
-  ```
-- **Retry**: Máximo 2 reintentos con exponential backoff (1s, 2s) solo para requests idempotentes (GET, PUT).
+- **Sin HTTP**: Los módulos se comunican por llamadas directas a funciones/casos de uso. No hay serialización JSON, ni overhead de red.
+- **Sin circuit breaker**: En un solo proceso, si un módulo falla, el error se propaga directamente. No hay necesidad de circuit breaker hasta que se extraigan a microservicios en v2.
+- **Sin timeouts**: Las llamadas son síncronas dentro del mismo proceso. Si un caso de uso tarda, es un bug de performance, no un problema de red.
+- **Sin retries**: No hay reintentos automáticos. Si un caso de uso falla, se maneja con try/catch en el caller.
 
 ---
 
 ## 2.4 Flujo de Autenticación
 
 ```
-CLIENTE                    AUTH SERVICE                    SUPABASE
+CLIENTE                    AUTH MODULE                     SUPABASE
   │                            │                               │
   │  POST /auth/register       │                               │
   │  {email, password, role}   │                               │
@@ -216,21 +171,21 @@ CLIENTE                    AUTH SERVICE                    SUPABASE
   │  Set-Cookie: refreshToken  │                               │
   │◄──────────────────────────│                               │
   │                            │                               │
-  │  GET /catalog/beats        │                               │
+  │  GET /beats                │                               │
   │  Authorization: Bearer ... │                               │
   │───────────────────────────────────────────────────────────►│
   │  Middleware: jwt.verify() sin llamar a Auth                │
   │◄───────────────────────────────────────────────────────────│
 ```
 
-**Decisión**: JWT auto-contenido con claims `{sub, role, email}`. No se consulta Auth Service en cada request. El refresh token se usa solo cuando el access token expira. Esto minimiza latencia y dependencia entre servicios.
+**Decisión**: JWT auto-contenido con claims `{sub, role, email}`. No se consulta Auth Module en cada request. El refresh token se usa solo cuando el access token expira. El middleware de Express valida la firma directamente, minimizando latencia.
 
 ---
 
 ## 2.5 Flujo de Audio (Upload + Preview + Streaming)
 
 ```
-CLIENTE            CATALOG           STREAMING           R2/BUNNYCDN
+CLIENTE            CATALOG           STREAMING           R2
   │                   │                  │                    │
   │  POST /beats      │                  │                    │
   │  {metadata JSON}  │                  │                    │
@@ -255,7 +210,8 @@ CLIENTE            CATALOG           STREAMING           R2/BUNNYCDN
   │                   │                  │  PUT preview.mp3   │
   │                   │                  │───────────────────►│ R2
   │                   │                  │                    │
-  │                   │  PATCH /beats/:id│                    │
+  │                   │  (llamada directa│                    │
+  │                   │   a use-case)    │                    │
   │                   │  {audioUrl,      │                    │
   │                   │   previewUrl}    │                    │
   │                   │◄─────────────────│                    │
@@ -263,195 +219,157 @@ CLIENTE            CATALOG           STREAMING           R2/BUNNYCDN
   │◄──────────────────│                  │                    │
   │                   │                  │                    │
   │  GET /stream/:id  │                  │                    │
-  │──────────────────────────────────────┼───────────────────►│ BunnyCDN
+  │──────────────────────────────────────┼───────────────────►│ R2
   │  Range: bytes=0-  │                  │                    │
-  │  200 Content-Range│                  │  206 Partial       │
+  │  206 Partial      │                  │                    │
   │◄─────────────────────────────────────┼────────────────────│
 ```
 
-**Decisión**: El upload es directo a Streaming Service (no pasa por Catalog). Streaming Service es el único que toca archivos. Catalog solo guarda URLs en la DB. Para el streaming, BunnyCDN actúa como CDN frente a R2, entregando audio con baja latencia global.
+**Decisión**: El upload es directo al Streaming Module (no pasa por Catalog). Streaming Module es el único que toca archivos. Catalog solo guarda URLs en la DB. En monolito, la notificación de "audio ready" es una llamada directa al caso de uso de Catalog, no un callback HTTP.
 
 ---
 
 ## 2.6 Flujo de Pago y Entrega de Licencia
 
 ```
-CLIENTE          PAYMENTS           STRIPE           CATALOG          AUTH        RESEND
-  │                 │                  │                 │               │            │
-  │ POST /checkout  │                  │                 │               │            │
-  │ {beatId}        │                  │                 │               │            │
-  │────────────────►│                  │                 │               │            │
-  │                 │ GET /beats/:id   │                 │               │            │
-  │                 │────────────────────────────────────►│               │            │
-  │                 │ ◄── {title,price,producerId}        │               │            │
-  │                 │                  │                 │               │            │
-  │                 │ POST /checkout/sessions             │               │            │
-  │                 │─────────────────►│                 │               │            │
-  │                 │ ◄── {url}        │                 │               │            │
-  │ 302 → Stripe    │                  │                 │               │            │
-  │◄────────────────│                  │                 │               │            │
-  │                 │                  │                 │               │            │
-  │   [usuario paga en Stripe]         │                 │               │            │
-  │                 │                  │                 │               │            │
-  │                 │ POST /webhooks/stripe               │               │            │
-  │                 │ ◄───────────────│ payment_intent.  │               │            │
-  │                 │                  │  succeeded       │               │            │
-  │                 │                  │                 │               │            │
-  │                 │ Verificar firma webhook (whsec_)    │               │            │
-  │                 │                  │                 │               │            │
-  │                 │ GET /users/:id (email comprador)                    │            │
-  │                 │────────────────────────────────────────────────────►│            │
-  │                 │ ◄── {email}                                         │            │
-  │                 │                  │                 │               │            │
-  │                 │ PATCH /beats/:id/sold              │               │            │
-  │                 │────────────────────────────────────►│               │            │
-  │                 │ ◄── OK            │                 │               │            │
-  │                 │                  │                 │               │            │
-  │                 │ INSERT INTO sales (transaction)                     │            │
-  │                 │ Generar licencia (PDF/texto)                        │            │
-  │                 │                  │                 │               │            │
-  │                 │ POST /emails     │                 │               │───────────►│
-  │                 │ {to, licenseUrl} │                 │               │  Send email│
-  │  200 OK         │                  │                 │               │            │
-  │◄────────────────│                  │                 │               │            │
+CLIENTE          PAYMENTS        MERCADOPAGO       CATALOG          AUTH
+  │                 │                  │                 │               │
+  │ POST /checkout  │                  │                 │               │
+  │ {beatId}        │                  │                 │               │
+  │────────────────►│                  │                 │               │
+  │                 │ (llamada directa) │                 │               │
+  │                 │◄────────────────────────────────────│               │
+  │                 │ ◄── {title,price,producerId}        │               │
+  │                 │                  │                 │               │
+  │                 │ Crear preferencia MP                │               │
+  │                 │─────────────────►│                 │               │
+  │                 │ ◄── {init_point}  │                 │               │
+  │ 302 → MP        │                  │                 │               │
+  │◄────────────────│                  │                 │               │
+  │                 │                  │                 │               │
+  │   [usuario paga en MercadoPago]    │                 │               │
+   │                 │                  │                 │               │
+   │                 │ POST /webhooks/mercadopago          │               │
+   │                 │ ◄───────────────│ payment.updated  │               │
+   │                 │                  │  status=approved │               │
+   │                 │                  │                 │               │
+   │                 │ Verificar via GET /collections/{id} │               │
+   │                 │                  │                 │               │
+   │                 │ (llamada directa: email comprador)  │               │
+   │                 │◄────────────────────────────────────│               │
+  │                 │ ◄── {email}                                         │
+  │                 │                  │                 │               │
+  │                 │ (llamada directa: marcar vendido)   │               │
+  │                 │────────────────────────────────────►│               │
+  │                 │ ◄── OK            │                 │               │
+  │                 │                  │                 │               │
+  │                 │ INSERT INTO sales (transaction)                     │
+  │                 │ Generar licencia (PDF/texto)                        │
+  │  200 OK         │                  │                 │               │
+  │◄────────────────│                  │                 │               │
 ```
 
-**Decisión**: Stripe maneja el pago; nuestro servicio solo reacciona a webhooks con verificación de firma. La licencia se genera solo después de confirmar el pago (no antes). El email de entrega incluye link de descarga del archivo WAV original.
+**Decisión**: MercadoPago maneja el pago; nuestro módulo solo reacciona a webhooks. La verificación se hace consultando la API de MercadoPago (GET /collections/{id}) en vez de confiar en la firma del webhook. La licencia se genera solo después de confirmar el pago (no antes). La entrega del archivo WAV original se incluye en la respuesta o como link descargable desde la licencia.
 
 ---
 
-## 2.7 Dependencias entre Servicios
+## 2.7 Dependencias entre Módulos
 
 ```
-                    ┌─────────────────────────────────────┐
-                    │      MATRIZ DE DEPENDENCIAS          │
-                    │   (quién llama a quién en runtime)   │
-                    └─────────────────────────────────────┘
+                     ┌─────────────────────────────────────┐
+                     │      DEPENDENCIAS ENTRE MÓDULOS       │
+                     │   (llamadas directas, mismo proceso)  │
+                     └─────────────────────────────────────┘
 
-                │  Auth  │ Catalog│Streaming│Payments│ User* │Notif* │
-    ────────────┼────────┼────────┼─────────┼────────┼───────┼───────┤
-    Auth        │   -    │   NO   │   NO    │   NO   │  NO   │  NO   │
-    Catalog     │  NO†   │   -    │   SÍ    │   NO   │  NO   │  NO   │
-    Streaming   │  NO    │   SÍ   │   -     │   NO   │  NO   │  NO   │
-    Payments    │  SÍ    │   SÍ   │   NO    │   -    │  NO   │  NO   │
-    ────────────┼────────┼────────┼─────────┼────────┼───────┼───────┤
-    User*       │  NO†   │   SÍ   │   NO    │   NO   │   -   │  NO   │
-    Notif*      │  SÍ    │   NO   │   NO    │   SÍ   │  SÍ   │   -   │
+                 │  Auth  │ Catalog│Streaming│Payments│
+     ────────────┼────────┼────────┼─────────┼────────┤
+     Auth        │   -    │   NO   │   NO    │   NO   │
+     Catalog     │  NO†   │   -    │   SÍ    │   NO   │
+     Streaming   │  NO    │   SÍ   │   -     │   NO   │
+     Payments    │  SÍ    │   SÍ   │   NO    │   -    │
+     ────────────┼────────┼────────┼─────────┼────────┤
 
-    † Catalog y User no llaman a Auth; validan JWT auto-contenido en middleware.
-    * User Service y Notification Service son v2 (NO MVP).
+     † Catalog y otros módulos no llaman a Auth; validan JWT auto-contenido en middleware.
 
-    CICLO DE DEPENDENCIA MVP (ya resuelto):
-    Catalog ←→ Streaming  (¡CUIDADO! dependencia circular)
-    
-    SOLUCIÓN: Catalog nunca espera respuesta síncrona de Streaming para 
-    devolver datos al cliente. Cuando el cliente sube audio, el flow es:
-    1. Catalog crea beat (sin URLs de audio) → responde 201 inmediatamente
-    2. Cliente sube audio a Streaming → Streaming procesa async
-    3. Streaming notifica a Catalog con URLs → Catalog actualiza beat
-    4. Cliente refresca para ver URLs (o usa polling corto)
+     En monolito NO hay dependencia circular problemática porque todo corre en el
+     mismo proceso. Los módulos importan casos de uso de otros módulos directamente.
 
-    Esto rompe el ciclo: Catalog puede funcionar sin Streaming disponible.
-    Catalog responde beats con o sin URLs de audio (estado: 'processing' o 'ready').
+     ORDEN DE INICIALIZACIÓN:
+     1. Auth Module (registra middleware JWT)
+     2. Catalog Module (depende de Auth para proteger rutas de producer)
+     3. Streaming Module (depende de Catalog para callback de audio-ready)
+     4. Payments Module (depende de Catalog y Auth para checkout)
+
+     Esto rompe cualquier ciclo: cada módulo importa solo de módulos ya inicializados.
 ```
 
 ---
 
-## 2.8 Gateway (MVP Simplificado)
+## 2.8 Routing en Express
 
-Para MVP, **no necesitamos un API Gateway dedicado**. Un simple proxy inverso con Nginx o Cloudflare Workers es suficiente:
+Express maneja el routing directamente con `express.Router()`:
 
 ```
-RAZONES PARA NO USAR KONG/APIGEE/TYK EN MVP:
-- 2 developers: mantener un gateway es overhead operativo
-- 4 servicios solamente: el routing es trivial
-- Sin rate limiting complejo: usamos middlewares por servicio
-- Sin service discovery: URLs estáticas en variables de entorno
-
-SOLUCIÓN MVP:
-┌────────────────────────────────────────────────────┐
-│         Cloudflare Workers (proxy simple)           │
-│  api.mingarecords.com/*                             │
-│                                                     │
-│  /auth/*     → auth-service.onrender.com:4001      │
-│  /catalog/*  → catalog-service.onrender.com:4002   │
-│  /stream/*   → streaming-service.onrender.com:4003 │
-│  /payments/* → payments-service.onrender.com:4004  │
-│                                                     │
-│  + CORS headers (allowed origins)                   │
-│  + Rate limit global (100 req/min por IP)           │
-│  + HTTPS enforcement                                │
-└────────────────────────────────────────────────────┘
-
-En v2, si necesitamos API key management, analytics de tráfico, 
-o autenticación a nivel gateway → considerar Kong o Traefik.
+┌────────────────────────────────────────────────────────┐
+│  Express App (:3000)                                    │
+│                                                         │
+│  /api/v1/auth/*       → Auth Module Router             │
+│  /api/v1/beats/*      → Catalog Module Router          │
+│  /api/v1/audio/*      → Streaming Module Router        │
+│  /api/v1/payments/*   → Payments Module Router         │
+│                                                         │
+│  + CORS middleware (allowed origins)                    │
+│  + JWT middleware (rutas protegidas)                    │
+│  + Error handler (RFC 7807)                            │
+│  + Rate limiting simple en memoria (sliding window)    │
+└────────────────────────────────────────────────────────┘
 ```
+
+No hace falta API Gateway ni reverse proxy para MVP. Todo corre en un solo proceso.
 
 ---
 
 ## 2.9 Estrategia de Base de Datos
 
 ```
-                    ┌──────────────────────────────────┐
-                    │   UNA BASE DE DATOS COMPARTIDA    │
-                    │   PostgreSQL (Supabase managed)   │
-                    │                                   │
-                    │  ┌─────────────────────────────┐  │
-                    │  │ Schema: auth                │  │
-                    │  │  - users                    │  │
-                    │  │  - refresh_tokens           │  │
-                    │  │  - user_profiles            │  │
-                    │  ├─────────────────────────────┤  │
-                    │  │ Schema: catalog             │  │
-                    │  │  - beats                    │  │
-                    │  │  - genres                   │  │
-                    │  │  - producer_profiles        │  │
-                    │  ├─────────────────────────────┤  │
-                    │  │ Schema: streaming           │  │
-                    │  │  - audio_files              │  │
-                    │  │  - uploads                  │  │
-                    │  ├─────────────────────────────┤  │
-                    │  │ Schema: payments            │  │
-                    │  │  - transactions             │  │
-                    │  │  - licenses                 │  │
-                    │  ├─────────────────────────────┤  │
-                    │  │ Schema: notification (v2)   │  │
-                    │  │  - notification_templates   │  │
-                    │  │  - notification_log         │  │
-                    │  └─────────────────────────────┘  │
-                    └──────────────────────────────────┘
+                     ┌──────────────────────────────────┐
+                     │   UNA BASE DE DATOS COMPARTIDA    │
+                     │   PostgreSQL (Supabase managed)   │
+                     │                                   │
+                     │  ┌─────────────────────────────┐  │
+                     │  │ Schema: auth                │  │
+                     │  │  - users                    │  │
+                     │  │  - refresh_tokens           │  │
+                     │  │  - user_profiles            │  │
+                     │  ├─────────────────────────────┤  │
+                     │  │ Schema: catalog             │  │
+                     │  │  - beats                    │  │
+                     │  │  - genres                   │  │
+                     │  │  - producer_profiles        │  │
+                     │  ├─────────────────────────────┤  │
+                     │  │ Schema: streaming           │  │
+                     │  │  - audio_files              │  │
+                     │  │  - uploads                  │  │
+                     │  ├─────────────────────────────┤  │
+                     │  │ Schema: payments            │  │
+                     │  │  - transactions             │  │
+                     │  │  - licenses                 │  │
+                     │  └─────────────────────────────┘  │
+                     └──────────────────────────────────┘
 
-DECISIÓN: UNA DB compartida en MVP. Razones:
-- 2 developers: gestionar 4 DBs separadas es suicidio operativo
-- Supabase free tier: 500MB, suficiente para MVP
-- Schemas separados por servicio → migración a DBs separadas en v2 es trivial
-- No hay riesgo de contención real en MVP (< 1000 usuarios)
+DECISIÓN: UNA DB compartida con schemas separados en MVP. Razones:
+- 1 solo proceso Express: 1 PrismaClient conecta a todos los schemas
+- Schemas separados por módulo → migración a DBs separadas en v2 es trivial
+- Transacciones ACID pueden abarcar múltiples módulos (ej: pago + actualizar ventas)
 - Prisma ORM con múltiples schemas funciona perfectamente
+- Sin riesgo de contención real en MVP (< 1000 usuarios)
 ```
+
+**1 PrismaClient para todos los schemas**:
+En el monolito, un solo `PrismaClient` accede a todos los schemas. Cada módulo usa solo las tablas de su schema, pero el cliente es compartido. Esto permite transacciones ACID entre módulos.
+
+**Connection pooling**:
+Supabase incluye connection pooler integrado (Supavisor). No hace falta configurar PgBouncer manualmente. Solo usar la URL de conexión con pooler que provee Supabase.
 
 **Migración futura a DBs separadas**:
-Cuando un servicio tenga > 10GB de datos o > 100 QPS sostenidos, se extrae su schema a una DB dedicada. Las migraciones de Prisma por schema facilitan esta separación.
-
----
-
-## 2.10 Patrón de Eventos para v2 (Notification Service)
-
-Aunque en MVP usamos llamadas HTTP síncronas, para v2 con Notification Service, se introduce un patrón de eventos simple:
-
-```
-MVP (HTTP directo):
-  Payments ──HTTP──► Resend (email de licencia entregada)
-
-v2 (Eventos + Notification Service):
-  Payments ──HTTP──► Notification Service (POST /events {type: "sale.completed"})
-  Notification Service ──► Evalúa preferencias del usuario
-                        ──► Envía por canal(es) correspondiente(s):
-                             • Email via Resend
-                             • Push via Web Push API
-                             • In-app via WebSocket/SSE
-
-  Catalog ──HTTP──► Notification Service (POST /events {type: "beat.published"})
-  User    ──HTTP──► Notification Service (POST /events {type: "user.followed"})
-```
-
-Para v2, este patrón puede escalar a un message broker (Redis Pub/Sub o RabbitMQ) si el volumen de eventos lo justifica. En MVP, ni siquiera implementamos el servicio de notificaciones — cada servicio envía emails directamente.
+Cuando un módulo tenga > 10GB de datos o > 100 QPS sostenidos, se extrae su schema a una DB dedicada. Las migraciones de Prisma por schema facilitan esta separación.

@@ -1,666 +1,478 @@
 # 08 — Estrategia de Testing
 
-> **Versión:** 1.0 — **Fecha:** 12 de mayo de 2026
+> **Versión:** 2.0 — **Fecha:** 19 de mayo de 2026
+> **Contexto:** MVP en 1 semana, 2 developers, presupuesto $0
 
 ---
 
-## 8.1 Pirámide de Testing
+## 8.1 Filosofía de Testing para MVP de 1 Semana
+
+Para un MVP con deadline de **una semana**, la prioridad es **testear lo que importa y saltear el resto**. No hay tiempo para testing perfecto — hay que ser pragmático.
+
+**Principios:**
+- Testeá los caminos críticos que, si fallan, el producto no funciona
+- Mockeá todo lo externo (MercadoPago, R2, Supabase)
+- No pierdas tiempo en contract testing, Docker, ni cobertura al 80%
+- Si un test tarda más de 30 minutos en escribirse, preguntate si vale la pena
+
+### Pirámide de Testing (Simplificada)
 
 ```
-                    ┌─────────────┐
-                    │    E2E      │  ← 5-10 tests
-                    │  (Playwright)│     Flujo completo del usuario
-                    ├─────────────┤
-                    │ Integration │  ← 30-50 tests
-                    │  (API + DB) │     Endpoints con DB real
-                    ├─────────────┤
-                    │    Unit     │  ← 100-200 tests
-                    │ (Domain +   │     Use cases con mocks
-                    │  Use Cases) │     Domain entities, value objects
-                    └─────────────┘
-
-Proporción recomendada para MingaRecords:
-- 70% Unit Tests    → Rápidos, baratos, no dependen de infraestructura
-- 20% Integration   → Validan que los adapters funcionan con DB real
-- 10% E2E           → Validan el flujo completo del usuario
+         ┌─────┐
+         │ E2E │  ← 3 tests (caminos críticos solamente)
+         ├─────┤
+         │ API │  ← 10-15 tests (endpoints clave)
+         ├─────┤
+         │Unit │  ← 20-30 tests (servicios + validación)
+         └─────┘
 ```
+
+**Total estimado:** ~35-50 tests, no 200+.
 
 ---
 
-## 8.2 Herramientas de Testing
+## 8.2 Herramientas
 
 | Capa | Herramienta | Propósito |
 |------|-------------|-----------|
-| Unit | Vitest | Framework de test (ya configurado en el proyecto) |
-| Unit | @testing-library/react | Tests de componentes React (frontend) |
-| Integration | Vitest + Prisma + PostgreSQL (Docker) | Tests de adapters con DB real |
-| Integration | Supertest | Tests HTTP de endpoints Fastify |
-| E2E | Playwright | Tests de flujo completo (frontend + backend) |
-| Mocks | Vitest `vi.fn()` | Mocks de puertos en tests unitarios |
-| Coverage | Vitest `--coverage` | Reporte de cobertura (v8) |
+| Unit + API | Vitest | Framework de test |
+| API | Supertest | Tests HTTP de endpoints Express |
+| E2E (opcional) | Playwright | 3 flujos críticos, solo si hay tiempo |
+| Mocks | Vitest `vi.fn()` | Mocks de SDKs y servicios externos |
+| Coverage | Vitest `--coverage` | Apuntar a ~60%, no más |
 
 ---
 
-## 8.3 Unit Tests — Domain Layer
+## 8.3 Unit Tests — Servicios y Validación
 
-### Qué testear
-- **Value objects**: validación en constructor/factory
-- **Entities**: comportamientos y reglas de negocio
-- **Use cases**: lógica de orquestación con mocks de puertos
+### Qué testear (prioridad)
+1. **Validación Zod** de inputs (auth, beats, pagos)
+2. **Servicios** que contienen lógica de negocio (auth, beats, pagos)
+3. **Utilidades** (slugs, formateo de precios, etc.)
 
 ### Qué NO testear en unit tests
-- Adapters (eso es integration)
-- HTTP handlers (eso es integration)
-- DB queries (eso es integration)
+- Rutas HTTP (eso va en API tests)
+- Conexiones reales a Supabase, R2 o MercadoPago
+- Middlewares genéricos de Express
 
-### Ejemplo: Value Object Tests
+### Ejemplo: Validación Zod
 
 ```typescript
-// test/unit/domain/value-objects/email.test.ts
+// test/unit/validation/auth.test.ts
 import { describe, it, expect } from 'vitest';
-import { Email } from '../../../src/domain/value-objects/email';
+import { registerSchema } from '../../src/validation/auth';
 
-describe('Email', () => {
-  it('should create a valid email', () => {
-    const email = new Email('Test@Example.COM');
-    expect(email.value).toBe('test@example.com');
+describe('registerSchema', () => {
+  it('should accept valid data', () => {
+    const result = registerSchema.safeParse({
+      email: 'test@minga.com',
+      password: 'Password123',
+      role: 'producer',
+    });
+
+    expect(result.success).toBe(true);
   });
 
-  it('should normalize and trim', () => {
-    const email = new Email('  USER@DOMAIN.COM  ');
-    expect(email.value).toBe('user@domain.com');
+  it('should reject invalid email', () => {
+    const result = registerSchema.safeParse({
+      email: 'not-an-email',
+      password: 'Password123',
+      role: 'producer',
+    });
+
+    expect(result.success).toBe(false);
   });
 
-  it('should reject invalid format', () => {
-    expect(() => new Email('not-an-email')).toThrow('Email inválido');
-    expect(() => new Email('user@')).toThrow('Email inválido');
-    expect(() => new Email('@domain.com')).toThrow('Email inválido');
+  it('should reject weak password', () => {
+    const result = registerSchema.safeParse({
+      email: 'test@minga.com',
+      password: '123',
+      role: 'producer',
+    });
+
+    expect(result.success).toBe(false);
   });
 
-  it('should reject emails longer than 255 chars', () => {
-    const longEmail = 'a'.repeat(250) + '@domain.com';
-    expect(() => new Email(longEmail)).toThrow('Email demasiado largo');
+  it('should reject invalid role', () => {
+    const result = registerSchema.safeParse({
+      email: 'test@minga.com',
+      password: 'Password123',
+      role: 'admin',
+    });
+
+    expect(result.success).toBe(false);
   });
 });
 ```
 
-### Ejemplo: Use Case Tests con Mocks
+### Ejemplo: Servicio con Mocks
 
 ```typescript
-// test/unit/application/use-cases/create-beat.test.ts
-import { describe, it, expect, vi } from 'vitest';
-import { CreateBeatUseCase } from '../../../src/application/use-cases/create-beat';
-import type { BeatRepository } from '../../../src/domain/ports/beat-repository';
+// test/unit/services/auth.test.ts
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { AuthService } from '../../src/services/auth';
+import { supabase } from '../../src/lib/supabase';
+import { jwt } from '../../src/lib/jwt';
 
-describe('CreateBeatUseCase', () => {
-  const mockRepository: BeatRepository = {
-    create: vi.fn(),
-    findById: vi.fn(),
-    findBySlug: vi.fn(),
-    list: vi.fn(),
-    update: vi.fn(),
-    softDelete: vi.fn(),
-  };
+vi.mock('../../src/lib/supabase', () => ({
+  supabase: {
+    from: vi.fn(),
+    auth: {
+      signUp: vi.fn(),
+      signInWithPassword: vi.fn(),
+    },
+  },
+}));
 
-  it('should create a beat with valid data', async () => {
-    vi.mocked(mockRepository.create).mockResolvedValue({
-      id: 'beat-123',
-      producerId: 'user-456',
-      title: 'Test Beat',
-      slug: 'test-beat',
-      genre: 'trap',
-      bpm: 140,
-      key: 'Cm',
-      priceCents: 2999,
-      description: null,
-      tags: ['dark'],
-      previewUrl: null,
-      streamUrl: null,
-      playsCount: 0,
-      salesCount: 0,
-      status: 'pending_audio',
-      publishedAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      deletedAt: null,
-    });
+vi.mock('../../src/lib/jwt', () => ({
+  jwt: {
+    sign: vi.fn(),
+    verify: vi.fn(),
+  },
+}));
 
-    const useCase = new CreateBeatUseCase(mockRepository);
+describe('AuthService', () => {
+  let service: AuthService;
 
-    const result = await useCase.execute({
-      producerId: 'user-456',
-      title: 'Test Beat',
-      genre: 'trap',
-      bpm: 140,
-      key: 'Cm',
-      priceCents: 2999,
-      tags: ['dark'],
-    });
-
-    expect(result.title).toBe('Test Beat');
-    expect(result.slug).toBe('test-beat');
-    expect(result.status).toBe('pending_audio');
-    expect(mockRepository.create).toHaveBeenCalledTimes(1);
+  beforeEach(() => {
+    service = new AuthService();
+    vi.clearAllMocks();
   });
 
-  it('should reject title shorter than 3 chars', async () => {
-    const useCase = new CreateBeatUseCase(mockRepository);
+  it('should register a new user', async () => {
+    vi.mocked(supabase.auth.signUp).mockResolvedValue({
+      data: { user: { id: 'user-123', email: 'test@minga.com' } },
+      error: null,
+    });
 
-    await expect(
-      useCase.execute({
-        producerId: 'user-456',
-        title: 'AB',
-        genre: 'trap',
-        priceCents: 2999,
-      }),
-    ).rejects.toThrow('El título debe tener al menos 3 caracteres');
+    vi.mocked(jwt.sign).mockReturnValue('fake-jwt-token');
+
+    const result = await service.register({
+      email: 'test@minga.com',
+      password: 'Password123',
+      role: 'producer',
+    });
+
+    expect(result.user.id).toBe('user-123');
+    expect(result.accessToken).toBe('fake-jwt-token');
   });
 
-  it('should reject price below minimum', async () => {
-    const useCase = new CreateBeatUseCase(mockRepository);
+  it('should reject registration if email exists', async () => {
+    vi.mocked(supabase.auth.signUp).mockResolvedValue({
+      data: { user: null },
+      error: { message: 'User already registered' },
+    });
 
     await expect(
-      useCase.execute({
-        producerId: 'user-456',
-        title: 'Valid Title',
-        genre: 'trap',
-        priceCents: 50,  // $0.50 < $1.00 mín
-      }),
-    ).rejects.toThrow('El precio mínimo es $1.00 USD');
+      service.register({
+        email: 'existing@minga.com',
+        password: 'Password123',
+        role: 'producer',
+      })
+    ).rejects.toThrow('El email ya está registrado');
   });
 });
 ```
 
 ---
 
-## 8.4 Integration Tests — Adapters + DB
+## 8.4 API Tests — Supertest + Express
 
-### Setup
-- PostgreSQL en Docker (el mismo `docker-compose.yml` de desarrollo)
-- Prisma migrate antes de correr los tests
-- Transacciones para aislar cada test (rollback al final)
+### Qué testear
+Endpoints clave que forman parte del flujo del usuario. No hace falta testear cada ruta.
 
-### Ejemplo: Repository Integration Test
+| Endpoint | Qué validar |
+|----------|-------------|
+| `POST /api/v1/auth/register` | Crea usuario, devuelve JWT |
+| `POST /api/v1/auth/login` | Login correcto / credenciales inválidas |
+| `GET /api/v1/beats` | Lista beats publicados |
+| `POST /api/v1/beats` | Crea beat (requiere auth) |
+| `GET /api/v1/beats/:id` | Devuelve beat existente / 404 |
+| `POST /api/v1/payments/preference` | Crea preferencia de MercadoPago |
+| `POST /api/v1/payments/webhook` | Maneja webhook de MercadoPago |
 
-```typescript
-// test/integration/database/beat-repository.test.ts
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { PrismaClient } from '@prisma/client';
-import { PrismaBeatRepository } from '../../../src/infrastructure/database/beat-repository';
-
-describe('PrismaBeatRepository', () => {
-  let prisma: PrismaClient;
-  let repository: PrismaBeatRepository;
-
-  beforeAll(async () => {
-    prisma = new PrismaClient();
-    await prisma.$connect();
-    repository = new PrismaBeatRepository(prisma);
-  });
-
-  afterAll(async () => {
-    await prisma.$disconnect();
-  });
-
-  beforeEach(async () => {
-    // Limpiar antes de cada test
-    await prisma.beat.deleteMany();
-  });
-
-  it('should create a beat and retrieve it by id', async () => {
-    const beat = await repository.create({
-      producerId: 'user-123',
-      title: 'Integration Test Beat',
-      slug: 'integration-test-beat',
-      genre: 'trap',
-      priceCents: 2999,
-      tags: ['test'],
-      status: 'pending_audio',
-    });
-
-    expect(beat.id).toBeDefined();
-    expect(beat.title).toBe('Integration Test Beat');
-    expect(beat.status).toBe('pending_audio');
-
-    const found = await repository.findById(beat.id);
-    expect(found).not.toBeNull();
-    expect(found!.id).toBe(beat.id);
-  });
-
-  it('should list beats with pagination', async () => {
-    // Crear 15 beats
-    for (let i = 0; i < 15; i++) {
-      await repository.create({
-        producerId: `user-${i}`,
-        title: `Beat ${i}`,
-        slug: `beat-${i}`,
-        genre: 'trap',
-        priceCents: 1000 + i * 100,
-        tags: [],
-        status: 'ready',
-      });
-    }
-
-    const page1 = await repository.list({ page: 1, limit: 10 });
-    expect(page1.data.length).toBe(10);
-    expect(page1.totalPages).toBe(2);
-    expect(page1.totalItems).toBe(15);
-
-    const page2 = await repository.list({ page: 2, limit: 10 });
-    expect(page2.data.length).toBe(5);
-  });
-
-  it('should filter beats by genre', async () => {
-    await repository.create({
-      producerId: 'user-1',
-      title: 'Trap Beat',
-      slug: 'trap-beat',
-      genre: 'trap',
-      priceCents: 2000,
-      tags: [],
-      status: 'ready',
-    });
-
-    await repository.create({
-      producerId: 'user-2',
-      title: 'Lo-fi Beat',
-      slug: 'lofi-beat',
-      genre: 'lo-fi',
-      priceCents: 1500,
-      tags: [],
-      status: 'ready',
-    });
-
-    const trapBeats = await repository.list({ genre: 'trap' });
-    expect(trapBeats.data.length).toBe(1);
-    expect(trapBeats.data[0].genre).toBe('trap');
-  });
-
-  it('should soft delete a beat', async () => {
-    const beat = await repository.create({
-      producerId: 'user-1',
-      title: 'To Delete',
-      slug: 'to-delete',
-      genre: 'trap',
-      priceCents: 2000,
-      tags: [],
-      status: 'ready',
-    });
-
-    await repository.softDelete(beat.id);
-
-    const deleted = await repository.findById(beat.id);
-    expect(deleted!.deletedAt).not.toBeNull();
-
-    // Soft-deleted beats no aparecen en list
-    const list = await repository.list();
-    expect(list.data.find((b) => b.id === beat.id)).toBeUndefined();
-  });
-});
-```
-
-### Ejemplo: HTTP Integration Test (Supertest)
+### Ejemplo: Auth Routes
 
 ```typescript
-// test/integration/http/auth-routes.test.ts
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import Fastify from 'fastify';
+// test/api/auth.test.ts
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
-import { authRoutes } from '../../../src/infrastructure/http/routes/auth.routes';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { app } from '../../src/app';
 
-describe('Auth Routes', () => {
-  let app: Fastify.FastifyInstance;
-  let prisma: PrismaClient;
-
-  beforeAll(async () => {
-    prisma = new PrismaClient();
-    await prisma.$connect();
-
-    app = Fastify();
-
-    // Setup DI y routes (simplificado para el test)
-    await app.register(authRoutes, { prefix: '/api/v1' });
-    await app.ready();
-  });
-
-  afterAll(async () => {
-    await prisma.$disconnect();
-    await app.close();
-  });
-
-  it('POST /auth/register should create a new user', async () => {
-    const response = await request(app.server)
+describe('POST /api/v1/auth/register', () => {
+  it('should create a new user', async () => {
+    const res = await request(app)
       .post('/api/v1/auth/register')
       .send({
-        email: 'newuser@minga.com',
+        email: 'test@minga.com',
         password: 'Password123',
         role: 'producer',
       });
 
-    expect(response.status).toBe(201);
-    expect(response.body.user.email).toBe('newuser@minga.com');
-    expect(response.body.user.role).toBe('producer');
-    expect(response.body.accessToken).toBeDefined();
+    expect(res.status).toBe(201);
+    expect(res.body.user.email).toBe('test@minga.com');
+    expect(res.body.accessToken).toBeDefined();
   });
 
-  it('POST /auth/register should reject duplicate email', async () => {
-    // Primero crear el usuario
-    await request(app.server)
+  it('should reject duplicate email', async () => {
+    // Primero registrar
+    await request(app)
       .post('/api/v1/auth/register')
       .send({
-        email: 'duplicate@minga.com',
+        email: 'dup@minga.com',
         password: 'Password123',
-        role: 'artist',
+        role: 'producer',
       });
 
-    // Intentar crear de nuevo
-    const response = await request(app.server)
+    // Intentar de nuevo
+    const res = await request(app)
       .post('/api/v1/auth/register')
       .send({
-        email: 'duplicate@minga.com',
+        email: 'dup@minga.com',
         password: 'Password123',
-        role: 'artist',
+        role: 'producer',
       });
 
-    expect(response.status).toBe(409);
-    expect(response.body.type).toContain('conflict');
+    expect(res.status).toBe(409);
   });
 
-  it('POST /auth/login should reject invalid credentials', async () => {
-    const response = await request(app.server)
+  it('should reject invalid input', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .send({
+        email: 'not-an-email',
+        password: 'short',
+      });
+
+    expect(res.status).toBe(400);
+  });
+});
+```
+
+### Ejemplo: Beats Routes
+
+```typescript
+// test/api/beats.test.ts
+import request from 'supertest';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { app } from '../../src/app';
+
+describe('GET /api/v1/beats', () => {
+  it('should list published beats', async () => {
+    const res = await request(app).get('/api/v1/beats');
+
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('should support pagination', async () => {
+    const res = await request(app)
+      .get('/api/v1/beats')
+      .query({ page: 1, limit: 5 });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBeLessThanOrEqual(5);
+  });
+});
+
+describe('POST /api/v1/beats', () => {
+  it('should create a beat with valid auth', async () => {
+    // Obtener token de un usuario de test
+    const loginRes = await request(app)
       .post('/api/v1/auth/login')
       .send({
-        email: 'nonexistent@minga.com',
-        password: 'WrongPassword',
+        email: 'producer@minga.com',
+        password: 'Password123',
       });
 
-    expect(response.status).toBe(401);
-    expect(response.body.type).toContain('unauthenticated');
+    const token = loginRes.body.accessToken;
+
+    const res = await request(app)
+      .post('/api/v1/beats')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Test Beat',
+        genre: 'trap',
+        bpm: 140,
+        priceCents: 2999,
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.title).toBe('Test Beat');
+  });
+
+  it('should reject unauthenticated requests', async () => {
+    const res = await request(app)
+      .post('/api/v1/beats')
+      .send({
+        title: 'Test Beat',
+        genre: 'trap',
+        priceCents: 2999,
+      });
+
+    expect(res.status).toBe(401);
   });
 });
 ```
 
 ---
 
-## 8.5 E2E Tests — Playwright
+## 8.5 E2E Tests — 3 Caminos Críticos (Opcional)
 
-### Qué testear en E2E
-Solo los flujos críticos del usuario. No testear cada endpoint.
+Solo si hay tiempo después de los unit y API tests. Máximo 3 flujos.
 
-| Test | Flujo | Prioridad |
-|------|-------|-----------|
-| `register-login-flow` | Registro → Login → Ver perfil | P0 |
-| `upload-beat-flow` | Login → Crear beat → Subir audio → Ver en catálogo | P0 |
-| `browse-stream-flow` | Abrir catálogo → Filtrar → Escuchar preview | P0 |
-| `purchase-flow` | Login → Ver beat → Comprar → Recibir licencia | P0 |
-| `error-states` | Login inválido → Upload archivo no audio → Pago fallido | P0 |
+| # | Flujo | Prioridad |
+|---|-------|-----------|
+| 1 | Registro → Login → Ver perfil | P0 |
+| 2 | Login → Crear beat → Ver en catálogo | P0 |
+| 3 | Buscar beat → Ver detalle → Crear preferencia de pago | P0 |
 
-### Ejemplo: E2E Test — Purchase Flow
+### Ejemplo: Registro → Login
 
 ```typescript
-// test/e2e/purchase-flow.spec.ts
+// test/e2e/auth-flow.spec.ts
 import { test, expect } from '@playwright/test';
 
-test('complete purchase flow', async ({ page }) => {
-  // 1. Login como artista
-  await page.goto('/auth/login');
-  await page.fill('input[name="email"]', 'artist@test.com');
+const BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:3000';
+
+test('register and login flow', async ({ page }) => {
+  // 1. Registro
+  await page.goto(`${BASE_URL}/auth/register`);
+  await page.fill('input[name="email"]', 'e2e-test@minga.com');
+  await page.fill('input[name="password"]', 'Password123');
+  await page.selectOption('select[name="role"]', 'producer');
+  await page.click('button[type="submit"]');
+
+  // 2. Debería redirigir al dashboard
+  await expect(page).toHaveURL(/dashboard/);
+
+  // 3. Logout y login
+  await page.goto(`${BASE_URL}/auth/login`);
+  await page.fill('input[name="email"]', 'e2e-test@minga.com');
   await page.fill('input[name="password"]', 'Password123');
   await page.click('button[type="submit"]');
-  await expect(page).toHaveURL('/catalog');
 
-  // 2. Buscar un beat
-  await page.goto('/catalog');
-  await page.fill('input[name="search"]', 'trap');
-  await page.click('button[type="submit"]');
-  await expect(page.locator('[data-testid="beat-card"]')).toBeVisible();
-
-  // 3. Ver detalle del beat
-  await page.click('[data-testid="beat-card"] >> nth=0');
-  await expect(page.locator('[data-testid="beat-title"]')).toBeVisible();
-
-  // 4. Escuchar preview
-  const audioPlayer = page.locator('audio');
-  await expect(audioPlayer).toBeVisible();
-
-  // 5. Comprar (redirige a Stripe en test mode)
-  await page.click('[data-testid="buy-button"]');
-  await expect(page).toHaveURL(/checkout\.stripe\.com/);
-
-  // 6. Completar pago en Stripe (test mode)
-  await page.fill('input[name="cardNumber"]', '4242424242424242');
-  await page.fill('input[name="cardExpiry"]', '12/30');
-  await page.fill('input[name="cardCvc"]', '123');
-  await page.click('button[type="submit"]');
-
-  // 7. Ver confirmación
-  await expect(page).toHaveURL(/success/);
-  await expect(page.locator('[data-testid="purchase-confirmation"]')).toBeVisible();
+  await expect(page).toHaveURL(/dashboard/);
 });
 ```
 
 ---
 
-## 8.6 Contract Testing — OpenAPI Validation
-
-### Estrategia
-Validar que las respuestas de los endpoints cumplen con los contratos OpenAPI definidos en `docs/openapi/`.
-
-```typescript
-// test/integration/contract/openapi-validation.test.ts
-import { describe, it, expect } from 'vitest';
-import { createValidator } from 'openapi-validator';
-import authContract from '../../../docs/openapi/auth.openapi.yaml';
-
-describe('OpenAPI Contract — Auth Service', () => {
-  const validator = createValidator(authContract);
-
-  it('POST /auth/register response matches schema', async () => {
-    const response = {
-      status: 201,
-      body: {
-        user: {
-          id: 'user-123',
-          email: 'test@minga.com',
-          role: 'producer',
-          alias: null,
-        },
-        accessToken: 'jwt-token-here',
-      },
-    };
-
-    const valid = await validator.validateResponse('/auth/register', 'post', response.status, response.body);
-    expect(valid.valid).toBe(true);
-  });
-
-  it('POST /auth/login 401 response matches schema', async () => {
-    const response = {
-      status: 401,
-      body: {
-        type: 'https://mingarecords.com/errors/unauthenticated',
-        title: 'Credenciales inválidas',
-        status: 401,
-        detail: 'El email o la contraseña son incorrectos.',
-      },
-    };
-
-    const valid = await validator.validateResponse('/auth/login', 'post', 401, response.body);
-    expect(valid.valid).toBe(true);
-  });
-});
-```
-
-### CI Gate
-En el pipeline de CI, validar que los contratos OpenAPI son válidos:
-
-```yaml
-# En ci.yml
-- name: Validate OpenAPI contracts
-  run: npx @redocly/cli lint docs/openapi/*.yaml
-```
-
----
-
-## 8.7 Mocking Strategy
+## 8.6 Estrategia de Mocking
 
 ### Qué mockear
+
 | Elemento | Por qué | Cómo |
 |----------|---------|------|
-| Repositorios en tests de use cases | No queremos DB en unit tests | `vi.fn()` con Vitest |
-| TokenService en tests de use cases | No queremos crypto real | `vi.fn().mockResolvedValue('fake-token')` |
-| EmailService en tests de use cases | No queremos enviar emails reales | `vi.fn()` |
-| Stripe SDK en tests de Payments | No queremos llamadas reales a Stripe | `vi.fn()` con responses predefinidos |
-| HTTP clients (Catalog, Auth) en tests de Payments/Streaming | No queremos dependencias cross-service | `vi.fn()` |
-| ffmpeg en tests de Streaming | ffmpeg es pesado y lento | Mock del adapter, no del binario |
+| Supabase client | No queremos queries reales en unit tests | `vi.mock()` con responses predefinidos |
+| MercadoPago SDK | No queremos crear preferencias reales | `vi.mock()` con datos fake |
+| Cloudflare R2 | No queremos subir archivos reales | `vi.mock()` con upload simulado |
+| JWT sign/verify | No queremos crypto real en tests | `vi.fn()` con tokens fake |
 
 ### Qué NO mockear
+
 | Elemento | Por qué |
 |----------|---------|
-| Prisma en integration tests | Queremos validar queries reales |
-| Zod schemas | La validación debe ser real |
-| Value objects | La validación de dominio debe ser real |
-| Fastify server en integration tests | Queremos validar el HTTP real |
+| Validación Zod | Tiene que ser real |
+| Express app en API tests | Queremos validar el HTTP real |
+| Middlewares de auth | Queremos validar que protegen rutas |
 
----
-
-## 8.8 CI Validation Gates
-
-| Gate | Qué valida | Cuándo se ejecuta | Bloquea merge si falla |
-|------|-----------|-------------------|------------------------|
-| `pnpm lint` | ESLint sin errores | Cada push a PR | ✅ Sí |
-| `pnpm type-check` | TypeScript sin errores | Cada push a PR | ✅ Sí |
-| `pnpm test` (unit) | Todos los unit tests pasan | Cada push a PR | ✅ Sí |
-| `pnpm test` (integration) | Integration tests con DB | Cada push a PR | ✅ Sí |
-| OpenAPI lint | Contratos `.yaml` válidos | Cada push a PR | ✅ Sí |
-| Coverage threshold | > 60% cobertura (MVP) | Cada push a PR | ⚠️ Warning (no bloquea en MVP) |
-| E2E tests | Flujos críticos completos | En merge a main | ✅ Sí |
-
----
-
-## 8.9 Testing de Features de Audio
-
-### Desafíos
-- ffmpeg requiere binario instalado
-- Los archivos de audio reales son pesados
-- El streaming de audio es difícil de testear en CI
-
-### Estrategia
+### Ejemplo: Mock de MercadoPago
 
 ```typescript
-// test/unit/application/use-cases/upload-audio.test.ts
-import { describe, it, expect, vi } from 'vitest';
-import { UploadAudioUseCase } from '../../../src/application/use-cases/upload-audio';
-import type { AudioStorage } from '../../../src/domain/ports/audio-storage';
-import type { AudioProcessor } from '../../../src/domain/ports/audio-processor';
-import type { CatalogClient } from '../../../src/infrastructure/adapters/catalog-client';
+// test/unit/services/payments.test.ts
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { PaymentsService } from '../../src/services/payments';
 
-describe('UploadAudioUseCase', () => {
-  const mockStorage: AudioStorage = {
-    upload: vi.fn().mockResolvedValue('https://cdn.mingarecords.com/previews/beat-123.mp3'),
-    delete: vi.fn(),
-  };
+vi.mock('mercadopago', () => ({
+  MercadoPago: vi.fn().mockImplementation(() => ({
+    preference: {
+      create: vi.fn().mockResolvedValue({
+        body: {
+          id: 'pref-fake-123',
+          init_point: 'https://mp.com/checkout/fake-123',
+        },
+      }),
+    },
+  })),
+}));
 
-  const mockProcessor: AudioProcessor = {
-    generatePreview: vi.fn().mockResolvedValue('/tmp/preview-123.mp3'),
-    extractMetadata: vi.fn().mockResolvedValue({
-      duration: 180,
-      sampleRate: 44100,
-      channels: 2,
-      format: 'wav',
-    }),
-    validateAudio: vi.fn().mockResolvedValue(true),
-  };
+describe('PaymentsService', () => {
+  let service: PaymentsService;
 
-  const mockCatalog: CatalogClient = {
-    notifyAudioReady: vi.fn(),
-    notifyAudioDeleted: vi.fn(),
-  };
-
-  it('should upload audio and notify catalog', async () => {
-    const useCase = new UploadAudioUseCase(mockStorage, mockProcessor, mockCatalog);
-
-    const result = await useCase.execute({
-      beatId: 'beat-123',
-      audioBuffer: Buffer.from('fake-wav-data'),
-      mimeType: 'audio/wav',
-    });
-
-    expect(mockProcessor.validateAudio).toHaveBeenCalled();
-    expect(mockProcessor.generatePreview).toHaveBeenCalled();
-    expect(mockStorage.upload).toHaveBeenCalledTimes(2); // original + preview
-    expect(mockCatalog.notifyAudioReady).toHaveBeenCalledWith({
-      beatId: 'beat-123',
-      previewUrl: expect.any(String),
-      streamUrl: expect.any(String),
-    });
+  beforeEach(() => {
+    service = new PaymentsService();
+    vi.clearAllMocks();
   });
 
-  it('should reject non-audio files', async () => {
-    vi.mocked(mockProcessor.validateAudio).mockResolvedValue(false);
+  it('should create a MercadoPago preference', async () => {
+    const result = await service.createPreference({
+      beatId: 'beat-123',
+      title: 'Test Beat',
+      priceCents: 2999,
+      buyerEmail: 'buyer@minga.com',
+    });
 
-    const useCase = new UploadAudioUseCase(mockStorage, mockProcessor, mockCatalog);
-
-    await expect(
-      useCase.execute({
-        beatId: 'beat-123',
-        audioBuffer: Buffer.from('fake-data'),
-        mimeType: 'application/octet-stream',
-      }),
-    ).rejects.toThrow('El archivo no es un formato de audio válido');
+    expect(result.preferenceId).toBe('pref-fake-123');
+    expect(result.checkoutUrl).toContain('https://mp.com/checkout/');
   });
 });
 ```
 
-### Test Files de Audio
-Crear archivos de audio mínimos para tests:
+---
 
-```
-test/fixtures/audio/
-├── valid-beat-30s.wav      # WAV válido de 30 segundos (~5MB)
-├── valid-beat-3min.wav     # WAV válido de 3 minutos (~30MB)
-├── invalid-not-audio.txt   # Archivo de texto con extensión .wav
-├── too-short-5s.wav        # WAV de 5 segundos (rechazado: < 30s)
-└── too-large-200mb.wav     # Referencia (no commitear el archivo real)
-```
+## 8.7 Qué NO Testear en el MVP
+
+Esto es clave para cumplir el deadline de 1 semana:
+
+- **Contract testing / validación OpenAPI** — No aporta valor inmediato
+- **Tests de integración con R2 real** — Mock alcanza
+- **Tests de integración con MercadoPago real** — Usar sandbox si hace falta
+- **E2E tests más allá de los 3 caminos críticos** — El resto se cubre con API tests
+- **Tests de archivos de audio** — Demasiado complejo para el MVP
+- **Cobertura al 80%+** — Apuntar a ~60%, lo importante es que los caminos críticos funcionen
+- **Tests de cada endpoint CRUD** — Testear los que importan, no todos
 
 ---
 
-## 8.10 Resumen de Testing por Servicio
+## 8.8 CI Gate
 
-| Servicio | Unit Tests | Integration Tests | E2E Tests |
-|----------|-----------|-------------------|-----------|
-| Auth | Register, Login, Refresh, Profile | DB repository, HTTP routes | Register → Login → Profile |
-| Catalog | CreateBeat, ListBeats, SearchBeats | DB repository, HTTP routes, full-text search | Browse → Filter → Search |
-| Streaming | UploadAudio, GeneratePreview, StreamAudio | R2 storage (mock), ffmpeg (mock), HTTP routes | Upload → Process → Stream |
-| Payments | CreateCheckout, HandleWebhook, GenerateLicense | Stripe (mock), DB repository, HTTP routes | Checkout → Webhook → License |
-| **Total estimado** | ~120 tests | ~40 tests | ~5 tests |
+Simple y directo:
 
-### Cobertura Target
+```yaml
+# En el pipeline de CI
+- name: Run tests
+  run: pnpm test
 
-| Capa | Target MVP | Target v2 |
-|------|-----------|-----------|
-| Domain (entities, value objects) | 90%+ | 95%+ |
-| Application (use cases) | 80%+ | 90%+ |
-| Infrastructure (adapters) | 60%+ | 80%+ |
-| HTTP routes | 60%+ | 80%+ |
-| **Global** | **60%+** | **80%+** |
+- name: Type check
+  run: pnpm type-check
+```
+
+**Regla:** `pnpm test` debe pasar para hacer merge. Nada más.
+
+### Scripts en `package.json`
+
+```json
+{
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  }
+}
+```
+
+### Cobertura
+
+Apuntar a **~60%** global. No bloquear merges por cobertura en el MVP. Si hay tiempo después del launch, se sube.
 
 ---
 
-## 8.11 Data Management para Tests
+## 8.9 Resumen de Testing
 
-### Unit Tests
-- Datos inline en los tests (no fixtures externas)
-- Mocks devuelven datos predefinidos
-
-### Integration Tests
-- `beforeEach`: limpiar tablas relevantes
-- Cada test crea sus propios datos
-- `afterAll`: limpiar todo
-
-### E2E Tests
-- Seed script: `pnpm db:seed` crea datos base para E2E
-- Usuarios de prueba: `test-producer@minga.com`, `test-artist@minga.com`
-- Beats de prueba: 5 beats con diferentes géneros y precios
-- Stripe test cards: `4242424242424242` (success), `4000000000000002` (declined)
+| Capa | Cantidad | Enfoque |
+|------|----------|---------|
+| Unit | 20-30 | Validación Zod, servicios con mocks |
+| API | 10-15 | Endpoints clave con Supertest |
+| E2E | 3 | Caminos críticos (opcional) |
+| **Total** | **~35-50** | **Lo mínimo para dormir tranquilo** |
