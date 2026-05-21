@@ -13,5 +13,15 @@
   "devDependencies": {
     "turbo": "^2.3.0"
   },
-  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b653eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be"
+  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b653eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be",
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "resend": "^6.12.3",
+    "zod": "^4.4.3"
+  }
 }
