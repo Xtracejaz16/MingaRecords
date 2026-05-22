@@ -15,10 +15,19 @@ export function VerifyEmailScreen({ onGoLogin }: VerifyEmailScreenProps) {
     let cancelled = false;
 
     async function verify() {
-      // Extract token from hash: #/verify-email/<token>
+      // Extract token from URL — soporta dos formatos:
+      // 1. Hash routing: #/verify-email/<token>  (formato nuevo)
+      // 2. Query param: /verify-email?token=<token>  (formato legacy)
+      let token: string | undefined;
+
       const hash = window.location.hash;
-      const match = hash.match(/\/verify-(?:email|verificar)\/(.+)/);
-      const token = match?.[1];
+      const hashMatch = hash.match(/\/verify-(?:email|verificar)\/(.+)/);
+      token = hashMatch?.[1];
+
+      if (!token) {
+        const params = new URLSearchParams(window.location.search);
+        token = params.get('token') ?? undefined;
+      }
 
       if (!token) {
         if (!cancelled) {

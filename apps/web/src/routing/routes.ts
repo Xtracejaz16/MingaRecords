@@ -125,9 +125,14 @@ export function resolveHashRoute(hash: string): ResolvedRoute {
   });
 
   if (!route) {
+    // Strip query params for matching (ej: verify-email?token=xxx)
+    const stripped = normalized.replace(/\?.*$/, '');
     // Check parameterized routes: <key>/<param>
-    const paramMatch = normalized.match(/^(verify-email|verificar)\/(.+)$/);
-    if (paramMatch) {
+    const paramMatch = stripped.match(/^(verify-email|verificar)\/(.+)$/);
+    // Check if path starts with verify-email (with or without token)
+    const startsWithVerify = stripped === 'verify-email' || stripped === 'verificar';
+
+    if (paramMatch || startsWithVerify) {
       route = ROUTES['verify-email'];
     }
   }
