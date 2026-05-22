@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { EyeIcon, EyeOffIcon, Music2, Waves } from 'lucide-react';
 import type { AuthDraft, AuthResult, AuthTab } from '../../../domain/auth/entities/auth';
 import { BrandLogo } from '../../shared/components/BrandLogo';
@@ -25,14 +25,11 @@ export function AuthScreen({ initialTab, onBackHome, onSubmit, notice }: AuthScr
   const [feedback, setFeedback] = useState('');
   const [feedbackTone, setFeedbackTone] = useState<'success' | 'error' | 'neutral'>('neutral');
 
-  useEffect(() => {
-    setTab(initialTab);
-  }, [initialTab]);
-
-  useEffect(() => {
+  const handleTabChange = (newTab: AuthTab) => {
+    setTab(newTab);
     setFeedback('');
     setShowPassword(false);
-  }, [tab]);
+  };
 
   const handleChange = (field: keyof AuthDraft, value: string | boolean) => {
     setDraft((current) => ({
@@ -83,14 +80,14 @@ export function AuthScreen({ initialTab, onBackHome, onSubmit, notice }: AuthScr
                 <button
                   className={tab === 'login' ? 'tab-button is-active w-full font-headline text-sm font-normal uppercase tracking-widest' : 'tab-button w-full font-headline text-sm font-normal uppercase tracking-widest'}
                   type="button"
-                  onClick={() => setTab('login')}
+                  onClick={() => handleTabChange('login')}
                 >
                 Entrar
               </button>
                 <button
                   className={tab === 'register' ? 'tab-button is-active w-full font-headline text-sm font-normal uppercase tracking-widest' : 'tab-button w-full font-headline text-sm font-normal uppercase tracking-widest'}
                   type="button"
-                  onClick={() => setTab('register')}
+                  onClick={() => handleTabChange('register')}
                 >
                 Unirme a la Minga
               </button>
@@ -193,7 +190,7 @@ export function AuthScreen({ initialTab, onBackHome, onSubmit, notice }: AuthScr
                   <span className="font-body text-xs font-normal italic">Recordar mi esencia</span>
                 </label>
 
-                <button className="link-button font-body text-xs font-normal underline underline-offset-4" type="button" onClick={() => setFeedback('Recuperación todavía pendiente para la fase API.') }>
+                <button className="link-button font-body text-xs font-normal underline underline-offset-4" type="button" onClick={() => setFeedback('Recuperación todavía pendiente para la fase API.')}>
                   ¿Olvidaste tu llave?
                 </button>
               </div>
@@ -207,7 +204,7 @@ export function AuthScreen({ initialTab, onBackHome, onSubmit, notice }: AuthScr
                 <button
                   className="secondary-button primary-button--wide font-headline text-sm font-normal uppercase tracking-[0.2em]"
                   type="button"
-                  onClick={() => setTab((current) => (current === 'login' ? 'register' : 'login'))}
+                  onClick={() => handleTabChange(tab === 'login' ? 'register' : 'login')}
                 >
                   {tab === 'login' ? 'Crear cuenta' : 'Ya tengo cuenta'}
                 </button>
