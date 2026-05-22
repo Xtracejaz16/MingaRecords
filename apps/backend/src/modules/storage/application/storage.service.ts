@@ -1,3 +1,4 @@
+// apps/backend/src/modules/storage/application/storage.service.ts
 import type { StoragePort, UploadResult } from '../domain/storage.types'
 
 export class StorageService {
@@ -8,13 +9,8 @@ export class StorageService {
     beatId: string,
     userId: string
   ): Promise<UploadResult> {
-    const allowed = ['audio/mpeg', 'audio/wav', 'audio/flac']
-    if (!allowed.includes(file.mimetype)) {
-      throw new Error('INVALID_FILE_TYPE')
-    }
-    if (file.size > 50 * 1024 * 1024) {
-      throw new Error('FILE_TOO_LARGE')
-    }
+    // fileFilter en multer.config.ts ya rechazó tipos inválidos
+    // el límite de 50MB también lo maneja multer con limits.fileSize
     return this.storage.upload(file, beatId, userId)
   }
 
