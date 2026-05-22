@@ -23,6 +23,10 @@ model User {
   
   // Un usuario puede tener muchos tokens de verificación (aunque normalmente uno solo).
   verificationTokens VerificationToken[]
+  // Beats que este usuario vende.
+  sellerBeats        Beat[]              @relation("SellerBeats")
+  // Beats que este usuario compró.
+  buyerBeats         Beat[]              @relation("BuyerBeats")
 }
 // La tabla de refresh tokens. Cada fila es una sesión activa en un dispositivo.
 model RefreshToken {
@@ -44,5 +48,21 @@ model VerificationToken {
   createdAt DateTime @default(now())
   // Relación: este token pertenece a un usuario.
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+// La tabla de beats. Cada registro es un beat que un artista sube para vender.
+model Beat {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  price       Float
+  isSold      Boolean  @default(false)
+  audioUrl    String
+  coverUrl    String
+  sellerId    String
+  seller      User     @relation("SellerBeats", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyerId     String?
+  buyer       User?    @relation("BuyerBeats", fields: [buyerId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
