@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import { env } from '@/config/env.js';
 import { beatsRouter } from '@/modules/beats/route.js';
+import { authRouter } from '@/modules/auth/route.js';
 
 const app = express();
 
@@ -22,6 +23,9 @@ app.use(express.json());
 
 // cookie-parser lee las cookies del header y las pone en req.cookies
 app.use(cookieParser());
+
+// Auth API routes
+app.use('/api/v1/auth', authRouter);
 
 // Beats API routes
 app.use('/api/v1/beats', beatsRouter);
