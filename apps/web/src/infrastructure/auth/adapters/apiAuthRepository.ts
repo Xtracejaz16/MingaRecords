@@ -23,16 +23,16 @@ export class ApiAuthRepository implements AuthRepository {
   }
 
   async login(draft: AuthDraft): Promise<AuthResult> {
-    return this.authRequest('/auth/login', draft);
+    return this.authRequest('/api/v1/auth/login', draft);
   }
 
   async register(draft: AuthDraft): Promise<AuthResult> {
-    return this.authRequest('/auth/register', draft);
+    return this.authRequest('/api/v1/auth/register', draft);
   }
 
   async logout(): Promise<AuthResult> {
     try {
-      const res = await this.fetchWithAuth(`${this.baseUrl}/auth/logout`, { method: 'POST' });
+      const res = await this.fetchWithAuth(`${this.baseUrl}/api/v1/auth/logout`, { method: 'POST' });
       this.accessToken = null;
 
       if (!res.ok) {
@@ -58,7 +58,7 @@ export class ApiAuthRepository implements AuthRepository {
 
   async getCurrentUser(): Promise<AuthSession | null> {
     try {
-      const res = await this.fetchWithAuth(`${this.baseUrl}/auth/me`, { method: 'GET' });
+      const res = await this.fetchWithAuth(`${this.baseUrl}/api/v1/auth/me`, { method: 'GET' });
       if (!res.ok) return null;
       const data = await res.json();
       return this.toSession(data);
@@ -130,7 +130,7 @@ export class ApiAuthRepository implements AuthRepository {
 
   private async performRefresh(): Promise<string | null> {
     try {
-      const res = await fetch(`${this.baseUrl}/auth/refresh`, {
+      const res = await fetch(`${this.baseUrl}/api/v1/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
       });
