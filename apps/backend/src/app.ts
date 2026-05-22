@@ -4,7 +4,6 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import path from 'path';
 import { env } from '@/config/env.js';
 import { beatsRouter } from '@/modules/beats/route.js';
 
@@ -24,11 +23,8 @@ app.use(express.json());
 // cookie-parser lee las cookies del header y las pone en req.cookies
 app.use(cookieParser());
 
-// Static files — serve uploaded beats from /public
-app.use(express.static(path.join(process.cwd(), 'public')));
-
 // Beats API routes
-app.use('/api/beats', beatsRouter);
+app.use('/api/v1/beats', beatsRouter);
 
 // Ruta de salud — útil para monitoreo
 app.get('/health', (req, res) => {

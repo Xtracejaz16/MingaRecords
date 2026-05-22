@@ -1,5 +1,4 @@
 
-
 datasource db {
   provider = "postgresql"
 }
@@ -8,6 +7,22 @@ generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
 }
+
+// --- Enums ---
+
+enum BeatStatus {
+  draft
+  pending_audio
+  processing
+  ready
+  published
+  sold
+  archived
+  deleted
+}
+
+// --- Models ---
+
 // La tabla de usuarios. Cada registro es una persona que se registró.
 model User {
   id                 String              @id @default(uuid())
@@ -20,14 +35,14 @@ model User {
   updatedAt          DateTime            @updatedAt
   // Un usuario puede tener muchos refresh tokens (uno por dispositivo).
   refreshTokens      RefreshToken[]
-  
   // Un usuario puede tener muchos tokens de verificación (aunque normalmente uno solo).
   verificationTokens VerificationToken[]
-  // Beats que este usuario vende.
-  sellerBeats        Beat[]              @relation("SellerBeats")
+  // Beats que este usuario produce.
+  producedBeats      Beat[]              @relation("ProducerBeats")
   // Beats que este usuario compró.
   buyerBeats         Beat[]              @relation("BuyerBeats")
 }
+
 // La tabla de refresh tokens. Cada fila es una sesión activa en un dispositivo.
 model RefreshToken {
   id        String   @id @default(uuid())
@@ -38,6 +53,7 @@ model RefreshToken {
   // Relación: este refresh token pertenece a un usuario.
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
 // La tabla de tokens de verificación de email.
 // Se crea al registrarse y se borra cuando el usuario confirma su email.
 model VerificationToken {
@@ -49,20 +65,39 @@ model VerificationToken {
   // Relación: este token pertenece a un usuario.
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
-// La tabla de beats. Cada registro es un beat que un artista sube para vender.
-model Beat {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  price       Float
-  isSold      Boolean  @default(false)
-  audioUrl    String
-  coverUrl    String
-  sellerId    String
-  seller      User     @relation("SellerBeats", fields: [sellerId], references: [id], onDelete: Cascade)
-  buyerId     String?
-  buyer       User?    @relation("BuyerBeats", fields: [buyerId], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+// La tabla de géneros musicales.
+model Genre {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
 }
 
+// La tabla de beats. Cada registro es un beat que un productor sube para vender.
+model Beat {
+  id          String      @id @default(uuid())
+  title       String
+  slug        String      @unique
+  description String?
+  priceCents  Int
+  genre       String?
+  bpm         Int?
+  key         String?
+  tags        String[]
+  audioUrl    String?
+  coverUrl    String?
+  previewUrl  String?
+  streamUrl   String?
+  playsCount  Int         @default(0)
+  salesCount  Int         @default(0)
+  status      BeatStatus  @default(draft)
+  publishedAt DateTime?
+  deletedAt   DateTime?
+  producerId  String
+  producer    User        @relation("ProducerBeats", fields: [producerId], references: [id], onDelete: Cascade)
+  buyerId     String?
+  buyer       User?       @relation("BuyerBeats", fields: [buyerId], references: [id], onDelete: SetNull)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
