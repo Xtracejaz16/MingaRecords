@@ -54,7 +54,7 @@ function generateRandomToken(): string {
 }
 
 async function sendVerificationEmail(email: string, token: string): Promise<void> {
-    const verificationUrl = `http://localhost:5173/verify-email?token=${token}`;
+    const verificationUrl = `http://localhost:5173/#/verify-email/${token}`;
     await resend.emails.send({
         from: 'onboarding@resend.dev',
         to: email,
