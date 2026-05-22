@@ -1,7 +1,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
- import { env } from '../../../../config/env';
+import { env } from '../../../../config/env.js';
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
@@ -18,7 +18,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     
     // Asignamos el usuario decodificado a req.user (gracias a nuestro tipo global)
     req.user = decoded; 
-    
+   
     next();
   } catch (error) {
     return res.status(403).json({ message: 'Token inválido o expirado' });
