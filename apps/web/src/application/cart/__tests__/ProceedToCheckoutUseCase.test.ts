@@ -56,9 +56,10 @@ describe('ProceedToCheckoutUseCase', () => {
   it('throws NOT_ARTIST when session role is producer', () => {
     const session = {
       id: '1',
-      identifier: 'prod@minga.com',
+      email: 'prod@minga.com',
       alias: 'Productor',
       role: 'producer' as const,
+      emailVerified: false,
       createdAt: new Date().toISOString(),
     };
 
@@ -69,9 +70,10 @@ describe('ProceedToCheckoutUseCase', () => {
   it('returns success with total and clears cart for artist', () => {
     const session = {
       id: '2',
-      identifier: 'artist@minga.com',
+      email: 'artist@minga.com',
       alias: 'Artista',
       role: 'artist' as const,
+      emailVerified: false,
       createdAt: new Date().toISOString(),
     };
 

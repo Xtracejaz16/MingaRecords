@@ -15,7 +15,18 @@ import { IntercambioPage } from './ui/cart/components/IntercambioPage';
 import './index.css';
 
 function App() {
-  const { session, resolvedRoute, goHome, openAuth, handleSubmit } = useAppShell();
+  const { session, isLoading, resolvedRoute, goHome, openAuth, handleSubmit } = useAppShell();
+
+  if (isLoading) {
+    return (
+      <main className="page-shell page-shell--dashboard min-h-screen bg-obsidian font-body text-koguiCream mineral-grain flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <span className="w-2 h-2 bg-muiscaGold animate-pulse" />
+          <span className="font-headline text-sm tracking-widest text-koguiCream/60 uppercase">Cargando...</span>
+        </div>
+      </main>
+    );
+  }
 
   if (resolvedRoute.kind === 'private' && resolvedRoute.key !== 'notFound' && !session) {
     const targetLabel =
@@ -40,6 +51,17 @@ function App() {
       <PanelDeniedScreen
         onGoHome={goHome}
         onGoLogin={() => openAuth('login')}
+      />
+    );
+  }
+
+  if (resolvedRoute.key === 'marketplace' && !session) {
+    return (
+      <AuthScreen
+        initialTab="login"
+        onBackHome={goHome}
+        onSubmit={handleSubmit('marketplace')}
+        notice="Necesitás iniciar sesión para entrar al marketplace."
       />
     );
   }

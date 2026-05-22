@@ -1,16 +1,16 @@
 import type { AuthDraft, AuthTab } from '../entities/auth';
 
-export function normalizeIdentifier(value: string) {
+export function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
 export function validateDraft(mode: AuthTab, draft: AuthDraft): string | null {
-  if (!draft.identifier.trim()) {
-    return 'Ingresá un usuario o email.';
+  if (!draft.email.trim()) {
+    return 'Ingresá un email.';
   }
 
-  if (draft.identifier.trim().length < 3) {
-    return 'El identificador debe tener al menos 3 caracteres.';
+  if (draft.email.trim().length < 3) {
+    return 'El email debe tener al menos 3 caracteres.';
   }
 
   if (mode === 'register' && !draft.alias.trim()) {

@@ -1,8 +1,10 @@
-import type { AuthSession, AuthUser } from '../entities/auth';
+import type { AuthDraft, AuthResult, AuthSession } from '../entities/auth';
 
 export interface AuthRepository {
-  listUsers: () => AuthUser[];
-  saveUsers: (users: AuthUser[]) => void;
-  loadSession: () => AuthSession | null;
-  saveSession: (session: AuthSession | null) => void;
+  login(draft: AuthDraft): Promise<AuthResult>;
+  register(draft: AuthDraft): Promise<AuthResult>;
+  logout(): Promise<AuthResult>;
+  loadSession(): Promise<AuthSession | null>;
+  saveSession(session: AuthSession | null): Promise<void>;
+  getCurrentUser(): Promise<AuthSession | null>;
 }

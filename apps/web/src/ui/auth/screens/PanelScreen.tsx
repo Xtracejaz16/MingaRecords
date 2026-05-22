@@ -33,7 +33,7 @@ export function PanelScreen({ session, onGoHome, onLogout }: PanelScreenProps) {
         <aside className="home-hero__panel">
           <p className="panel-label">Sesión activa</p>
           <h2>{session.alias}</h2>
-          <p>{session.identifier}</p>
+          <p>{session.email}</p>
           <p className="panel-meta">Rol: {session.role === 'producer' ? 'Productor' : 'Artista'}</p>
         </aside>
       </section>

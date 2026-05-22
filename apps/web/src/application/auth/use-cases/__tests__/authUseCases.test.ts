@@ -1,31 +1,42 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import type { AuthDraft, AuthSession, AuthUser } from '../../../../domain/auth/entities/auth';
+import { describe, expect, it } from 'vitest';
+import type { AuthDraft, AuthResult, AuthSession } from '../../../../domain/auth/entities/auth';
 import type { AuthRepository } from '../../../../domain/auth/ports/AuthRepository';
 import { clearSession } from '../clearSession';
 import { loadSession } from '../loadSession';
 import { login } from '../login';
 import { register } from '../register';
-import { ensureDemoUsersSeeded } from '../../seedDemoUsers';
-import { DEMO_USERS } from '../../../../domain/auth/entities/auth';
 
-function createRepository(initialUsers: AuthUser[] = [], initialSession: AuthSession | null = null): AuthRepository {
-  let users = [...initialUsers];
-  let session = initialSession;
+function createRepository(options: {
+  loginResult?: AuthResult;
+  registerResult?: AuthResult;
+  session?: AuthSession | null;
+  currentUser?: AuthSession | null;
+} = {}): AuthRepository {
+  const {
+    loginResult = { ok: false, message: 'not implemented' },
+    registerResult = { ok: false, message: 'not implemented' },
+    session = null,
+    currentUser = null,
+  } = options;
+
+  let savedSession: AuthSession | null = session;
 
   return {
-    listUsers: () => users,
-    saveUsers: (nextUsers) => {
-      users = [...nextUsers];
+    login: async () => loginResult,
+    register: async () => registerResult,
+    logout: async () => {
+      return { ok: true, message: 'Sesión cerrada.' };
     },
-    loadSession: () => session,
-    saveSession: (nextSession) => {
-      session = nextSession;
+    loadSession: async () => savedSession,
+    saveSession: async (nextSession) => {
+      savedSession = nextSession;
     },
+    getCurrentUser: async () => currentUser,
   };
 }
 
 const loginDraft: AuthDraft = {
-  identifier: 'demo@mingarecords.com',
+  email: 'demo@mingarecords.com',
   password: 'minga123',
   alias: '',
   role: 'artist',
@@ -33,116 +44,150 @@ const loginDraft: AuthDraft = {
 };
 
 describe('auth use cases', () => {
-  let repository: AuthRepository;
+  describe('login', () => {
+    it('validates login fields before authentication', async () => {
+      const repo = createRepository();
+      const result = await login(repo, { ...loginDraft, email: '  ', password: '' });
 
-  beforeEach(() => {
-    repository = createRepository();
-  });
-
-  it('validates login fields before authentication', () => {
-    const result = login(repository, { ...loginDraft, identifier: '  ', password: '' });
-
-    expect(result.ok).toBe(false);
-    expect(result.message).toBe('Ingresá un usuario o email.');
-  });
-
-  it('rejects duplicate registrations', () => {
-    const result = register(repository, {
-      ...loginDraft,
-      alias: 'Nueva Minga',
-      role: 'producer',
-      password: 'abcd',
+      expect(result.ok).toBe(false);
+      expect(result.message).toBe('Ingresá un email.');
     });
 
-    expect(result.ok).toBe(false);
-    expect(result.message).toBe('Ese usuario ya existe. Probá iniciar sesión.');
-  });
-
-  it('persists remembered sessions when registering', () => {
-    const result = register(repository, {
-      identifier: 'artist@mingarecords.com',
-      password: 'abcd',
-      alias: 'Artista Minga',
-      role: 'artist',
-      remember: true,
-    });
-
-    expect(result.ok).toBe(true);
-    expect(loadSession(repository)?.alias).toBe('Artista Minga');
-  });
-
-  it('seeds exactly the two demo credentials', () => {
-    ensureDemoUsersSeeded(repository);
-
-    expect(repository.listUsers()).toHaveLength(2);
-    expect(repository.listUsers().map((user) => user.identifier).sort()).toEqual(
-      DEMO_USERS.map((user) => user.identifier).sort(),
-    );
-  });
-
-  it('keeps valid stored sessions and removes malformed ones', () => {
-    const validSession: AuthSession = {
-      id: 'producer-1',
-      identifier: DEMO_USERS[0].identifier,
-      alias: DEMO_USERS[0].alias,
-      role: 'producer',
-      createdAt: '2026-04-30T00:00:00.000Z',
-    };
-
-    repository = createRepository([
-      {
-        id: validSession.id,
-        identifier: validSession.identifier,
-        password: DEMO_USERS[0].password,
-        alias: validSession.alias,
-        role: validSession.role,
-        createdAt: validSession.createdAt,
-      },
-      {
-        id: 'artist-1',
-        identifier: DEMO_USERS[1].identifier,
-        password: DEMO_USERS[1].password,
-        alias: DEMO_USERS[1].alias,
+    it('delegates to repository.login after validation passes', async () => {
+      const session: AuthSession = {
+        id: '1',
+        email: 'demo@mingarecords.com',
+        alias: 'Kogui Demo',
         role: 'artist',
+        emailVerified: false,
         createdAt: '2026-04-30T00:00:00.000Z',
-      },
-    ], validSession);
+      };
+      const repo = createRepository({
+        loginResult: { ok: true, message: 'Sesión iniciada.', user: session },
+      });
 
-    expect(loadSession(repository)).toMatchObject(validSession);
+      const result = await login(repo, loginDraft);
 
-    repository = createRepository([], {
-      id: 'orphan',
-      identifier: 'ghost@mingarecords.com',
-      alias: 'Ghost',
-      role: 'producer',
-      createdAt: '2026-04-30T00:00:00.000Z',
+      expect(result.ok).toBe(true);
+      expect(result.user?.email).toBe('demo@mingarecords.com');
     });
 
-    expect(loadSession(repository)).toBeNull();
+    it('normalizes email before sending to repository', async () => {
+      let receivedEmail = '';
+      const repo: AuthRepository = {
+        login: async (draft) => {
+          receivedEmail = draft.email;
+          return { ok: true, message: 'ok' };
+        },
+        register: async () => ({ ok: false, message: '' }),
+        logout: async () => ({ ok: true, message: '' }),
+        loadSession: async () => null,
+        saveSession: async () => {},
+        getCurrentUser: async () => null,
+      };
 
-    repository = createRepository([], {
-      id: 'broken',
-      identifier: 'ghost@mingarecords.com',
-      alias: 'Ghost',
-      role: 'producer',
-      createdAt: '2026-04-30T00:00:00.000Z',
+      await login(repo, { ...loginDraft, email: '  Demo@MingaRecords.COM  ' });
+
+      expect(receivedEmail).toBe('demo@mingarecords.com');
     });
-
-    expect(loadSession(repository)).toBeNull();
-    expect(repository.loadSession()).toBeNull();
   });
 
-  it('clears the session on logout', () => {
-    repository = createRepository([], {
-      id: '1',
-      identifier: 'demo@mingarecords.com',
-      alias: 'Kogui Demo',
-      role: 'producer',
-      createdAt: new Date().toISOString(),
+  describe('register', () => {
+    it('validates register fields before delegation', async () => {
+      const repo = createRepository();
+      const result = await register(repo, { ...loginDraft, email: '  ', password: '' });
+
+      expect(result.ok).toBe(false);
+      expect(result.message).toBe('Ingresá un email.');
     });
 
-    clearSession(repository);
+    it('delegates to repository.register after validation passes', async () => {
+      const session: AuthSession = {
+        id: '2',
+        email: 'new@mingarecords.com',
+        alias: 'Nueva Minga',
+        role: 'producer',
+        emailVerified: false,
+        createdAt: '2026-04-30T00:00:00.000Z',
+      };
+      const repo = createRepository({
+        registerResult: { ok: true, message: 'Registro creado.', user: session },
+      });
 
-    expect(loadSession(repository)).toBeNull();
+      const result = await register(repo, {
+        ...loginDraft,
+        email: 'new@mingarecords.com',
+        alias: 'Nueva Minga',
+        role: 'producer',
+      });
+
+      expect(result.ok).toBe(true);
+      expect(result.user?.email).toBe('new@mingarecords.com');
+    });
+  });
+
+  describe('loadSession', () => {
+    it('returns null when no session is stored', async () => {
+      const repo = createRepository({ session: null });
+      const result = await loadSession(repo);
+
+      expect(result).toBeNull();
+    });
+
+    it('returns session when stored session is valid and backend confirms', async () => {
+      const session: AuthSession = {
+        id: '1',
+        email: 'demo@mingarecords.com',
+        alias: 'Kogui Demo',
+        role: 'producer',
+        emailVerified: true,
+        createdAt: '2026-04-30T00:00:00.000Z',
+      };
+      const repo = createRepository({ session, currentUser: session });
+      const result = await loadSession(repo);
+
+      expect(result).toMatchObject({ email: 'demo@mingarecords.com', role: 'producer' });
+    });
+
+    it('clears session when stored session has invalid shape', async () => {
+      const repo = createRepository({ session: { id: '1' } as unknown as AuthSession });
+      const result = await loadSession(repo);
+
+      expect(result).toBeNull();
+    });
+
+    it('clears session when backend does not confirm it', async () => {
+      const session: AuthSession = {
+        id: '1',
+        email: 'demo@mingarecords.com',
+        alias: 'Kogui Demo',
+        role: 'producer',
+        emailVerified: false,
+        createdAt: '2026-04-30T00:00:00.000Z',
+      };
+      const repo = createRepository({ session, currentUser: null });
+      const result = await loadSession(repo);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('clearSession', () => {
+    it('calls logout and clears the persisted session', async () => {
+      const session: AuthSession = {
+        id: '1',
+        email: 'demo@mingarecords.com',
+        alias: 'Kogui Demo',
+        role: 'producer',
+        emailVerified: false,
+        createdAt: new Date().toISOString(),
+      };
+      const repo = createRepository({ session });
+
+      await clearSession(repo);
+
+      const reloaded = await repo.loadSession();
+      expect(reloaded).toBeNull();
+    });
   });
 });
