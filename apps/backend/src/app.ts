@@ -5,6 +5,7 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import { env } from '@/config/env.js';
+import { beatsRouter } from '@/modules/beats/route.js';
 
 const app = express();
 
@@ -21,6 +22,9 @@ app.use(express.json());
 
 // cookie-parser lee las cookies del header y las pone en req.cookies
 app.use(cookieParser());
+
+// Beats API routes
+app.use('/api/v1/beats', beatsRouter);
 
 // Ruta de salud — útil para monitoreo
 app.get('/health', (req, res) => {
