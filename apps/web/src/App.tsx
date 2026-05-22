@@ -16,6 +16,16 @@ import { IntercambioPage } from './ui/cart/components/IntercambioPage';
 import './index.css';
 
 function App() {
+  // Detect legacy /verify-email?token=xxx paths (from old email links)
+  // and convert them to hash routing so VerifyEmailScreen can process them
+  if (
+    window.location.pathname.startsWith('/verify-email') &&
+    !window.location.hash.startsWith('#/verify-email')
+  ) {
+    const search = window.location.search;
+    window.location.hash = `/verify-email${search}`;
+  }
+
   const { session, isLoading, resolvedRoute, goHome, openAuth, handleSubmit } = useAppShell();
 
   if (isLoading) {
