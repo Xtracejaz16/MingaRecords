@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import type { AuthDraft, AuthTab } from '../../../domain/auth/entities/auth';
+import type { AuthDraft, AuthResult, AuthTab } from '../../../domain/auth/entities/auth';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { canonicalHashForRoute, resolveHashRoute, type AppRouteKey } from '../../../routing/routes';
 
 export function useAppShell() {
-  const { session, submitAuth, logout } = useAuth();
+  const { session, isLoading, submitAuth, logout } = useAuth();
   const [hash, setHash] = useState(() => window.location.hash || '#/');
 
   useEffect(() => {
@@ -39,8 +39,8 @@ export function useAppShell() {
     navigateTo(tab === 'login' ? 'login' : 'register');
   };
 
-  const handleSubmit = (nextRoute: AppRouteKey) => (mode: AuthTab, draft: AuthDraft) => {
-    const result = submitAuth(mode, draft);
+  const handleSubmit = (nextRoute: AppRouteKey) => async (mode: AuthTab, draft: AuthDraft): Promise<AuthResult> => {
+    const result = await submitAuth(mode, draft);
 
     if (result.ok && result.user) {
       const targetRoute =
@@ -55,8 +55,8 @@ export function useAppShell() {
     return result;
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigateTo('home');
   };
 
@@ -64,6 +64,7 @@ export function useAppShell() {
 
   return {
     session,
+    isLoading,
     resolvedRoute,
     navigateTo,
     goHome,
