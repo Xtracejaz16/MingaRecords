@@ -1,3 +1,9 @@
+
 import { Router } from 'express';
-export const usersRouter = Router();
-usersRouter.get('/', (req, res) => { res.json({ message: "Users OK" }); });
+
+const router = Router();
+
+router.get('/', (_req, res) => { res.json({ message: 'Users OK' }); });
+
+export { router as usersRouter };
+export default router;

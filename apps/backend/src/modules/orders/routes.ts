@@ -1,3 +1,8 @@
 import { Router } from 'express';
-export const ordersRouter = Router();
-ordersRouter.get('/', (req, res) => { res.json({ message: "Orders OK" }); });
+
+const router = Router();
+
+router.get('/', (_req, res) => { res.json({ message: 'Orders OK' }); });
+
+export { router as ordersRouter };
+export default router;
