@@ -4,7 +4,7 @@ module.exports = [
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       parser: require('@typescript-eslint/parser'),
-      parserOptions: { project: ['./tsconfig.json'] }
+      parserOptions: { project: ['./apps/backend/tsconfig.json'] }
     },
     plugins: { '@typescript-eslint': require('@typescript-eslint/eslint-plugin') },
     rules: {

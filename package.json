@@ -2,35 +2,16 @@
   "name": "mingarecords",
   "private": true,
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "lint": "eslint .",
-    "format": "prettier --write ."
+    "dev": "turbo run dev",
+    "dev:web": "pnpm --filter @mingarecords/web dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "docker:up": "docker compose -f tooling/docker-compose.yml up -d",
+    "docker:down": "docker compose -f tooling/docker-compose.yml down"
   },
   "devDependencies": {
-    "@types/bcrypt": "^6.0.0",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/morgan": "^1.9.10",
-    "@types/node": "^24.12.2",
-    "@typescript-eslint/eslint-plugin": "^8.59.4",
-    "@typescript-eslint/parser": "^8.59.4",
-    "eslint": "^9.39.4",
-    "prettier": "^3.8.3",
-    "tsx": "^4.22.3",
-    "typescript": "~5.9.3"
+    "turbo": "^2.3.0"
   },
-  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b653eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be",
-  "dependencies": {
-    "bcrypt": "^6.0.0",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.3",
-    "morgan": "^1.10.1",
-    "zod": "^4.4.3"
-  }
+  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b653eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be"
 }
