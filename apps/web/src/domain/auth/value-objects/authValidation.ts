@@ -17,8 +17,16 @@ export function validateDraft(mode: AuthTab, draft: AuthDraft): string | null {
     return 'Elegí un alias para tu proyecto.';
   }
 
-  if (draft.password.trim().length < 4) {
-    return 'La llave debe tener al menos 4 caracteres.';
+  if (draft.password.trim().length < 8) {
+    return 'La llave debe tener al menos 8 caracteres.';
+  }
+
+  if (!/[A-Z]/.test(draft.password)) {
+    return 'La llave debe tener al menos una mayúscula.';
+  }
+
+  if (!/[0-9]/.test(draft.password)) {
+    return 'La llave debe tener al menos un número.';
   }
 
   return null;
