@@ -1,13 +1,6 @@
 import { PrismaClient } from '@/generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-// --- Storage Provider Contract ---
-
-export interface StorageProvider {
-  uploadFile(buffer: Buffer, filename: string, mimetype: string): Promise<string>;
-  deleteFile(url: string): Promise<void>;
-}
-
 // --- Prisma Singleton ---
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
