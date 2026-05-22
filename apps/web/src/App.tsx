@@ -1,5 +1,6 @@
 import { useAppShell } from './ui/app/hooks/useAppShell';
 import { AuthScreen } from './ui/auth/screens/AuthScreen';
+import { VerifyEmailScreen } from './ui/auth/screens/VerifyEmailScreen';
 import { DashboardPage } from './ui/dashboard/components/DashboardPage';
 import { HomeScreen } from './ui/home/screens/HomeScreen';
 import { NotFoundScreen } from './ui/app/screens/NotFoundScreen';
@@ -101,6 +102,14 @@ function App() {
   if (resolvedRoute.key === 'configuracion') return <ConfiguracionPage />;
   if (resolvedRoute.key === 'marketplace') return <MarketplacePage />;
   if (resolvedRoute.key === 'intercambio') return <IntercambioPage />;
+
+  if (resolvedRoute.key === 'verify-email') {
+    return (
+      <VerifyEmailScreen
+        onGoLogin={() => openAuth('login')}
+      />
+    );
+  }
 
   if (resolvedRoute.key === 'login' || resolvedRoute.key === 'register') {
     return (

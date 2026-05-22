@@ -1,6 +1,6 @@
 import type { AuthTab } from '../domain/auth/entities/auth';
 
-export type AppRouteKey = 'home' | 'login' | 'register' | 'panel' | 'beats' | 'ganancias' | 'analisis' | 'actualizaciones' | 'configuracion' | 'marketplace' | 'intercambio';
+export type AppRouteKey = 'home' | 'login' | 'register' | 'verify-email' | 'panel' | 'beats' | 'ganancias' | 'analisis' | 'actualizaciones' | 'configuracion' | 'marketplace' | 'intercambio';
 export type ResolvedRouteKind = 'public' | 'private' | 'notFound';
 
 interface RouteDefinition {
@@ -38,6 +38,12 @@ const ROUTES: Record<AppRouteKey, RouteDefinition> = {
     canonicalHash: '#/ser-productor',
     aliases: ['register', 'producer', 'ser-productor'],
     authTab: 'register',
+  },
+  'verify-email': {
+    key: 'verify-email',
+    kind: 'public',
+    canonicalHash: '#/verify-email',
+    aliases: ['verificar'],
   },
   panel: {
     key: 'panel',
@@ -112,10 +118,19 @@ export function resolveHashRoute(hash: string): ResolvedRoute {
     };
   }
 
-  const route = Object.values(ROUTES).find((definition) => {
+  // Check exact match first
+  let route = Object.values(ROUTES).find((definition) => {
     const canonicalPath = definition.canonicalHash.replace(/^#/, '').replace(/^\//, '');
     return canonicalPath === normalized || definition.aliases.includes(normalized);
   });
+
+  if (!route) {
+    // Check parameterized routes: <key>/<param>
+    const paramMatch = normalized.match(/^(verify-email|verificar)\/(.+)$/);
+    if (paramMatch) {
+      route = ROUTES['verify-email'];
+    }
+  }
 
   if (!route) {
     return {
