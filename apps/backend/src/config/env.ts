@@ -1,17 +1,39 @@
-import { z } from 'zod/v4';
+import dotenv from 'dotenv';
 
-const envSchema = z.object({
-  NODE_ENV: z.string().default('development'),
-  PORT: z.coerce.number().default(3000),
-});
+dotenv.config();
 
-const parsed = envSchema.safeParse(process.env);
+const requiredEnvVars = [
+    'JWT_SECRET',
+    'DATABASE_URL',
+    'RESEND_API_KEY',
+] as const;
 
-if (!parsed.success) {
-  console.error('❌ Invalid environment variables:', parsed.error.flatten().fieldErrors);
-  process.exit(1);
+function getEnvVar(name: string): string {
+    const value = process.env[name];
+    if (!value) {
+        throw new Error(`Missing required environment variable: ${name}`);
+    }
+    return value;
 }
 
-export const env = parsed.data;
+function getEnvVarNumber(name: string, defaultValue: number): number {
+    const value = process.env[name];
+    if (!value) return defaultValue;
+    const parsed = parseInt(value, 10);
+    if (isNaN(parsed)) {
+        throw new Error(`Environment variable ${name} must be a number, got: ${value}`);
+    }
+    return parsed;
+}
 
-export type Env = z.infer<typeof envSchema>;
+for (const name of requiredEnvVars) {
+    getEnvVar(name);
+}
+
+export const env = {
+    jwtSecret: getEnvVar('JWT_SECRET'),
+    databaseUrl: getEnvVar('DATABASE_URL'),
+    resendApiKey: getEnvVar('RESEND_API_KEY'),
+    port: getEnvVarNumber('PORT', 3000),
+    isProduction: process.env.NODE_ENV === 'production',
+} as const;
