@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // apps/backend/src/modules/storage/routes.ts
 import { Router, Request, Response } from 'express'
 import { S3Adapter } from './infrastructure/s3.adapter'
@@ -68,3 +69,12 @@ storageRouter.delete(
     }
   }
 )
+=======
+import { Router } from 'express';
+
+const router = Router();
+
+// Storage routes scaffold
+
+export default router;
+>>>>>>> 7e7d908adcf8bb5b9ccd15da0c71894c2b487d16
