@@ -2,7 +2,7 @@ export type AuthTab = 'login' | 'register';
 export type AuthRole = 'artist' | 'producer';
 
 export interface AuthDraft {
-  identifier: string;
+  email: string;
   password: string;
   alias: string;
   role: AuthRole;
@@ -11,8 +11,7 @@ export interface AuthDraft {
 
 export interface AuthUser {
   id: string;
-  identifier: string;
-  password: string;
+  email: string;
   alias: string;
   role: AuthRole;
   createdAt: string;
@@ -20,9 +19,10 @@ export interface AuthUser {
 
 export interface AuthSession {
   id: string;
-  identifier: string;
+  email: string;
   alias: string;
   role: AuthRole;
+  emailVerified: boolean;
   createdAt: string;
 }
 
@@ -32,36 +32,10 @@ export interface AuthResult {
   user?: AuthSession;
 }
 
-export interface DemoCredential {
-  identifier: string;
-  password: string;
-  alias: string;
-  role: AuthRole;
-  createdAt: string;
-}
-
-export const DEMO_USERS = [
-  {
-    identifier: 'demo@mingarecords.com',
-    password: 'minga123',
-    alias: 'Kogui Demo',
-    role: 'producer',
-    createdAt: '2026-04-30T00:00:00.000Z',
-  },
-  {
-    identifier: 'artista@mingarecords.com',
-    password: 'minga123',
-    alias: 'Minga Artista',
-    role: 'artist',
-    createdAt: '2026-04-30T00:00:00.000Z',
-  },
-] as const satisfies readonly DemoCredential[];
-
-export function createUser(input: AuthDraft, normalizedIdentifier: string): AuthUser {
+export function createUser(input: AuthDraft, normalizedEmail: string): AuthUser {
   return {
     id: globalThis.crypto?.randomUUID?.() ?? `user-${Date.now()}`,
-    identifier: normalizedIdentifier,
-    password: input.password,
+    email: normalizedEmail,
     alias: input.alias.trim() || 'Minguit@ sin nombre',
     role: input.role,
     createdAt: new Date().toISOString(),
@@ -71,9 +45,10 @@ export function createUser(input: AuthDraft, normalizedIdentifier: string): Auth
 export function toSession(user: AuthUser): AuthSession {
   return {
     id: user.id,
-    identifier: user.identifier,
+    email: user.email,
     alias: user.alias,
     role: user.role,
+    emailVerified: false,
     createdAt: user.createdAt,
   };
 }
