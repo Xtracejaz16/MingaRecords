@@ -1,26 +1,35 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { clearSession as clearSessionUseCase } from '../../../application/auth/use-cases/clearSession';
 import { loadSession as loadSessionUseCase } from '../../../application/auth/use-cases/loadSession';
 import { login as loginUseCase } from '../../../application/auth/use-cases/login';
 import { register as registerUseCase } from '../../../application/auth/use-cases/register';
 import type { AuthDraft, AuthResult, AuthSession, AuthTab } from '../../../domain/auth/entities/auth';
-import { createLocalStorageAuthAdapter } from '../../../infrastructure/auth/adapters/localStorageAuthAdapter';
+import { ApiAuthRepository } from '../../../infrastructure/auth/adapters/apiAuthRepository';
 
 export function useAuth() {
-  const [repository] = useState(() => createLocalStorageAuthAdapter());
-  const [session, setSession] = useState<AuthSession | null>(() => loadSessionUseCase(repository));
+  const [repository] = useState(() => new ApiAuthRepository());
+  const [session, setSession] = useState<AuthSession | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const syncSession = () => {
-    const currentSession = loadSessionUseCase(repository);
-    setSession(currentSession);
+  useEffect(() => {
+    let cancelled = false;
 
-    return currentSession;
-  };
+    loadSessionUseCase(repository).then((loaded) => {
+      if (!cancelled) {
+        setSession(loaded);
+        setIsLoading(false);
+      }
+    });
 
-  const submitAuth = (mode: AuthTab, draft: AuthDraft): AuthResult => {
+    return () => {
+      cancelled = true;
+    };
+  }, [repository]);
+
+  const submitAuth = async (mode: AuthTab, draft: AuthDraft): Promise<AuthResult> => {
     const result = mode === 'login'
-      ? loginUseCase(repository, draft)
-      : registerUseCase(repository, draft);
+      ? await loginUseCase(repository, draft)
+      : await registerUseCase(repository, draft);
 
     if (result.ok) {
       setSession(result.user ?? null);
@@ -29,15 +38,22 @@ export function useAuth() {
     return result;
   };
 
-  const logout = () => {
-    clearSessionUseCase(repository);
+  const logout = async (): Promise<void> => {
+    await clearSessionUseCase(repository);
     setSession(null);
+  };
+
+  const loadSession = async (): Promise<AuthSession | null> => {
+    const currentSession = await loadSessionUseCase(repository);
+    setSession(currentSession);
+    return currentSession;
   };
 
   return {
     session,
+    isLoading,
     submitAuth,
     logout,
-    loadSession: syncSession,
+    loadSession,
   };
 }

@@ -6,12 +6,12 @@ import { BrandLogo } from '../../shared/components/BrandLogo';
 interface AuthScreenProps {
   initialTab: AuthTab;
   onBackHome: () => void;
-  onSubmit: (mode: AuthTab, draft: AuthDraft) => AuthResult;
+  onSubmit: (mode: AuthTab, draft: AuthDraft) => Promise<AuthResult>;
   notice?: string;
 }
 
 const emptyDraft: AuthDraft = {
-  identifier: '',
+  email: '',
   password: '',
   alias: '',
   role: 'artist',
@@ -41,9 +41,9 @@ export function AuthScreen({ initialTab, onBackHome, onSubmit, notice }: AuthScr
     }));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const result = onSubmit(tab, draft);
+    const result = await onSubmit(tab, draft);
     setFeedback(result.message);
     setFeedbackTone(result.ok ? 'success' : 'error');
 
@@ -146,13 +146,13 @@ export function AuthScreen({ initialTab, onBackHome, onSubmit, notice }: AuthScr
               ) : null}
 
               <label className="field font-headline text-[10px] font-normal uppercase tracking-widest">
-                <span>Nombre de usuario o email</span>
+                <span>Email</span>
                 <input
                   className="w-full font-body text-base font-normal placeholder:italic placeholder:opacity-30"
-                  value={draft.identifier}
-                  onChange={(event) => handleChange('identifier', event.target.value)}
-                  placeholder="Ej: guerrero_zenu"
-                  type="text"
+                  value={draft.email}
+                  onChange={(event) => handleChange('email', event.target.value)}
+                  placeholder="tu@email.com"
+                  type="email"
                 />
               </label>
 

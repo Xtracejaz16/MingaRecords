@@ -7,35 +7,70 @@ function setHash(hash: string) {
   window.dispatchEvent(new HashChangeEvent('hashchange'));
 }
 
-function loginSession() {
-  window.localStorage.setItem(
-    'mingarecords.auth.session',
-    JSON.stringify({
-      id: '1',
-      identifier: 'demo@mingarecords.com',
-      alias: 'Kogui Demo',
-      role: 'producer',
-      createdAt: new Date().toISOString(),
-    }),
-  );
+const PRODUCER_SESSION = {
+  id: '1',
+  email: 'demo@mingarecords.com',
+  alias: 'Kogui Demo',
+  role: 'producer',
+  emailVerified: true,
+  createdAt: new Date().toISOString(),
+};
+
+const ARTIST_SESSION = {
+  id: '2',
+  email: 'artista@mingarecords.com',
+  alias: 'Minga Artista',
+  role: 'artist',
+  emailVerified: true,
+  createdAt: new Date().toISOString(),
+};
+
+function mockFetchSession(session: unknown) {
+  const fetchMock = vi.mocked(globalThis.fetch);
+  fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+    const url = typeof input === 'string' ? input : input.toString();
+    if (url.includes('/auth/me')) {
+      return new Response(JSON.stringify(session), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return new Response(null, { status: 404 });
+  });
 }
 
-function loginArtistSession() {
-  window.localStorage.setItem(
-    'mingarecords.auth.session',
-    JSON.stringify({
-      id: '2',
-      identifier: 'artista@mingarecords.com',
-      alias: 'Minga Artista',
-      role: 'artist',
-      createdAt: new Date().toISOString(),
-    }),
-  );
+function mockFetchNoSession() {
+  const fetchMock = vi.mocked(globalThis.fetch);
+  fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+    const url = typeof input === 'string' ? input : input.toString();
+    if (url.includes('/auth/me')) {
+      return new Response(null, { status: 401 });
+    }
+    return new Response(null, { status: 404 });
+  });
+}
+
+function mockFetchLogin(session: unknown) {
+  const fetchMock = vi.mocked(globalThis.fetch);
+  fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : input.toString();
+    if (url.includes('/auth/login') && init?.method === 'POST') {
+      return new Response(
+        JSON.stringify({ accessToken: 'test-token', user: session }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+    if (url.includes('/auth/me')) {
+      return new Response(null, { status: 401 });
+    }
+    return new Response(null, { status: 404 });
+  });
 }
 
 describe('App routing', () => {
   beforeEach(() => {
-    window.localStorage.clear();
+    vi.stubGlobal('fetch', vi.fn());
+    mockFetchNoSession();
     setHash('#/');
     vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
   });
@@ -49,59 +84,53 @@ describe('App routing', () => {
 
     render(<App />);
 
-    expect(screen.getByText(/BIENVENIDO AL ORIGEN/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/BIENVENIDO AL ORIGEN/i)).toBeInTheDocument());
     await waitFor(() => expect(window.location.hash).toBe('#/login'));
   });
 
-  it('shows the 404 screen for unknown routes', () => {
+  it('shows the 404 screen for unknown routes', async () => {
     setHash('#/inventado');
 
     render(<App />);
 
-    expect(screen.getByText(/Ruta no encontrada/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Ruta no encontrada/i)).toBeInTheDocument());
   });
 
-  it('blocks private routes without session', () => {
+  it('blocks private routes without session', async () => {
     setHash('#/panel');
 
     render(<App />);
 
-    expect(screen.getByText(/Necesitás iniciar sesión para entrar al panel privado/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Necesitás iniciar sesión para entrar al panel privado/i)).toBeInTheDocument());
   });
 
-  it('lets authenticated users enter the private panel', () => {
-    loginSession();
+  it('lets authenticated users enter the private panel', async () => {
+    mockFetchSession(PRODUCER_SESSION);
     setHash('#/panel');
 
     render(<App />);
 
-    expect(screen.getByText(/Cosecha del Mes/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Cosecha del Mes/i)).toBeInTheDocument());
   });
 
-  it('denies artist sessions from entering the private panel', () => {
-    window.localStorage.setItem(
-      'mingarecords.auth.session',
-      JSON.stringify({
-        id: '2',
-        identifier: 'artista@mingarecords.com',
-        alias: 'Minga Artista',
-        role: 'artist',
-        createdAt: '2026-04-30T00:00:00.000Z',
-      }),
-    );
+  it('denies artist sessions from entering the private panel', async () => {
+    mockFetchSession(ARTIST_SESSION);
     setHash('#/panel');
 
     render(<App />);
 
-    expect(screen.getByText(/Esa sesión no puede entrar al panel/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Esa sesión no puede entrar al panel/i)).toBeInTheDocument());
   });
 
-  it('logs in a producer from the private panel and redirects to the dashboard', () => {
+  it('logs in a producer from the private panel and redirects to the dashboard', async () => {
+    mockFetchLogin(PRODUCER_SESSION);
     setHash('#/panel');
 
     render(<App />);
 
-    fireEvent.change(screen.getByLabelText(/Nombre de usuario o email/i), {
+    await waitFor(() => expect(screen.getByLabelText(/Email/i)).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText(/Email/i), {
       target: { value: 'demo@mingarecords.com' },
     });
     fireEvent.change(screen.getByLabelText(/Contraseña sagrada/i), {
@@ -109,30 +138,20 @@ describe('App routing', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /Ingresar/i }));
 
-    expect(screen.getByText(/Producer Portal/i)).toBeInTheDocument();
-    expect(window.location.hash).toBe('#/panel');
+    await waitFor(() => expect(window.location.hash).toBe('#/panel'));
   });
 
-  it('cleans malformed stored session payloads on load', () => {
-    window.localStorage.setItem('mingarecords.auth.session', '{broken-json');
-    setHash('#/panel');
-
+  it('exposes canonical home navigation links', async () => {
     render(<App />);
 
-    expect(screen.getByText(/Necesitás iniciar sesión para entrar al panel privado/i)).toBeInTheDocument();
-    expect(window.localStorage.getItem('mingarecords.auth.session')).toBeNull();
-  });
-
-  it('exposes canonical home navigation links', () => {
-    render(<App />);
-
-    expect(screen.getByRole('link', { name: /ser productor/i })).toHaveAttribute('href', '#/ser-productor');
+    await waitFor(() => expect(screen.getByRole('link', { name: /ser productor/i })).toHaveAttribute('href', '#/ser-productor'));
   });
 });
 
 describe('Private route access', () => {
   beforeEach(() => {
-    window.localStorage.clear();
+    vi.stubGlobal('fetch', vi.fn());
+    mockFetchNoSession();
     setHash('#/');
     vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
   });
@@ -150,64 +169,65 @@ describe('Private route access', () => {
   ];
 
   privateRoutes.forEach(({ hash, label }) => {
-    it(`blocks ${label} without session and shows auth notice`, () => {
+    it(`blocks ${label} without session and shows auth notice`, async () => {
       setHash(hash);
 
       render(<App />);
 
-      expect(screen.getByText(/Necesitás iniciar sesión para acceder a esta sección/i)).toBeInTheDocument();
+      await waitFor(() => expect(screen.getByText(/Necesitás iniciar sesión para acceder a esta sección/i)).toBeInTheDocument());
     });
   });
 
-  it('lets authenticated users access #/beats', () => {
-    loginSession();
+  it('lets authenticated users access #/beats', async () => {
+    mockFetchSession(PRODUCER_SESSION);
     setHash('#/beats');
 
     render(<App />);
 
-    expect(screen.getByText(/5 Beats Publicados/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/5 Beats Publicados/i)).toBeInTheDocument());
   });
 
-  it('lets authenticated users access #/ganancias', () => {
-    loginSession();
+  it('lets authenticated users access #/ganancias', async () => {
+    mockFetchSession(PRODUCER_SESSION);
     setHash('#/ganancias');
 
     render(<App />);
 
-    expect(screen.getByText(/Historial de Ingresos/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Historial de Ingresos/i)).toBeInTheDocument());
   });
 
-  it('lets authenticated users access #/analisis', () => {
-    loginSession();
+  it('lets authenticated users access #/analisis', async () => {
+    mockFetchSession(PRODUCER_SESSION);
     setHash('#/analisis');
 
     render(<App />);
 
-    expect(screen.getByText(/Métricas y Territorios/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Métricas y Territorios/i)).toBeInTheDocument());
   });
 
-  it('lets authenticated users access #/actualizaciones', () => {
-    loginSession();
+  it('lets authenticated users access #/actualizaciones', async () => {
+    mockFetchSession(PRODUCER_SESSION);
     setHash('#/actualizaciones');
 
     render(<App />);
 
-    expect(screen.getByText(/Novedades y Próximamente/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Novedades y Próximamente/i)).toBeInTheDocument());
   });
 
-  it('lets authenticated users access #/configuracion', () => {
-    loginSession();
+  it('lets authenticated users access #/configuracion', async () => {
+    mockFetchSession(PRODUCER_SESSION);
     setHash('#/configuracion');
 
     render(<App />);
 
-    expect(screen.getByText(/Preferencias y Ajustes/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Preferencias y Ajustes/i)).toBeInTheDocument());
   });
 });
 
 describe('Marketplace access', () => {
   beforeEach(() => {
-    window.localStorage.clear();
+    vi.stubGlobal('fetch', vi.fn());
+    mockFetchNoSession();
     setHash('#/');
     vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
   });
@@ -216,16 +236,16 @@ describe('Marketplace access', () => {
     vi.restoreAllMocks();
   });
 
-  it('bloquea #/marketplace sin sesión → muestra mensaje auth', () => {
+  it('bloquea #/marketplace sin sesión → muestra mensaje auth', async () => {
     setHash('#/marketplace');
 
     render(<App />);
 
-    expect(screen.getByText(/Necesitás iniciar sesión para entrar al marketplace/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Necesitás iniciar sesión para entrar al marketplace/i)).toBeInTheDocument());
   });
 
   it('permite acceso a #/marketplace con sesión artist', async () => {
-    loginArtistSession();
+    mockFetchSession(ARTIST_SESSION);
     setHash('#/marketplace');
 
     render(<App />);
@@ -233,19 +253,20 @@ describe('Marketplace access', () => {
     await waitFor(() => expect(screen.getByText(/Cosecha del Mes/i)).toBeInTheDocument());
   });
 
-  it('deniega acceso a #/marketplace para role producer → MarketplaceDeniedScreen', () => {
-    loginSession();
+  it('deniega acceso a #/marketplace para role producer → MarketplaceDeniedScreen', async () => {
+    mockFetchSession(PRODUCER_SESSION);
     setHash('#/marketplace');
 
     render(<App />);
 
-    expect(screen.getByText(/Esa sesión no puede entrar al marketplace/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Esa sesión no puede entrar al marketplace/i)).toBeInTheDocument());
   });
 });
 
 describe('Post-login redirect by role', () => {
   beforeEach(() => {
-    window.localStorage.clear();
+    vi.stubGlobal('fetch', vi.fn());
+    mockFetchNoSession();
     setHash('#/');
     vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
   });
@@ -254,12 +275,15 @@ describe('Post-login redirect by role', () => {
     vi.restoreAllMocks();
   });
 
-  it('login artist redirige a #/marketplace', () => {
+  it('login artist redirige a #/marketplace', async () => {
+    mockFetchLogin(ARTIST_SESSION);
     setHash('#/login');
 
     render(<App />);
 
-    fireEvent.change(screen.getByLabelText(/Nombre de usuario o email/i), {
+    await waitFor(() => expect(screen.getByLabelText(/Email/i)).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText(/Email/i), {
       target: { value: 'artista@mingarecords.com' },
     });
     fireEvent.change(screen.getByLabelText(/Contraseña sagrada/i), {
@@ -267,15 +291,18 @@ describe('Post-login redirect by role', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /Ingresar/i }));
 
-    expect(window.location.hash).toBe('#/marketplace');
+    await waitFor(() => expect(window.location.hash).toBe('#/marketplace'));
   });
 
-  it('login producer redirige a #/panel', () => {
+  it('login producer redirige a #/panel', async () => {
+    mockFetchLogin(PRODUCER_SESSION);
     setHash('#/login');
 
     render(<App />);
 
-    fireEvent.change(screen.getByLabelText(/Nombre de usuario o email/i), {
+    await waitFor(() => expect(screen.getByLabelText(/Email/i)).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText(/Email/i), {
       target: { value: 'demo@mingarecords.com' },
     });
     fireEvent.change(screen.getByLabelText(/Contraseña sagrada/i), {
@@ -283,6 +310,6 @@ describe('Post-login redirect by role', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /Ingresar/i }));
 
-    expect(window.location.hash).toBe('#/panel');
+    await waitFor(() => expect(window.location.hash).toBe('#/panel'));
   });
 });

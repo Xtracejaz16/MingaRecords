@@ -34,7 +34,12 @@ export class ApiAuthRepository implements AuthRepository {
     try {
       const res = await this.fetchWithAuth(`${this.baseUrl}/auth/logout`, { method: 'POST' });
       this.accessToken = null;
-      return this.toAuthResult(res);
+
+      if (!res.ok) {
+        return this.toAuthResult(res);
+      }
+
+      return { ok: true, message: 'Sesión cerrada.' };
     } catch {
       this.accessToken = null;
       return { ok: false, message: NETWORK_ERROR };
