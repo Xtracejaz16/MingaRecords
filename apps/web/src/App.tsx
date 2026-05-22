@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useAppShell } from './ui/app/hooks/useAppShell';
 import { AuthScreen } from './ui/auth/screens/AuthScreen';
 import { DashboardPage } from './ui/dashboard/components/DashboardPage';
@@ -16,6 +17,13 @@ import './index.css';
 
 function App() {
   const { session, resolvedRoute, goHome, openAuth, handleSubmit } = useAppShell();
+
+  useEffect(() => {
+    const search = window.location.search;
+    if (search.includes('?')) {
+      window.location.hash = `/verify-email${search}`;
+    }
+  }, []);
 
   if (resolvedRoute.kind === 'private' && resolvedRoute.key !== 'notFound' && !session) {
     const targetLabel =
