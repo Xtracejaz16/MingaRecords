@@ -78,7 +78,7 @@ export async function rotateRefreshToken(
 
 export async function createVerificationToken(
     data: {
-        token: string;
+        tokenHash: string;
         userId: string;
         expiresAt: Date;
     }
@@ -86,15 +86,37 @@ export async function createVerificationToken(
     await prisma.verificationToken.create({ data });
 }
 
-export async function getVerificationToken(token: string): Promise<VerificationToken | null> {
+export async function getVerificationTokenByHash(tokenHash: string): Promise<VerificationToken | null> {
     const verificationToken = await prisma.verificationToken.findUnique({
-        where: { token },
+        where: { tokenHash },
     });
     return verificationToken;
 }
 
-export async function deleteVerificationToken(token: string): Promise<void> {
+export async function deleteVerificationTokenByHash(tokenHash: string): Promise<void> {
     await prisma.verificationToken.delete({
-        where: { token },
+        where: { tokenHash },
     });
+}
+
+export async function deleteVerificationTokensByUserId(userId: string): Promise<void> {
+    await prisma.verificationToken.deleteMany({
+        where: { userId },
+    });
+}
+
+export async function markEmailVerifiedAndMarkTokenUsed(
+    userId: string,
+    tokenId: string
+): Promise<void> {
+    await prisma.$transaction([
+        prisma.user.update({
+            where: { id: userId },
+            data: { emailVerified: true },
+        }),
+        prisma.verificationToken.update({
+            where: { id: tokenId },
+            data: { usedAt: new Date() },
+        }),
+    ]);
 }

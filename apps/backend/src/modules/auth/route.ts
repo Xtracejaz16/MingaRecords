@@ -5,17 +5,20 @@ import {
     logoutUser,
     refreshAccessToken,
     verifyEmail,
+    resendVerificationEmail,
     getMe,
 } from './service.js';
 import {
     RegisterInputSchema,
     LoginInputSchema,
+    ResendVerificationSchema,
 } from './types.js';
 import type { AuthenticatedRequest } from './types.js';
 import type { Request, Response, NextFunction } from 'express';
 import { requireAuth } from '@/shared/middleware/auth.js';
 import { env } from '@/config/env.js';
 import { Prisma } from '../../generated/prisma/client.js';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 const refreshTokenCookieOptions = {
     httpOnly: true,
@@ -25,9 +28,39 @@ const refreshTokenCookieOptions = {
     path: '/api/v1/auth',
 };
 
+// Rate limiters per endpoint
+const registerLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 5,
+    message: { error: 'RATE_LIMITED', message: 'Too many registration attempts' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const loginLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 15,
+    message: { error: 'RATE_LIMITED', message: 'Too many login attempts' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const resendVerificationLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 1,
+    keyGenerator: (req) => {
+        const email = req.body?.email ?? 'unknown';
+        const ip = ipKeyGenerator(req.ip ?? 'unknown');
+        return `${email}:${ip}`;
+    },
+    message: { error: 'RATE_LIMITED', message: 'Please wait before requesting another email' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 const router = Router();
 
-router.post('/register', async (req, res) => {
+router.post('/register', registerLimiter, async (req, res) => {
     try {
         const input = RegisterInputSchema.parse(req.body);
         const result = await registerUser(input);
@@ -38,7 +71,7 @@ router.post('/register', async (req, res) => {
     }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
     try {
         const input = LoginInputSchema.parse(req.body);
         const result = await loginUser(input);
@@ -87,6 +120,17 @@ router.get('/verify-email', async (req, res) => {
         }
         const result = await verifyEmail(token);
         res.status(200).json(result);
+    } catch (error) {
+        handleAuthError(error, res);
+    }
+});
+
+router.post('/resend-verification', resendVerificationLimiter, async (req, res) => {
+    try {
+        const input = ResendVerificationSchema.parse(req.body);
+        await resendVerificationEmail(input.email);
+        // Always return success to not reveal if user exists
+        res.status(200).json({ message: 'Si el email existe, se envió un nuevo link de verificación' });
     } catch (error) {
         handleAuthError(error, res);
     }
@@ -159,8 +203,10 @@ function handleAuthError(error: unknown, res: Response): void {
             res.status(403).json({ error: 'EMAIL_NOT_VERIFIED', message: 'Verificá tu email antes de iniciar sesión' });
             break;
         case 'INVALID_TOKEN':
+            res.status(401).json({ error: 'INVALID_TOKEN', message: 'Token inválido' });
+            break;
         case 'TOKEN_EXPIRED':
-            res.status(401).json({ error: 'INVALID_TOKEN', message: 'Token inválido o expirado' });
+            res.status(401).json({ error: 'TOKEN_EXPIRED', message: 'El token de verificación expiró' });
             break;
         case 'USER_NOT_FOUND':
             res.status(404).json({ error: 'USER_NOT_FOUND', message: 'Usuario no encontrado' });
