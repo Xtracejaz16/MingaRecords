@@ -55,15 +55,17 @@ model RefreshToken {
 }
 
 // La tabla de tokens de verificación de email.
-// Se crea al registrarse y se borra cuando el usuario confirma su email.
+// Se crea al registrarse. Se marca como usado (usedAt) cuando el usuario confirma su email.
+// El token se guarda hasheado (SHA-256) por seguridad.
 model VerificationToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  id         String    @id @default(uuid())
+  tokenHash  String    @unique
+  userId     String
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  usedAt     DateTime?
   // Relación: este token pertenece a un usuario.
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // La tabla de géneros musicales.

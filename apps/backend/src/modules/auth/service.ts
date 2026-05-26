@@ -12,27 +12,30 @@ import {
     createUser,
     getUserByEmail,
     getUserById,
-    markEmailVerified,
     createRefreshToken,
     getRefreshToken,
     deleteRefreshToken,
     rotateRefreshToken,
     createVerificationToken,
-    getVerificationToken,
-    deleteVerificationToken,
+    getVerificationTokenByHash,
+    deleteVerificationTokensByUserId,
+    markEmailVerifiedAndMarkTokenUsed,
 } from './repository.js';
 
 import bcrypt from 'bcryptjs';
 
 import jwt from 'jsonwebtoken';
 
-import { randomUUID } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
 
 import { Resend } from 'resend';
 
 import { env } from '@/config/env.js';
 
+import { ResendNotificationAdapter } from '@/modules/notification/index.js';
+
 const resend = new Resend(env.resendApiKey);
+const notificationPort = new ResendNotificationAdapter(resend, env.resendSenderEmail);
 
 async function hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, 10);
@@ -49,23 +52,12 @@ function signAccessToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
     });
 }
 
-function generateRandomToken(): string {
-    return randomUUID();
+function generateToken(): string {
+    return randomBytes(32).toString('hex');
 }
 
-async function sendVerificationEmail(email: string, token: string): Promise<void> {
-    const verificationUrl = `http://localhost:5173/#/verify-email/${token}`;
-    await resend.emails.send({
-        from: 'onboarding@resend.dev',
-        to: email,
-        subject: 'Verificá tu cuenta de Minga Records',
-        html: `
-            <h1>¡Bienvenido a Minga Records!</h1>
-            <p>Hacé click en el siguiente link para verificar tu cuenta:</p>
-            <a href="${verificationUrl}">Verificar mi cuenta</a>
-            <p>Este link expira en 24 horas.</p>
-        `,
-    });
+function hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
 }
 
 function addDays(date: Date, days: number): Date {
@@ -94,7 +86,7 @@ export async function registerUser(input: RegisterInput): Promise<AuthResponse> 
         email: user.email,
         role: user.role,
     });
-    const refreshTokenValue = generateRandomToken();
+    const refreshTokenValue = generateToken();
 
     await createRefreshToken({
         token: refreshTokenValue,
@@ -102,14 +94,29 @@ export async function registerUser(input: RegisterInput): Promise<AuthResponse> 
         expiresAt: addDays(new Date(), 7),
     });
 
-    const verificationTokenValue = generateRandomToken();
+    // Invalidate any existing tokens before creating new one
+    await deleteVerificationTokensByUserId(user.id);
+
+    const verificationToken = generateToken();
+    const verificationTokenHash = hashToken(verificationToken);
+
     await createVerificationToken({
-        token: verificationTokenValue,
+        tokenHash: verificationTokenHash,
         userId: user.id,
         expiresAt: addDays(new Date(), 1),
     });
 
-    await sendVerificationEmail(user.email, verificationTokenValue);
+    // Send verification email - if it fails, log but don't block registration
+    try {
+        const verificationUrl = `${env.frontendUrl}/#/verify-email?token=${verificationToken}`;
+        await notificationPort.sendVerificationEmail({
+            to: user.email,
+            verificationUrl,
+        });
+    } catch (err) {
+        console.error('Failed to send verification email during registration:', err);
+        // User is still created - frontend will show "Account created but we couldn't send the email"
+    }
 
     return {
         accessToken,
@@ -119,6 +126,7 @@ export async function registerUser(input: RegisterInput): Promise<AuthResponse> 
             email: user.email,
             alias: user.alias,
             role: user.role,
+            emailVerified: user.emailVerified,
         },
     };
 }
@@ -143,7 +151,7 @@ export async function loginUser(input: LoginInput): Promise<AuthResponse> {
         email: user.email,
         role: user.role,
     });
-    const refreshTokenValue = generateRandomToken();
+    const refreshTokenValue = generateToken();
 
     await createRefreshToken({
         token: refreshTokenValue,
@@ -159,6 +167,7 @@ export async function loginUser(input: LoginInput): Promise<AuthResponse> {
             email: user.email,
             alias: user.alias,
             role: user.role,
+            emailVerified: user.emailVerified,
         },
     };
 }
@@ -187,7 +196,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<{ access
         email: user.email,
         role: user.role,
     });
-    const newRefreshTokenValue = generateRandomToken();
+    const newRefreshTokenValue = generateToken();
 
     await rotateRefreshToken(refreshToken, {
         token: newRefreshTokenValue,
@@ -199,7 +208,9 @@ export async function refreshAccessToken(refreshToken: string): Promise<{ access
 }
 
 export async function verifyEmail(token: string): Promise<VerifyEmailResponse> {
-    const verificationToken = await getVerificationToken(token);
+    const hashedToken = hashToken(token);
+    const verificationToken = await getVerificationTokenByHash(hashedToken);
+
     if (!verificationToken) {
         throw new Error('INVALID_TOKEN');
     }
@@ -208,10 +219,56 @@ export async function verifyEmail(token: string): Promise<VerifyEmailResponse> {
         throw new Error('TOKEN_EXPIRED');
     }
 
-    await markEmailVerified(verificationToken.userId);
+    // Idempotency: if user already verified, return success
+    const user = await getUserById(verificationToken.userId);
+    if (user?.emailVerified) {
+        return { status: 'ALREADY_VERIFIED', message: 'Email ya verificado exitosamente' };
+    }
 
-    await deleteVerificationToken(token);
-    return { message: 'Email verificado exitosamente' };
+    // Used token with unverified user = inconsistent state
+    if (verificationToken.usedAt) {
+        throw new Error('INVALID_TOKEN');
+    }
+
+    // Atomic operation: mark verified + mark token used
+    await markEmailVerifiedAndMarkTokenUsed(verificationToken.userId, verificationToken.id);
+
+    return { status: 'VERIFIED', message: 'Email verificado exitosamente' };
+}
+
+export async function resendVerificationEmail(email: string): Promise<void> {
+    const user = await getUserByEmail(email);
+
+    // Don't reveal if user exists or not
+    if (!user) {
+        return;
+    }
+
+    if (user.emailVerified) {
+        return;
+    }
+
+    // Invalidate any existing tokens
+    await deleteVerificationTokensByUserId(user.id);
+
+    const verificationToken = generateToken();
+    const verificationTokenHash = hashToken(verificationToken);
+
+    await createVerificationToken({
+        tokenHash: verificationTokenHash,
+        userId: user.id,
+        expiresAt: addDays(new Date(), 1),
+    });
+
+    const verificationUrl = `${env.frontendUrl}/#/verify-email?token=${verificationToken}`;
+    try {
+        await notificationPort.sendVerificationEmail({
+            to: user.email,
+            verificationUrl,
+        });
+    } catch (err) {
+        console.error('Failed to resend verification email:', err);
+    }
 }
 
 export async function getMe(userId: string): Promise<MeResponse> {

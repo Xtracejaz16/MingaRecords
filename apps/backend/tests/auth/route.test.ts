@@ -8,6 +8,7 @@ vi.mock('@/modules/auth/service.js', () => ({
     logoutUser: vi.fn(),
     refreshAccessToken: vi.fn(),
     verifyEmail: vi.fn(),
+    resendVerificationEmail: vi.fn(),
     getMe: vi.fn(),
 }));
 
@@ -17,7 +18,11 @@ vi.mock('@/config/env.js', () => ({
         jwtSecret: 'test-secret',
         databaseUrl: 'postgresql://test',
         resendApiKey: 'test-key',
-        port: 3000,
+        frontendUrl: 'http://localhost:5173',
+        resendSenderEmail: 'onboarding@resend.dev',
+        apiUrl: 'http://localhost:3001',
+        corsOrigin: 'http://localhost:5173',
+        port: 3001,
         isProduction: false,
     },
 }));
@@ -46,6 +51,11 @@ vi.mock('../../generated/prisma/client.js', () => ({
     },
 }));
 
+// Mock express-rate-limit to pass through
+vi.mock('express-rate-limit', () => ({
+    default: vi.fn().mockReturnValue((_req: any, _res: any, next: any) => next()),
+}));
+
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import {
@@ -54,6 +64,7 @@ import {
     logoutUser,
     refreshAccessToken,
     verifyEmail,
+    resendVerificationEmail,
     getMe,
 } from '@/modules/auth/service.js';
 import { authRouter } from '@/modules/auth/route.js';
@@ -212,14 +223,26 @@ describe('GET /api/v1/auth/me', () => {
 
 describe('GET /api/v1/auth/verify-email', () => {
     it('should verify email successfully', async () => {
-        vi.mocked(verifyEmail).mockResolvedValue({ message: 'Email verificado exitosamente' });
+        vi.mocked(verifyEmail).mockResolvedValue({ status: 'VERIFIED', message: 'Email verificado exitosamente' });
 
         const res = await request(app)
             .get('/api/v1/auth/verify-email')
             .query({ token: 'valid-token' });
 
         expect(res.status).toBe(200);
+        expect(res.body.status).toBe('VERIFIED');
         expect(res.body.message).toBe('Email verificado exitosamente');
+    });
+
+    it('should return already verified status', async () => {
+        vi.mocked(verifyEmail).mockResolvedValue({ status: 'ALREADY_VERIFIED', message: 'Email ya verificado exitosamente' });
+
+        const res = await request(app)
+            .get('/api/v1/auth/verify-email')
+            .query({ token: 'valid-token' });
+
+        expect(res.status).toBe(200);
+        expect(res.body.status).toBe('ALREADY_VERIFIED');
     });
 
     it('should return 400 if no token provided', async () => {
@@ -238,6 +261,50 @@ describe('GET /api/v1/auth/verify-email', () => {
 
         expect(res.status).toBe(401);
         expect(res.body.error).toBe('INVALID_TOKEN');
+    });
+
+    it('should return 401 on TOKEN_EXPIRED', async () => {
+        vi.mocked(verifyEmail).mockRejectedValue(new Error('TOKEN_EXPIRED'));
+
+        const res = await request(app)
+            .get('/api/v1/auth/verify-email')
+            .query({ token: 'expired-token' });
+
+        expect(res.status).toBe(401);
+        expect(res.body.error).toBe('TOKEN_EXPIRED');
+    });
+});
+
+describe('POST /api/v1/auth/resend-verification', () => {
+    it('should resend verification email successfully', async () => {
+        vi.mocked(resendVerificationEmail).mockResolvedValue(undefined);
+
+        const res = await request(app)
+            .post('/api/v1/auth/resend-verification')
+            .send({ email: 'test@example.com' });
+
+        expect(res.status).toBe(200);
+        expect(res.body.message).toBeDefined();
+        expect(resendVerificationEmail).toHaveBeenCalledWith('test@example.com');
+    });
+
+    it('should return 400 on invalid email', async () => {
+        const res = await request(app)
+            .post('/api/v1/auth/resend-verification')
+            .send({ email: 'not-an-email' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toBe('VALIDATION_ERROR');
+    });
+
+    it('should return success even if user does not exist', async () => {
+        vi.mocked(resendVerificationEmail).mockResolvedValue(undefined);
+
+        const res = await request(app)
+            .post('/api/v1/auth/resend-verification')
+            .send({ email: 'unknown@example.com' });
+
+        expect(res.status).toBe(200);
     });
 });
 
