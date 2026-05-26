@@ -34,7 +34,7 @@ export function useAppShell() {
     }
 
     window.location.hash = resolvedRoute.canonicalHash;
-  }, [resolvedRoute.canonicalHash, resolvedRoute.kind]);
+  }, [resolvedRoute.canonicalHash, resolvedRoute.kind, resolvedRoute.key]);
 
   const navigateTo = (target: AppRouteKey) => {
     window.location.hash = canonicalHashForRoute(target);

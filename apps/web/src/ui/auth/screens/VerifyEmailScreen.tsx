@@ -122,7 +122,6 @@ export function VerifyEmailScreen({ onGoLogin, email, onVerified }: VerifyEmailS
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, loadSession]);
 
   // Resend handler
