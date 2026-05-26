@@ -55,5 +55,6 @@ export function useAuth() {
     submitAuth,
     logout,
     loadSession,
+    repository,
   };
 }

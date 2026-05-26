@@ -1,5 +1,6 @@
 import { useAppShell } from './ui/app/hooks/useAppShell';
 import { AuthScreen } from './ui/auth/screens/AuthScreen';
+import { VerifyEmailScreen } from './ui/auth/screens/VerifyEmailScreen';
 import { DashboardPage } from './ui/dashboard/components/DashboardPage';
 import { HomeScreen } from './ui/home/screens/HomeScreen';
 import { NotFoundScreen } from './ui/app/screens/NotFoundScreen';
@@ -13,9 +14,23 @@ import { ConfiguracionPage } from './ui/configuracion/components/ConfiguracionPa
 import { MarketplacePage } from './ui/marketplace/pages/MarketplacePage';
 import { IntercambioPage } from './ui/cart/components/IntercambioPage';
 import './index.css';
+import { useEffect } from 'react';
 
 function App() {
-  const { session, isLoading, resolvedRoute, goHome, openAuth, handleSubmit } = useAppShell();
+  // Detect legacy /verify-email?token=xxx paths (from old email links)
+  // and convert them to hash routing so VerifyEmailScreen can process them
+  // Uses hash assignment (no reload) so useAppShell can pick it up via hashchange
+  useEffect(() => {
+    if (
+      window.location.pathname.startsWith('/verify-email') &&
+      !window.location.hash.startsWith('#/verify-email')
+    ) {
+      const search = window.location.search;
+      window.location.hash = `/verify-email${search}`;
+    }
+  }, []);
+
+  const { session, isLoading, resolvedRoute, goHome, openAuth, handleSubmit, navigateTo } = useAppShell();
 
   if (isLoading) {
     return (
@@ -25,6 +40,20 @@ function App() {
           <span className="font-headline text-sm tracking-widest text-koguiCream/60 uppercase">Cargando...</span>
         </div>
       </main>
+    );
+  }
+
+  const isVerified = session?.emailVerified === true;
+  const allowedUnverified: string[] = ['home', 'login', 'register', 'verify-email'];
+
+  // Gate: logged in but email not verified → force verify-email screen
+  if (session && !isVerified && !allowedUnverified.includes(resolvedRoute.key)) {
+    return (
+      <VerifyEmailScreen
+        email={session.email}
+        onGoLogin={() => openAuth('login')}
+        onVerified={(role) => navigateTo(role === 'artist' ? 'marketplace' : 'panel')}
+      />
     );
   }
 
@@ -51,6 +80,17 @@ function App() {
       <PanelDeniedScreen
         onGoHome={goHome}
         onGoLogin={() => openAuth('login')}
+      />
+    );
+  }
+
+  // Gate: marketplace requires verified email
+  if (resolvedRoute.key === 'marketplace' && session && !isVerified) {
+    return (
+      <VerifyEmailScreen
+        email={session.email}
+        onGoLogin={() => openAuth('login')}
+        onVerified={(role) => navigateTo(role === 'artist' ? 'marketplace' : 'panel')}
       />
     );
   }
@@ -101,6 +141,16 @@ function App() {
   if (resolvedRoute.key === 'configuracion') return <ConfiguracionPage />;
   if (resolvedRoute.key === 'marketplace') return <MarketplacePage />;
   if (resolvedRoute.key === 'intercambio') return <IntercambioPage />;
+
+  if (resolvedRoute.key === 'verify-email') {
+    return (
+      <VerifyEmailScreen
+        email={session?.email}
+        onGoLogin={() => openAuth('login')}
+        onVerified={(role) => navigateTo(role === 'artist' ? 'marketplace' : 'panel')}
+      />
+    );
+  }
 
   if (resolvedRoute.key === 'login' || resolvedRoute.key === 'register') {
     return (

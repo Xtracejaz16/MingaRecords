@@ -5,16 +5,19 @@ import { clearSession } from '../clearSession';
 import { loadSession } from '../loadSession';
 import { login } from '../login';
 import { register } from '../register';
+import { resendVerificationEmail } from '../resendVerificationEmail';
 
 function createRepository(options: {
   loginResult?: AuthResult;
   registerResult?: AuthResult;
+  resendResult?: AuthResult;
   session?: AuthSession | null;
   currentUser?: AuthSession | null;
 } = {}): AuthRepository {
   const {
     loginResult = { ok: false, message: 'not implemented' },
     registerResult = { ok: false, message: 'not implemented' },
+    resendResult = { ok: false, message: 'not implemented' },
     session = null,
     currentUser = null,
   } = options;
@@ -32,6 +35,7 @@ function createRepository(options: {
       savedSession = nextSession;
     },
     getCurrentUser: async () => currentUser,
+    resendVerificationEmail: async () => resendResult,
   };
 }
 
@@ -84,6 +88,7 @@ describe('auth use cases', () => {
         loadSession: async () => null,
         saveSession: async () => {},
         getCurrentUser: async () => null,
+        resendVerificationEmail: async () => ({ ok: false, message: '' }),
       };
 
       await login(repo, { ...loginDraft, email: '  Demo@MingaRecords.COM  ' });
@@ -188,6 +193,41 @@ describe('auth use cases', () => {
 
       const reloaded = await repo.loadSession();
       expect(reloaded).toBeNull();
+    });
+  });
+
+  describe('resendVerificationEmail', () => {
+    it('delegates to repository.resendVerificationEmail with the provided email', async () => {
+      let receivedEmail = '';
+      const repo: AuthRepository = {
+        login: async () => ({ ok: false, message: '' }),
+        register: async () => ({ ok: false, message: '' }),
+        logout: async () => ({ ok: true, message: '' }),
+        loadSession: async () => null,
+        saveSession: async () => {},
+        getCurrentUser: async () => null,
+        resendVerificationEmail: async (email) => {
+          receivedEmail = email;
+          return { ok: true, message: 'Email enviado.' };
+        },
+      };
+
+      const result = await resendVerificationEmail(repo, 'user@mingarecords.com');
+
+      expect(receivedEmail).toBe('user@mingarecords.com');
+      expect(result.ok).toBe(true);
+      expect(result.message).toBe('Email enviado.');
+    });
+
+    it('returns failure result from repository', async () => {
+      const repo = createRepository({
+        resendResult: { ok: false, message: 'Rate limit excedido.' },
+      });
+
+      const result = await resendVerificationEmail(repo, 'user@mingarecords.com');
+
+      expect(result.ok).toBe(false);
+      expect(result.message).toBe('Rate limit excedido.');
     });
   });
 });

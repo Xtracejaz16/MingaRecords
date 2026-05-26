@@ -67,6 +67,23 @@ function mockFetchLogin(session: unknown) {
   });
 }
 
+function mockFetchRegister(session: unknown) {
+  const fetchMock = vi.mocked(globalThis.fetch);
+  fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : input.toString();
+    if (url.includes('/api/v1/auth/register') && init?.method === 'POST') {
+      return new Response(
+        JSON.stringify({ accessToken: 'test-token', user: session }),
+        { status: 201, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+    if (url.includes('/api/v1/auth/me')) {
+      return new Response(null, { status: 401 });
+    }
+    return new Response(null, { status: 404 });
+  });
+}
+
 describe('App routing', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
@@ -311,5 +328,136 @@ describe('Post-login redirect by role', () => {
     fireEvent.click(screen.getByRole('button', { name: /Ingresar/i }));
 
     await waitFor(() => expect(window.location.hash).toBe('#/panel'));
+  });
+});
+
+describe('Post-register redirect to verify-email', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+    mockFetchNoSession();
+    setHash('#/');
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const UNVERIFIED_SESSION = {
+    id: '3',
+    email: 'new@mingarecords.com',
+    alias: 'Nuevo Minga',
+    role: 'artist',
+    emailVerified: false,
+    createdAt: new Date().toISOString(),
+  };
+
+  it('register artist redirige a #/verify-email', async () => {
+    mockFetchRegister(UNVERIFIED_SESSION);
+    setHash('#/register');
+
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByLabelText(/Email/i)).toBeInTheDocument());
+
+    // Select artist role (default, but ensure it's selected)
+    fireEvent.click(screen.getByLabelText(/Artista/i));
+
+    fireEvent.change(screen.getByLabelText(/Email/i), {
+      target: { value: 'new@mingarecords.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/Contraseña sagrada/i), {
+      target: { value: 'Minga123' },
+    });
+    fireEvent.change(screen.getByLabelText(/Alias/i), {
+      target: { value: 'Nuevo Minga' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Registrarme/i }));
+
+    await waitFor(() => expect(window.location.hash).toBe('#/verify-email'));
+  });
+
+  it('register producer redirige a #/verify-email', async () => {
+    const unverifiedProducer = { ...UNVERIFIED_SESSION, role: 'producer' };
+    mockFetchRegister(unverifiedProducer);
+    setHash('#/register');
+
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByLabelText(/Email/i)).toBeInTheDocument());
+
+    // Select producer role
+    fireEvent.click(screen.getByLabelText(/Productor/i));
+
+    fireEvent.change(screen.getByLabelText(/Email/i), {
+      target: { value: 'new@mingarecords.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/Contraseña sagrada/i), {
+      target: { value: 'Minga123' },
+    });
+    fireEvent.change(screen.getByLabelText(/Alias/i), {
+      target: { value: 'Nuevo Minga' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Registrarme/i }));
+
+    await waitFor(() => expect(window.location.hash).toBe('#/verify-email'));
+  });
+});
+
+describe('Email verified gate', () => {
+  const UNVERIFIED_SESSION = {
+    id: '3',
+    email: 'new@mingarecords.com',
+    alias: 'Nuevo Minga',
+    role: 'artist',
+    emailVerified: false,
+    createdAt: new Date().toISOString(),
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+    mockFetchNoSession();
+    setHash('#/');
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('blocks private routes when emailVerified is false', async () => {
+    mockFetchSession(UNVERIFIED_SESSION);
+    setHash('#/panel');
+
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByText(/Revisá tu email/i)).toBeInTheDocument());
+  });
+
+  it('blocks marketplace when emailVerified is false', async () => {
+    mockFetchSession(UNVERIFIED_SESSION);
+    setHash('#/marketplace');
+
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByText(/Revisá tu email/i)).toBeInTheDocument());
+  });
+
+  it('allows access to private routes when emailVerified is true', async () => {
+    mockFetchSession(PRODUCER_SESSION);
+    setHash('#/panel');
+
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByText(/Cosecha del Mes/i)).toBeInTheDocument());
+  });
+
+  it('allows access to marketplace when emailVerified is true', async () => {
+    mockFetchSession(ARTIST_SESSION);
+    setHash('#/marketplace');
+
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByText(/Cosecha del Mes/i)).toBeInTheDocument());
   });
 });
