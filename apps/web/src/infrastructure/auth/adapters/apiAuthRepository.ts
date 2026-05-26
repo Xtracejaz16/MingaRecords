@@ -19,7 +19,7 @@ export class ApiAuthRepository implements AuthRepository {
   private readonly baseUrl: string;
 
   constructor() {
-    this.baseUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000';
+    this.baseUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001';
   }
 
   async login(draft: AuthDraft): Promise<AuthResult> {
@@ -64,6 +64,24 @@ export class ApiAuthRepository implements AuthRepository {
       return this.toSession(data);
     } catch {
       return null;
+    }
+  }
+
+  async resendVerificationEmail(email: string): Promise<AuthResult> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/v1/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!res.ok) {
+        return this.toAuthResult(res);
+      }
+
+      return { ok: true, message: 'Si el email existe, se envió un nuevo link de verificación.' };
+    } catch {
+      return { ok: false, message: NETWORK_ERROR };
     }
   }
 
