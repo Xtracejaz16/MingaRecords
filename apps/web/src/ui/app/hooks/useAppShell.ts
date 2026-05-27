@@ -25,10 +25,16 @@ export function useAppShell() {
       return;
     }
 
-    if (window.location.hash !== resolvedRoute.canonicalHash) {
-      window.location.hash = resolvedRoute.canonicalHash;
+    // If the current hash already resolves to the same route key, skip
+    // normalization so we preserve path/query params that routes like
+    // verify-email/<token> depend on.
+    const currentResolved = resolveHashRoute(window.location.hash);
+    if (currentResolved.key === resolvedRoute.key) {
+      return;
     }
-  }, [resolvedRoute.canonicalHash, resolvedRoute.kind]);
+
+    window.location.hash = resolvedRoute.canonicalHash;
+  }, [resolvedRoute.canonicalHash, resolvedRoute.kind, resolvedRoute.key]);
 
   const navigateTo = (target: AppRouteKey) => {
     window.location.hash = canonicalHashForRoute(target);
@@ -43,13 +49,17 @@ export function useAppShell() {
     const result = await submitAuth(mode, draft);
 
     if (result.ok && result.user) {
-      const targetRoute =
-        result.user.role === 'artist'
-          ? 'marketplace'
-          : result.user.role === 'producer'
-            ? 'panel'
-            : nextRoute;
-      navigateTo(targetRoute);
+      if (mode === 'register') {
+        navigateTo('verify-email');
+      } else {
+        const targetRoute =
+          result.user.role === 'artist'
+            ? 'marketplace'
+            : result.user.role === 'producer'
+              ? 'panel'
+              : nextRoute;
+        navigateTo(targetRoute);
+      }
     }
 
     return result;

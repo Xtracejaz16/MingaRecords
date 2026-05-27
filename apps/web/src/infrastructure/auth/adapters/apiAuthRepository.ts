@@ -19,20 +19,20 @@ export class ApiAuthRepository implements AuthRepository {
   private readonly baseUrl: string;
 
   constructor() {
-    this.baseUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000';
+    this.baseUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001';
   }
 
   async login(draft: AuthDraft): Promise<AuthResult> {
-    return this.authRequest('/auth/login', draft);
+    return this.authRequest('/api/v1/auth/login', draft);
   }
 
   async register(draft: AuthDraft): Promise<AuthResult> {
-    return this.authRequest('/auth/register', draft);
+    return this.authRequest('/api/v1/auth/register', draft);
   }
 
   async logout(): Promise<AuthResult> {
     try {
-      const res = await this.fetchWithAuth(`${this.baseUrl}/auth/logout`, { method: 'POST' });
+      const res = await this.fetchWithAuth(`${this.baseUrl}/api/v1/auth/logout`, { method: 'POST' });
       this.accessToken = null;
 
       if (!res.ok) {
@@ -58,12 +58,30 @@ export class ApiAuthRepository implements AuthRepository {
 
   async getCurrentUser(): Promise<AuthSession | null> {
     try {
-      const res = await this.fetchWithAuth(`${this.baseUrl}/auth/me`, { method: 'GET' });
+      const res = await this.fetchWithAuth(`${this.baseUrl}/api/v1/auth/me`, { method: 'GET' });
       if (!res.ok) return null;
       const data = await res.json();
       return this.toSession(data);
     } catch {
       return null;
+    }
+  }
+
+  async resendVerificationEmail(email: string): Promise<AuthResult> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/v1/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!res.ok) {
+        return this.toAuthResult(res);
+      }
+
+      return { ok: true, message: 'Si el email existe, se envió un nuevo link de verificación.' };
+    } catch {
+      return { ok: false, message: NETWORK_ERROR };
     }
   }
 
@@ -130,7 +148,7 @@ export class ApiAuthRepository implements AuthRepository {
 
   private async performRefresh(): Promise<string | null> {
     try {
-      const res = await fetch(`${this.baseUrl}/auth/refresh`, {
+      const res = await fetch(`${this.baseUrl}/api/v1/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
       });

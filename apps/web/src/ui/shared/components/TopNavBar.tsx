@@ -39,7 +39,7 @@ export function TopNavBar() {
         </button>
 
         <div className="flex gap-4 items-center text-koguiCream/60">
-          {!session ? (
+          {!session || session.emailVerified === false ? (
             <>
               <button
                 type="button"

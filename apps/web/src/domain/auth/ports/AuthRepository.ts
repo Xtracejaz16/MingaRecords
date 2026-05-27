@@ -7,4 +7,5 @@ export interface AuthRepository {
   loadSession(): Promise<AuthSession | null>;
   saveSession(session: AuthSession | null): Promise<void>;
   getCurrentUser(): Promise<AuthSession | null>;
+  resendVerificationEmail(email: string): Promise<AuthResult>;
 }
