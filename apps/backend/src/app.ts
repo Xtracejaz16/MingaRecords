@@ -4,6 +4,7 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import path from 'node:path';
 import { env } from '@/config/env.js';
 import { beatsRouter } from '@/modules/beats/route.js';
 import { authRouter } from '@/modules/auth/route.js';
@@ -30,6 +31,9 @@ app.use('/api/v1/auth', authRouter);
 
 // Beats API routes
 app.use('/api/v1/beats', beatsRouter);
+
+// Archivos subidos (modo local) — servidos como estáticos
+app.use('/uploads', express.static(path.resolve(process.cwd(), 'public', 'uploads')));
 
 // Storage API routes
 app.use('/api/v1/storage', storageRouter);
