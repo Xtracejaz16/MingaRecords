@@ -48,7 +48,7 @@ const FOOTER_ITEMS = [
 
 export function SideNavBar() {
   const { session } = useAuth();
-  const { navigateTo } = useAppShell();
+  const { navigateTo, handleLogout } = useAppShell();
   const [modalVariant, setModalVariant] = useState<LoginRequiredModalProps['variant']>('not-logged-in-purchases');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -143,6 +143,8 @@ export function SideNavBar() {
             <button
               key={item.label}
               className="w-full flex items-center gap-3 px-4 py-2 text-koguiCream/40 hover:text-koguiCream text-xs font-display tracking-widest uppercase cursor-pointer transition-colors"
+              type="button"
+              onClick={item.label === 'Salir' ? handleLogout : undefined}
             >
               <span className="material-symbols-outlined text-base">
                 {item.icon}

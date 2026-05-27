@@ -67,7 +67,7 @@ export function useAppShell() {
 
   const handleLogout = async () => {
     await logout();
-    navigateTo('home');
+    navigateTo('login');
   };
 
   const goHome = () => navigateTo('home');
