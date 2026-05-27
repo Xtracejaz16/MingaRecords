@@ -77,7 +77,6 @@ export class HTMLAudioPlayerAdapter implements AudioPlayerRepository {
     this.audio.removeEventListener('ended', this.handleEnded);
     this.audio.removeEventListener('error', this.handleError);
     this.audio.pause();
-    this.audio.src = '';
     this.timeUpdateCallback = null;
     this.loadedMetadataCallback = null;
     this.endedCallback = null;

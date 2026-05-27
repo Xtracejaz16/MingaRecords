@@ -21,10 +21,7 @@ export function PersistentPlayer() {
   const duration = usePlayerStore((s) => s.duration);
   const volume = usePlayerStore((s) => s.volume);
   const isMuted = usePlayerStore((s) => s.isMuted);
-  const pauseBeat = usePlayerStore((s) => s.pauseBeat);
-  const resumeBeat = usePlayerStore((s) => s.resumeBeat);
-
-  const { seek, setVolume, toggleMute } = useAudioPlayer();
+  const { seek, setVolume, toggleMute, pause, resume } = useAudioPlayer();
 
   const [isDragging, setIsDragging] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
@@ -75,9 +72,9 @@ export function PersistentPlayer() {
   const handlePlayPause = () => {
     if (!currentBeat) return;
     if (isPlaying) {
-      pauseBeat();
+      pause();
     } else {
-      resumeBeat();
+      resume();
     }
   };
 

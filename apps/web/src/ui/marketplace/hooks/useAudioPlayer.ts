@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { HTMLAudioPlayerAdapter } from '../../../infrastructure/marketplace/HTMLAudioPlayerAdapter';
 import { PlayBeatUseCase } from '../../../application/marketplace/PlayBeatUseCase';
 import { usePlayerStore } from '../store/playerStore';
@@ -10,22 +10,13 @@ function createAudioPlayer(): AudioPlayerRepository {
 }
 
 export function useAudioPlayer() {
-  const adapterRef = useRef<AudioPlayerRepository | null>(null);
-  const useCaseRef = useRef<PlayBeatUseCase | null>(null);
+  const [adapter] = useState(() => createAudioPlayer());
+  const [useCase] = useState(() => new PlayBeatUseCase(adapter));
 
   const setProgress = usePlayerStore((s) => s.setProgress);
   const setDuration = usePlayerStore((s) => s.setDuration);
   const setStatus = usePlayerStore((s) => s.setStatus);
   const pauseBeat = usePlayerStore((s) => s.pauseBeat);
-
-  // Initialize adapter and use case once
-  if (!adapterRef.current) {
-    adapterRef.current = createAudioPlayer();
-    useCaseRef.current = new PlayBeatUseCase(adapterRef.current);
-  }
-
-  const adapter = adapterRef.current;
-  const useCase = useCaseRef.current;
 
   // Wire audio events to store
   useEffect(() => {
@@ -52,8 +43,11 @@ export function useAudioPlayer() {
     };
   }, [adapter, setProgress, setDuration, setStatus, pauseBeat]);
 
+  const setCurrentBeat = usePlayerStore((s) => s.setCurrentBeat);
+
   const playBeat = async (beat: Beat) => {
-    if (!useCase) return;
+    setCurrentBeat(beat);
+    setStatus('loading');
     try {
       await useCase.execute(beat);
     } catch (error) {
@@ -62,6 +56,18 @@ export function useAudioPlayer() {
       }
       setStatus('error');
     }
+  };
+
+  const pause = () => {
+    adapter.pause();
+    usePlayerStore.getState().pauseBeat();
+  };
+
+  const resume = () => {
+    adapter.play().catch(() => {
+      usePlayerStore.getState().setStatus('error');
+    });
+    usePlayerStore.getState().resumeBeat();
   };
 
   const seek = (time: number) => {
@@ -80,6 +86,8 @@ export function useAudioPlayer() {
 
   return {
     playBeat,
+    pause,
+    resume,
     seek,
     setVolume,
     toggleMute,
