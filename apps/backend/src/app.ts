@@ -7,6 +7,7 @@ import cors from 'cors';
 import { env } from '@/config/env.js';
 import { beatsRouter } from '@/modules/beats/route.js';
 import { authRouter } from '@/modules/auth/route.js';
+import { storageRouter } from '@/modules/storage/routes.js';
 
 const app = express();
 
@@ -29,6 +30,9 @@ app.use('/api/v1/auth', authRouter);
 
 // Beats API routes
 app.use('/api/v1/beats', beatsRouter);
+
+// Storage API routes
+app.use('/api/v1/storage', storageRouter);
 
 // Ruta de salud — útil para monitoreo
 app.get('/health', (req, res) => {

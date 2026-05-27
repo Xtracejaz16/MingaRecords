@@ -6,6 +6,9 @@ const requiredEnvVars = [
     'JWT_SECRET',
     'DATABASE_URL',
     'RESEND_API_KEY',
+    'S3_ACCESS_KEY',
+    'S3_SECRET_KEY',
+    'S3_BUCKET_NAME',
 ] as const;
 
 function getEnvVar(name: string): string {
@@ -36,4 +39,9 @@ export const env = {
     resendApiKey: getEnvVar('RESEND_API_KEY'),
     port: getEnvVarNumber('PORT', 3000),
     isProduction: process.env.NODE_ENV === 'production',
+    s3Region: process.env.S3_REGION ?? 'us-east-1',
+    s3Endpoint: process.env.S3_ENDPOINT ?? undefined,
+    s3AccessKey: getEnvVar('S3_ACCESS_KEY'),
+    s3SecretKey: getEnvVar('S3_SECRET_KEY'),
+    s3BucketName: getEnvVar('S3_BUCKET_NAME'),
 } as const;
