@@ -2,10 +2,10 @@ import { Router, type Request, type Response } from 'express';
 import { env } from '@/config/env.js';
 import { requireAuth } from '@/shared/middleware/auth.js';
 import { markAudioReady } from '@/modules/beats/service.js';
-import { S3Adapter } from './infrastructure/s3.adapter.js';
-import { LocalStorageAdapter } from './infrastructure/local.adapter.js';
-import { StorageService } from './application/storage.service.js';
-import { upload } from './infrastructure/multer.config.js';
+import { S3Adapter } from './s3.adapter.js';
+import { LocalStorageAdapter } from './local.adapter.js';
+import { StorageService } from './service.js';
+import { upload } from './multer.config.js';
 
 export const storageRouter = Router();
 
