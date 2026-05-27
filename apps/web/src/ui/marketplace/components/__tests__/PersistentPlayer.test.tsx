@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { PersistentPlayer } from '../PersistentPlayer';
 import { usePlayerStore } from '../../store/playerStore';
 import type { Beat } from '../../../../domain/marketplace/Beat';

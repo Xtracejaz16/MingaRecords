@@ -2,7 +2,11 @@ import type { AudioPlayerRepository } from '../../domain/marketplace/AudioPlayer
 import type { Beat } from '../../domain/marketplace/Beat';
 
 export class PlayBeatUseCase {
-  constructor(private readonly audioRepo: AudioPlayerRepository) {}
+  private readonly audioRepo: AudioPlayerRepository;
+
+  constructor(audioRepo: AudioPlayerRepository) {
+    this.audioRepo = audioRepo;
+  }
 
   async execute(beat: Beat): Promise<void> {
     if (!beat.audioUrl) {

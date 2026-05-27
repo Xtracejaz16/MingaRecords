@@ -18,7 +18,7 @@ export function PersistentPlayer() {
   const pauseBeat = usePlayerStore((s) => s.pauseBeat);
   const resumeBeat = usePlayerStore((s) => s.resumeBeat);
 
-  const { playBeat, seek, setVolume, toggleMute } = useAudioPlayer();
+  const { seek, setVolume, toggleMute } = useAudioPlayer();
 
   const [isDragging, setIsDragging] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);

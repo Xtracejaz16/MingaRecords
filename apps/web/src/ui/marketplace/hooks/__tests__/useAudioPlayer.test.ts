@@ -2,7 +2,6 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAudioPlayer } from '../useAudioPlayer';
 import { usePlayerStore } from '../../store/playerStore';
-import type { Beat } from '../../../../domain/marketplace/Beat';
 
 vi.mock('../../../../infrastructure/marketplace/HTMLAudioPlayerAdapter', () => {
   return {
@@ -23,17 +22,6 @@ vi.mock('../../../../infrastructure/marketplace/HTMLAudioPlayerAdapter', () => {
     })),
   };
 });
-
-const sampleBeat: Beat = {
-  id: 'beat-1',
-  title: 'Test Beat',
-  artist: 'Test Artist',
-  genre: 'CUMBIA',
-  genreColor: '#C8860A',
-  price: 29_999,
-  coverUrl: '',
-  audioUrl: 'https://example.com/audio.mp3',
-};
 
 describe('useAudioPlayer', () => {
   beforeEach(() => {

@@ -53,6 +53,7 @@ export function useAudioPlayer() {
   }, [adapter, setProgress, setDuration, setStatus, pauseBeat]);
 
   const playBeat = async (beat: Beat) => {
+    if (!useCase) return;
     try {
       await useCase.execute(beat);
     } catch (error) {
