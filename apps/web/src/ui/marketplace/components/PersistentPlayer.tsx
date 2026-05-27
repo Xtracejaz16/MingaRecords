@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { usePlayerStore } from '../store/playerStore';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 
@@ -6,6 +6,12 @@ function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function getPercentFromEvent(e: MouseEvent, element: HTMLDivElement): number {
+  const rect = element.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  return Math.max(0, Math.min(100, (x / rect.width) * 100));
 }
 
 export function PersistentPlayer() {
@@ -24,33 +30,18 @@ export function PersistentPlayer() {
   const progressRef = useRef<HTMLDivElement>(null);
   const volumeRef = useRef<HTMLDivElement>(null);
 
-  const getPercentFromEvent = useCallback(
-    (e: MouseEvent, element: HTMLDivElement): number => {
-      const rect = element.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      return Math.max(0, Math.min(100, (x / rect.width) * 100));
-    },
-    [],
-  );
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (duration <= 0) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percent = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    seek((percent / 100) * duration);
+  };
 
-  const handleProgressClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (duration <= 0) return;
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const percent = Math.max(0, Math.min(100, (x / rect.width) * 100));
-      seek((percent / 100) * duration);
-    },
-    [duration, seek],
-  );
-
-  const handleThumbMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      setIsDragging(true);
-    },
-    [],
-  );
+  const handleThumbMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
 
   useEffect(() => {
     if (!isDragging) return;
@@ -72,26 +63,23 @@ export function PersistentPlayer() {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, duration, seek, getPercentFromEvent]);
+  }, [isDragging, duration, seek]);
 
-  const handleVolumeClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const percent = Math.max(0, Math.min(100, (x / rect.width) * 100));
-      setVolume(percent);
-    },
-    [setVolume],
-  );
+  const handleVolumeClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percent = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    setVolume(percent);
+  };
 
-  const handlePlayPause = useCallback(() => {
+  const handlePlayPause = () => {
     if (!currentBeat) return;
     if (isPlaying) {
       pauseBeat();
     } else {
       resumeBeat();
     }
-  }, [currentBeat, isPlaying, pauseBeat, resumeBeat]);
+  };
 
   if (!currentBeat) return null;
 
