@@ -85,6 +85,10 @@ export class ApiAuthRepository implements AuthRepository {
     }
   }
 
+  getAccessToken(): string | null {
+    return this.accessToken;
+  }
+
   private async authRequest(path: string, draft: AuthDraft): Promise<AuthResult> {
     try {
       const res = await fetch(`${this.baseUrl}${path}`, {

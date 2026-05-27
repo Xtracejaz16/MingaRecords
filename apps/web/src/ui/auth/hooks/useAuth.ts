@@ -49,6 +49,10 @@ export function useAuth() {
     return currentSession;
   };
 
+  const getAccessToken = (): string | null => {
+    return repository.getAccessToken();
+  };
+
   return {
     session,
     isLoading,
@@ -56,5 +60,6 @@ export function useAuth() {
     logout,
     loadSession,
     repository,
+    getAccessToken,
   };
 }
