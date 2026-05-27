@@ -6,12 +6,13 @@ import { LoginRequiredModal, type LoginRequiredModalProps } from '../../cart/com
 
 const NAV_ITEMS = [
   {
-    label: 'Marketplace',
-    icon: 'storefront',
-    active: true,
-    activeClasses: 'bg-taironaTerracotta/30 border-l-4 border-taironaTerracotta text-white',
-    hoverClasses: '',
-    action: 'marketplace' as const,
+    label: 'Favoritos',
+    icon: 'favorite',
+    active: false,
+    activeClasses: '',
+    hoverClasses: 'hover:bg-surface-container-high/20 hover:text-zenuCopper',
+    badge: 0,
+    action: 'favorites' as const,
   },
   {
     label: 'Mis Compras',
@@ -21,15 +22,6 @@ const NAV_ITEMS = [
     hoverClasses: 'hover:bg-surface-container-high/20 hover:text-wayuuJade',
     badge: 0,
     action: 'purchases' as const,
-  },
-  {
-    label: 'Favoritos',
-    icon: 'favorite',
-    active: false,
-    activeClasses: '',
-    hoverClasses: 'hover:bg-surface-container-high/20 hover:text-zenuCopper',
-    badge: 0,
-    action: 'favorites' as const,
   },
   {
     label: 'Mi Perfil',
@@ -53,11 +45,6 @@ export function SideNavBar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleNavClick = (action: typeof NAV_ITEMS[number]['action']) => {
-    if (action === 'marketplace') {
-      navigateTo('marketplace');
-      return;
-    }
-
     if (action === 'purchases') {
       const guard = checkCartAccess(session);
       if (!guard.allowed) {
@@ -105,7 +92,7 @@ export function SideNavBar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
-        {NAV_ITEMS.filter((item) => session || (item.action !== 'profile' && item.action !== 'purchases')).map((item) => (
+        {NAV_ITEMS.filter((item) => session || item.action !== 'profile').map((item) => (
           <button
             key={item.label}
             type="button"
