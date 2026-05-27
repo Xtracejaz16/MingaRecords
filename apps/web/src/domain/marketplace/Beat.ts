@@ -7,4 +7,5 @@ export interface Beat {
   price: number;
   coverUrl: string;
   isFavorite?: boolean;
+  audioUrl: string;
 }
