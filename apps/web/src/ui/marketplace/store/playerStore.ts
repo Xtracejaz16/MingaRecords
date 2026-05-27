@@ -18,6 +18,7 @@ export interface PlayerStoreState {
   setDuration: (duration: number) => void;
   setStatus: (status: PlayerStatus) => void;
   setCurrentBeat: (beat: Beat) => void;
+  setIsPlaying: (isPlaying: boolean) => void;
   toggleMute: () => void;
 }
 
@@ -51,5 +52,6 @@ export const usePlayerStore = create<PlayerStoreState>((set) => ({
   setDuration: (duration) => set({ duration }),
   setStatus: (status) => set({ status }),
   setCurrentBeat: (beat) => set({ currentBeat: beat }),
+  setIsPlaying: (isPlaying) => set({ isPlaying }),
   toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
 }));
