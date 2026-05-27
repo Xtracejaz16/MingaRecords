@@ -5,14 +5,14 @@ vi.mock('@/modules/auth/repository.js', () => ({
     createUser: vi.fn(),
     getUserByEmail: vi.fn(),
     getUserById: vi.fn(),
-    markEmailVerified: vi.fn(),
     createRefreshToken: vi.fn(),
     getRefreshToken: vi.fn(),
     deleteRefreshToken: vi.fn(),
     rotateRefreshToken: vi.fn(),
     createVerificationToken: vi.fn(),
-    getVerificationToken: vi.fn(),
-    deleteVerificationToken: vi.fn(),
+    getVerificationTokenByHash: vi.fn(),
+    deleteVerificationTokensByUserId: vi.fn(),
+    markEmailVerifiedAndMarkTokenUsed: vi.fn(),
 }));
 
 vi.mock('bcryptjs', () => ({
@@ -28,10 +28,14 @@ vi.mock('jsonwebtoken', () => ({
     },
 }));
 
-vi.mock('resend', () => ({
-    Resend: vi.fn().mockImplementation(() => ({
-        emails: { send: vi.fn().mockResolvedValue({}) },
+vi.mock('@/modules/notification/index.js', () => ({
+    ResendNotificationAdapter: vi.fn().mockImplementation(() => ({
+        sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
     })),
+}));
+
+vi.mock('resend', () => ({
+    Resend: vi.fn().mockImplementation(() => ({})),
 }));
 
 vi.mock('@/config/env.js', () => ({
@@ -39,13 +43,23 @@ vi.mock('@/config/env.js', () => ({
         jwtSecret: 'test-secret',
         databaseUrl: 'postgresql://test',
         resendApiKey: 'test-key',
-        port: 3000,
+        frontendUrl: 'http://localhost:5173',
+        resendSenderEmail: 'onboarding@resend.dev',
+        apiUrl: 'http://localhost:3001',
+        corsOrigin: 'http://localhost:5173',
+        port: 3001,
         isProduction: false,
     },
 }));
 
 vi.mock('crypto', () => ({
-    randomUUID: vi.fn().mockReturnValue('mock-uuid-token'),
+    randomBytes: vi.fn().mockReturnValue({
+        toString: vi.fn().mockReturnValue('mock-raw-token-64-chars-hex-string'),
+    }),
+    createHash: vi.fn().mockReturnValue({
+        update: vi.fn().mockReturnThis(),
+        digest: vi.fn().mockReturnValue('mock-hashed-token-sha256'),
+    }),
 }));
 
 import {
@@ -54,6 +68,7 @@ import {
     logoutUser,
     refreshAccessToken,
     verifyEmail,
+    resendVerificationEmail,
     getMe,
 } from '@/modules/auth/service.js';
 
@@ -61,14 +76,14 @@ import {
     createUser,
     getUserByEmail,
     getUserById,
-    markEmailVerified,
     createRefreshToken,
     getRefreshToken,
     deleteRefreshToken,
     rotateRefreshToken,
     createVerificationToken,
-    getVerificationToken,
-    deleteVerificationToken,
+    getVerificationTokenByHash,
+    deleteVerificationTokensByUserId,
+    markEmailVerifiedAndMarkTokenUsed,
 } from '@/modules/auth/repository.js';
 
 import bcrypt from 'bcryptjs';
@@ -101,6 +116,7 @@ describe('registerUser', () => {
         vi.mocked(createUser).mockResolvedValue(mockUser);
         vi.mocked(jwt.sign).mockReturnValue('access-token' as never);
         vi.mocked(createRefreshToken).mockResolvedValue(undefined);
+        vi.mocked(deleteVerificationTokensByUserId).mockResolvedValue(undefined);
         vi.mocked(createVerificationToken).mockResolvedValue(undefined);
 
         const result = await registerUser({
@@ -111,7 +127,7 @@ describe('registerUser', () => {
         });
 
         expect(result.accessToken).toBe('access-token');
-        expect(result.refreshToken).toBe('mock-uuid-token');
+        expect(result.refreshToken).toBe('mock-raw-token-64-chars-hex-string');
         expect(result.user.id).toBe('user-1');
         expect(result.user.role).toBe('artist');
         expect(createUser).toHaveBeenCalledWith({
@@ -121,7 +137,12 @@ describe('registerUser', () => {
             role: 'artist',
         });
         expect(createRefreshToken).toHaveBeenCalled();
-        expect(createVerificationToken).toHaveBeenCalled();
+        expect(deleteVerificationTokensByUserId).toHaveBeenCalledWith('user-1');
+        expect(createVerificationToken).toHaveBeenCalledWith({
+            tokenHash: 'mock-hashed-token-sha256',
+            userId: 'user-1',
+            expiresAt: expect.any(Date),
+        });
     });
 
     it('should throw EMAIL_EXISTS if user already exists', async () => {
@@ -135,6 +156,32 @@ describe('registerUser', () => {
                 role: 'artist',
             })
         ).rejects.toThrow('EMAIL_EXISTS');
+    });
+
+    it('should still register user even if email sending fails', async () => {
+        vi.mocked(getUserByEmail).mockResolvedValue(null);
+        vi.mocked(bcrypt.hash).mockResolvedValue('hashed-password' as never);
+        vi.mocked(createUser).mockResolvedValue(mockUser);
+        vi.mocked(jwt.sign).mockReturnValue('access-token' as never);
+        vi.mocked(createRefreshToken).mockResolvedValue(undefined);
+        vi.mocked(deleteVerificationTokensByUserId).mockResolvedValue(undefined);
+        vi.mocked(createVerificationToken).mockResolvedValue(undefined);
+
+        // Mock notification adapter to throw
+        const { ResendNotificationAdapter } = await import('@/modules/notification/index.js');
+        vi.mocked(ResendNotificationAdapter).mockImplementation(() => ({
+            sendVerificationEmail: vi.fn().mockRejectedValue(new Error('Email service down')),
+        }));
+
+        const result = await registerUser({
+            email: 'test@example.com',
+            password: 'Password123',
+            alias: 'testuser',
+            role: 'artist',
+        });
+
+        expect(result.accessToken).toBe('access-token');
+        expect(result.user.id).toBe('user-1');
     });
 });
 
@@ -204,9 +251,9 @@ describe('refreshAccessToken', () => {
         const result = await refreshAccessToken('old-token');
 
         expect(result.accessToken).toBe('new-access-token');
-        expect(result.refreshToken).toBe('mock-uuid-token');
+        expect(result.refreshToken).toBe('mock-raw-token-64-chars-hex-string');
         expect(rotateRefreshToken).toHaveBeenCalledWith('old-token', {
-            token: 'mock-uuid-token',
+            token: 'mock-raw-token-64-chars-hex-string',
             userId: 'user-1',
             expiresAt: expect.any(Date),
         });
@@ -239,40 +286,101 @@ describe('refreshAccessToken', () => {
 });
 
 describe('verifyEmail', () => {
-    it('should verify email successfully', async () => {
-        vi.mocked(getVerificationToken).mockResolvedValue({
+    it('should verify email successfully with hashed token', async () => {
+        vi.mocked(getVerificationTokenByHash).mockResolvedValue({
             id: 'vt-1',
-            token: 'verify-token',
+            tokenHash: 'mock-hashed-token-sha256',
             userId: 'user-1',
             expiresAt: new Date(Date.now() + 86400000),
             createdAt: new Date(),
         });
-        vi.mocked(markEmailVerified).mockResolvedValue(undefined);
-        vi.mocked(deleteVerificationToken).mockResolvedValue(undefined);
+        vi.mocked(getUserById).mockResolvedValue(mockUnverifiedUser);
+        vi.mocked(markEmailVerifiedAndMarkTokenUsed).mockResolvedValue(undefined);
 
-        const result = await verifyEmail('verify-token');
+        const result = await verifyEmail('raw-token');
 
+        expect(result.status).toBe('VERIFIED');
         expect(result.message).toBe('Email verificado exitosamente');
-        expect(markEmailVerified).toHaveBeenCalledWith('user-1');
-        expect(deleteVerificationToken).toHaveBeenCalledWith('verify-token');
+        expect(markEmailVerifiedAndMarkTokenUsed).toHaveBeenCalledWith('user-1', 'vt-1');
+    });
+
+    it('should return ALREADY_VERIFIED if user is already verified', async () => {
+        vi.mocked(getVerificationTokenByHash).mockResolvedValue({
+            id: 'vt-1',
+            tokenHash: 'mock-hashed-token-sha256',
+            userId: 'user-1',
+            expiresAt: new Date(Date.now() + 86400000),
+            createdAt: new Date(),
+            usedAt: new Date(),
+        });
+        vi.mocked(getUserById).mockResolvedValue(mockUser);
+
+        const result = await verifyEmail('raw-token');
+
+        expect(result.status).toBe('ALREADY_VERIFIED');
+        expect(markEmailVerifiedAndMarkTokenUsed).not.toHaveBeenCalled();
     });
 
     it('should throw INVALID_TOKEN if verification token not found', async () => {
-        vi.mocked(getVerificationToken).mockResolvedValue(null);
+        vi.mocked(getVerificationTokenByHash).mockResolvedValue(null);
 
         await expect(verifyEmail('bad-token')).rejects.toThrow('INVALID_TOKEN');
     });
 
     it('should throw TOKEN_EXPIRED if verification token is expired', async () => {
-        vi.mocked(getVerificationToken).mockResolvedValue({
+        vi.mocked(getVerificationTokenByHash).mockResolvedValue({
             id: 'vt-1',
-            token: 'verify-token',
+            tokenHash: 'mock-hashed-token-sha256',
             userId: 'user-1',
             expiresAt: new Date(Date.now() - 86400000),
             createdAt: new Date(),
         });
 
         await expect(verifyEmail('expired-token')).rejects.toThrow('TOKEN_EXPIRED');
+    });
+
+    it('should throw INVALID_TOKEN if token is used but user is not verified (inconsistent state)', async () => {
+        vi.mocked(getVerificationTokenByHash).mockResolvedValue({
+            id: 'vt-1',
+            tokenHash: 'mock-hashed-token-sha256',
+            userId: 'user-1',
+            expiresAt: new Date(Date.now() + 86400000),
+            createdAt: new Date(),
+            usedAt: new Date(),
+        });
+        vi.mocked(getUserById).mockResolvedValue(mockUnverifiedUser);
+
+        await expect(verifyEmail('raw-token')).rejects.toThrow('INVALID_TOKEN');
+    });
+});
+
+describe('resendVerificationEmail', () => {
+    it('should send verification email for unverified user', async () => {
+        vi.mocked(getUserByEmail).mockResolvedValue(mockUnverifiedUser);
+        vi.mocked(deleteVerificationTokensByUserId).mockResolvedValue(undefined);
+        vi.mocked(createVerificationToken).mockResolvedValue(undefined);
+
+        await resendVerificationEmail('test@example.com');
+
+        expect(deleteVerificationTokensByUserId).toHaveBeenCalledWith('user-1');
+        expect(createVerificationToken).toHaveBeenCalledWith({
+            tokenHash: 'mock-hashed-token-sha256',
+            userId: 'user-1',
+            expiresAt: expect.any(Date),
+        });
+    });
+
+    it('should not throw if user does not exist', async () => {
+        vi.mocked(getUserByEmail).mockResolvedValue(null);
+
+        await expect(resendVerificationEmail('unknown@example.com')).resolves.toBeUndefined();
+    });
+
+    it('should not throw if user is already verified', async () => {
+        vi.mocked(getUserByEmail).mockResolvedValue(mockUser);
+
+        await expect(resendVerificationEmail('test@example.com')).resolves.toBeUndefined();
+        expect(deleteVerificationTokensByUserId).not.toHaveBeenCalled();
     });
 });
 

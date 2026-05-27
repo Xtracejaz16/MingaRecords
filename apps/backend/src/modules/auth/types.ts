@@ -22,10 +22,11 @@ export interface JWTPayload {
 
 export interface VerificationToken {
     id: string;
-    token: string;
+    tokenHash: string;
     userId: string;
     expiresAt: Date;
     createdAt: Date;
+    usedAt: Date | null;
 }
 
 export const RegisterInputSchema = z.object({
@@ -48,6 +49,10 @@ export const VerifyEmailSchema = z.object({
     token: z.string().min(1, 'Token de verificación requerido'),
 });
 
+export const ResendVerificationSchema = z.object({
+    email: z.string().email('Debe ser un email valido'),
+});
+
 export interface AuthResponse {
     accessToken: string;
     refreshToken: string;
@@ -56,6 +61,7 @@ export interface AuthResponse {
         email: string;
         alias: string;
         role: 'producer' | 'artist';
+        emailVerified: boolean;
     };
 }
 
@@ -68,11 +74,13 @@ export interface MeResponse {
 }
 
 export interface VerifyEmailResponse {
+    status: 'VERIFIED' | 'ALREADY_VERIFIED';
     message: string;
 }
 
 export type RegisterInput = z.infer<typeof RegisterInputSchema>;
 export type LoginInput = z.infer<typeof LoginInputSchema>;
+export type ResendVerificationInput = z.infer<typeof ResendVerificationSchema>;
 
 export interface AuthenticatedRequest extends Request {
     user: JWTPayload;
