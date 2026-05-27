@@ -66,7 +66,7 @@ export function SideNavBar() {
   };
 
   return (
-    <aside className="h-full w-64 flex-shrink-0 bg-surface border-r border-outline/5 z-40 flex flex-col overflow-y-auto">
+    <aside className="h-full w-64 flex-shrink-0 bg-surface border-r border-outline/5 z-40 flex flex-col overflow-y-auto pt-20">
       {/* Profile */}
       {session && (
         <div className="p-6 border-b border-outline/10">
