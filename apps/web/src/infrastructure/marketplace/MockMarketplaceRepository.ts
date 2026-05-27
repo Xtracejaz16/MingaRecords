@@ -16,6 +16,7 @@ const BEATS: Beat[] = [
     genreColor: '#C8860A',
     price: 29_999,
     coverUrl: '',
+    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
   },
   {
     id: 'beat-gold-dust-riddim',
@@ -25,6 +26,7 @@ const BEATS: Beat[] = [
     genreColor: '#1A7A6E',
     price: 34_999,
     coverUrl: '',
+    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
   },
   {
     id: 'beat-tierra-santa',
@@ -34,6 +36,7 @@ const BEATS: Beat[] = [
     genreColor: '#B5651D',
     price: 45_000,
     coverUrl: '',
+    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
   },
 ];
 
