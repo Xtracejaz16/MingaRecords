@@ -25,3 +25,6 @@ dist-ssr
 
 # Stitch generated design artifacts
 stitch_generated_screen/
+
+# Environment variables
+.env
