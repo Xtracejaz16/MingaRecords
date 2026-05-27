@@ -2,7 +2,7 @@ import { PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sd
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3Client } from './s3.client.js';
 import { env } from '@/config/env.js';
-import type { StoragePort, UploadResult } from '../domain/storage.types.js';
+import type { StoragePort, UploadResult } from './types.js';
 
 export class S3Adapter implements StoragePort {
   private bucket = env.s3BucketName;

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { StorageService } from '../../src/modules/storage/application/storage.service.js';
+import { StorageService } from '../../src/modules/storage/service.js';
 
 const mockAdapter = {
   upload: vi.fn().mockResolvedValue({ key: 'beats/u1/b1/file.mp3', url: 'https://cdn/file.mp3' }),

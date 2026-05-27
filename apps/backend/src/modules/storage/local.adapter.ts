@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { env } from '@/config/env.js';
-import type { StoragePort, UploadResult } from '../domain/storage.types.js';
+import type { StoragePort, UploadResult } from './types.js';
 
 export class LocalStorageAdapter implements StoragePort {
   private basePath = env.uploadsDir;
