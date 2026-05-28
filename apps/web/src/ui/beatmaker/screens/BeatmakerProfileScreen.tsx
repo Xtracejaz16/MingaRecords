@@ -3,7 +3,7 @@ import { SideNavBar } from '../../shared/components/SideNavBar';
 import { TopNavBar } from '../../shared/components/TopNavBar';
 
 export function BeatmakerProfileScreen() {
-  const { form, updateField, save, saving, error, success, session } = useBeatmakerProfile();
+  const { form, updateField, save, saving, error, success } = useBeatmakerProfile();
 
   return (
     <main className="page-shell page-shell--dashboard min-h-screen bg-obsidian font-body text-koguiCream mineral-grain">
