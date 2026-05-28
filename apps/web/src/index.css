@@ -1,5 +1,37 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-obsidian: #0F0A00;
+  --color-muiscaGold: #C8860A;
+  --color-taironaTerracotta: #8B2500;
+  --color-koguiCream: #F2E8D0;
+  --color-zenuCopper: #B5651D;
+  --color-emberaNavy: #1A2340;
+  --color-wayuuJade: #1A7A6E;
+  --color-surface: #0F0A00;
+  --color-surface-container-high: #211b08;
+  --color-primary: #C8860A;
+  --color-secondary: #8B2500;
+  --color-on-background: #F2E8D0;
+  --color-on-surface: #efe2c2;
+  --color-on-surface-variant: #d6c4af;
+  --color-outline: #514535;
+  --color-outline-variant: #514535;
+  --color-brightGold: #ffb950;
+  --color-blush: #ffb59f;
+  --color-paleCream: #efe2c2;
+  --color-deepObsidian: #211b08;
+  --color-void: #130e01;
+  --color-mutedCream: #d6c4af;
+  --color-mud: #3b341f;
+  --color-darkMud: #302915;
+  --font-headline: Cinzel, serif;
+  --font-body: Crimson Pro, serif;
+  --font-label: Crimson Pro, serif;
+  --font-display: Cinzel, serif;
+  --font-cinzel: Cinzel, serif;
+  --font-crimson: Crimson Pro, serif;
+}
 
 :root {
   color: #efe2c2;
