@@ -1,6 +1,6 @@
 # Skill Registry — MingaRecords
 
-Updated: 2026-05-11 | SDD Init
+Updated: 2026-05-28 | SDD Init
 
 ## Project Conventions
 

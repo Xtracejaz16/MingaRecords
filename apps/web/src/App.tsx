@@ -1,4 +1,5 @@
 import { useAppShell } from './ui/app/hooks/useAppShell';
+import { BeatmakerProfileScreen } from './ui/beatmaker/screens/BeatmakerProfileScreen';
 import { AuthScreen } from './ui/auth/screens/AuthScreen';
 import { VerifyEmailScreen } from './ui/auth/screens/VerifyEmailScreen';
 import { DashboardPage } from './ui/dashboard/components/DashboardPage';
@@ -52,7 +53,7 @@ function App() {
       <VerifyEmailScreen
         email={session.email}
         onGoLogin={() => openAuth('login')}
-        onVerified={(role) => navigateTo(role === 'artist' ? 'marketplace' : 'panel')}
+        onVerified={(role) => navigateTo(role === 'BEATMAKER' ? 'beatmaker-perfil' : 'panel')}
       />
     );
   }
@@ -75,7 +76,7 @@ function App() {
     );
   }
 
-  if (resolvedRoute.key === 'panel' && session?.role === 'artist') {
+  if (resolvedRoute.key === 'panel' && session?.role === 'BEATMAKER') {
     return (
       <PanelDeniedScreen
         onGoHome={goHome}
@@ -90,7 +91,7 @@ function App() {
       <VerifyEmailScreen
         email={session.email}
         onGoLogin={() => openAuth('login')}
-        onVerified={(role) => navigateTo(role === 'artist' ? 'marketplace' : 'panel')}
+        onVerified={(role) => navigateTo(role === 'BEATMAKER' ? 'beatmaker-perfil' : 'panel')}
       />
     );
   }
@@ -106,7 +107,7 @@ function App() {
     );
   }
 
-  if (resolvedRoute.key === 'marketplace' && session?.role === 'producer') {
+  if (resolvedRoute.key === 'marketplace' && session?.role === 'BEATMAKER') {
     return (
       <MarketplaceDeniedScreen
         onGoHome={goHome}
@@ -115,7 +116,7 @@ function App() {
     );
   }
 
-  if (resolvedRoute.key === 'intercambio' && session?.role === 'producer') {
+  if (resolvedRoute.key === 'intercambio' && session?.role === 'BEATMAKER') {
     return (
       <MarketplaceDeniedScreen
         onGoHome={goHome}
@@ -141,13 +142,14 @@ function App() {
   if (resolvedRoute.key === 'configuracion') return <ConfiguracionPage />;
   if (resolvedRoute.key === 'marketplace') return <MarketplacePage />;
   if (resolvedRoute.key === 'intercambio') return <IntercambioPage />;
+  if (resolvedRoute.key === 'beatmaker-perfil') return <BeatmakerProfileScreen />;
 
   if (resolvedRoute.key === 'verify-email') {
     return (
       <VerifyEmailScreen
         email={session?.email}
         onGoLogin={() => openAuth('login')}
-        onVerified={(role) => navigateTo(role === 'artist' ? 'marketplace' : 'panel')}
+        onVerified={(role) => navigateTo(role === 'BEATMAKER' ? 'beatmaker-perfil' : 'panel')}
       />
     );
   }

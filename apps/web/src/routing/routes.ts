@@ -1,6 +1,6 @@
 import type { AuthTab } from '../domain/auth/entities/auth';
 
-export type AppRouteKey = 'home' | 'login' | 'register' | 'verify-email' | 'panel' | 'beats' | 'ganancias' | 'analisis' | 'actualizaciones' | 'configuracion' | 'marketplace' | 'intercambio';
+export type AppRouteKey = 'home' | 'login' | 'register' | 'verify-email' | 'panel' | 'beats' | 'ganancias' | 'analisis' | 'actualizaciones' | 'configuracion' | 'marketplace' | 'intercambio' | 'beatmaker-perfil';
 export type ResolvedRouteKind = 'public' | 'private' | 'notFound';
 
 interface RouteDefinition {
@@ -92,6 +92,12 @@ const ROUTES: Record<AppRouteKey, RouteDefinition> = {
     kind: 'private',
     canonicalHash: '#/intercambio',
     aliases: ['intercambio', 'exchange'],
+  },
+  'beatmaker-perfil': {
+    key: 'beatmaker-perfil',
+    kind: 'private',
+    canonicalHash: '#/beatmaker/perfil',
+    aliases: ['perfil-beatmaker', 'mi-perfil'],
   },
 };
 

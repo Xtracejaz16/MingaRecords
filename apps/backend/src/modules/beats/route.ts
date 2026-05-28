@@ -38,13 +38,13 @@ function rfc7807Error(
 router.post('/', requireAuth, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    if (user.role !== 'producer') {
+    if (user.role !== 'BEATMAKER') {
       res.status(403).json(
         rfc7807Error(
           'https://mingarecords.com/errors/forbidden',
           'Rol insuficiente',
           403,
-          'Solo los productores pueden crear beats',
+          'Solo los beatmakers pueden crear beats',
           req.originalUrl,
         ),
       );
@@ -90,13 +90,13 @@ router.get('/genres', async (_req: Request, res: Response) => {
 router.get('/dashboard', requireAuth, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    if (user.role !== 'producer') {
+    if (user.role !== 'BEATMAKER') {
       res.status(403).json(
         rfc7807Error(
           'https://mingarecords.com/errors/forbidden',
           'Rol insuficiente',
           403,
-          'Solo los productores pueden acceder al dashboard',
+          'Solo los beatmakers pueden acceder al dashboard',
           req.originalUrl,
         ),
       );

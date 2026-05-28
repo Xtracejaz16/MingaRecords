@@ -27,6 +27,12 @@ enum LicenseType {
   EXCLUSIVE
 }
 
+enum Role {
+  BEATMAKER
+  BUYER
+  ADMIN
+}
+
 // --- Models ---
 
 // La tabla de usuarios. Cada registro es una persona que se registró.
@@ -35,10 +41,10 @@ model User {
   email              String              @unique
   passwordHash       String
   alias              String
-  role               String
-  avatarUrl          String?
+  role               Role                @default(BEATMAKER)
+  profileImage       String?
   bio                String?
-  beatmakerGenre     String?
+  genre              String?
   artistName         String?
   emailVerified      Boolean             @default(false)
   createdAt          DateTime            @default(now())
