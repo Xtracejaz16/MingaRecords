@@ -1,6 +1,7 @@
 // apps/backend/src/index.ts
 // Entry point — arranca el servidor HTTP
-
+import "dotenv/config"; // <--- Esta debe ser la línea 1
+// ... resto de tu código
 import { app } from './app.js';
 import { env } from '@/config/env.js';
 
