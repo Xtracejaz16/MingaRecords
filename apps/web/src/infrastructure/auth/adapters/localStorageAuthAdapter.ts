@@ -115,5 +115,9 @@ export function createLocalStorageAuthAdapter(): AuthRepository {
     async getCurrentUser(): Promise<AuthSession | null> {
       return readStorage<AuthSession>(AUTH_STORAGE_KEYS.session);
     },
+
+    async resendVerificationEmail(): Promise<AuthResult> {
+      return { ok: true, message: 'Si el email existe, se envió un nuevo link de verificación.' };
+    },
   };
 }

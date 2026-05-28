@@ -95,17 +95,6 @@ function App() {
     );
   }
 
-  if (resolvedRoute.key === 'marketplace' && !session) {
-    return (
-      <AuthScreen
-        initialTab="login"
-        onBackHome={goHome}
-        onSubmit={handleSubmit('marketplace')}
-        notice="Necesitás iniciar sesión para entrar al marketplace."
-      />
-    );
-  }
-
   if (resolvedRoute.key === 'marketplace' && session?.role === 'producer') {
     return (
       <MarketplaceDeniedScreen
