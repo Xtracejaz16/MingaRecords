@@ -9,6 +9,11 @@ interface BeatmakerProfileForm {
   profileImage: string;
 }
 
+interface FieldErrors {
+  artistName?: string;
+  genre?: string;
+}
+
 export function useBeatmakerProfile() {
   const { session, getAccessToken } = useAuth();
   const [form, setForm] = useState<BeatmakerProfileForm>({
@@ -16,17 +21,40 @@ export function useBeatmakerProfile() {
     genre: '',
     profileImage: '',
   });
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const updateField = useCallback((key: keyof BeatmakerProfileForm, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[key as keyof FieldErrors];
+      return next;
+    });
     setError(null);
     setSuccess(null);
   }, []);
 
+  const validate = useCallback((): boolean => {
+    const errors: FieldErrors = {};
+
+    if (!form.artistName.trim()) {
+      errors.artistName = 'El nombre artístico es obligatorio';
+    }
+
+    if (!form.genre) {
+      errors.genre = 'Seleccioná un género musical';
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, [form.artistName, form.genre]);
+
   const save = useCallback(async () => {
+    if (!validate()) return;
+
     setSaving(true);
     setError(null);
     setSuccess(null);
@@ -57,7 +85,7 @@ export function useBeatmakerProfile() {
     } finally {
       setSaving(false);
     }
-  }, [form, getAccessToken]);
+  }, [form, getAccessToken, validate]);
 
-  return { form, updateField, save, saving, error, success, session };
+  return { form, fieldErrors, updateField, save, saving, error, success, session };
 }

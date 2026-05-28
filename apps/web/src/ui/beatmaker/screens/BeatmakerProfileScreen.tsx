@@ -3,7 +3,7 @@ import { SideNavBar } from '../../shared/components/SideNavBar';
 import { TopNavBar } from '../../shared/components/TopNavBar';
 
 export function BeatmakerProfileScreen() {
-  const { form, updateField, save, saving, error, success } = useBeatmakerProfile();
+  const { form, fieldErrors, updateField, save, saving, error, success } = useBeatmakerProfile();
 
   return (
     <main className="page-shell page-shell--dashboard min-h-screen bg-obsidian font-body text-koguiCream mineral-grain">
@@ -89,9 +89,12 @@ export function BeatmakerProfileScreen() {
                   value={form.artistName}
                   onChange={(e) => updateField('artistName', e.target.value)}
                   placeholder="Tu nombre artístico"
-                  className="w-full border border-taironaTerracotta/20 bg-obsidian/50 px-4 py-3 font-body text-sm text-koguiCream placeholder-koguiCream/30 outline-none transition-colors focus:border-muiscaGold/60"
+                  className={`w-full border bg-obsidian/50 px-4 py-3 font-body text-sm text-koguiCream placeholder-koguiCream/30 outline-none transition-colors focus:border-muiscaGold/60 ${fieldErrors.artistName ? 'border-red-500/60' : 'border-taironaTerracotta/20'}`}
                   maxLength={100}
                 />
+                {fieldErrors.artistName && (
+                  <span className="text-xs text-red-400">{fieldErrors.artistName}</span>
+                )}
               </div>
 
               {/* Genre */}
@@ -102,7 +105,7 @@ export function BeatmakerProfileScreen() {
                 <select
                   value={form.genre}
                   onChange={(e) => updateField('genre', e.target.value)}
-                  className="w-full appearance-none border border-taironaTerracotta/20 bg-obsidian/50 px-4 py-3 font-body text-sm text-koguiCream outline-none transition-colors focus:border-muiscaGold/60"
+                  className={`w-full appearance-none bg-obsidian/50 px-4 py-3 font-body text-sm text-koguiCream outline-none transition-colors focus:border-muiscaGold/60 ${fieldErrors.genre ? 'border border-red-500/60' : 'border border-taironaTerracotta/20'}`}
                 >
                   <option value="">Seleccioná un género</option>
                   <option value="Hip Hop">Hip Hop</option>
@@ -118,6 +121,9 @@ export function BeatmakerProfileScreen() {
                   <option value="Jazz">Jazz</option>
                   <option value="Otro">Otro</option>
                 </select>
+                {fieldErrors.genre && (
+                  <span className="text-xs text-red-400">{fieldErrors.genre}</span>
+                )}
               </div>
 
               {/* Save Button */}
