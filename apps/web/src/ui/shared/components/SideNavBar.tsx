@@ -5,12 +5,18 @@ const NAV_ITEMS = [
   { label: 'Analytics', icon: 'insights', route: '#/analisis', active: false },
 ] as const;
 
+import { useAuth } from '../../auth/hooks/useAuth';
+import { useAppShell } from '../../app/hooks/useAppShell';
+
 const FOOTER_ITEMS = [
-  { label: 'Settings', icon: 'settings', route: '#/configuracion' },
-  { label: 'Support', icon: 'contact_support', route: '#/soporte' },
+  { label: 'Ajustes', icon: 'settings', route: '#/configuracion' },
+  { label: 'Soporte', icon: 'contact_support', route: '#/soporte' },
 ] as const;
 
 export function SideNavBar() {
+  const { session } = useAuth();
+  const { handleLogout } = useAppShell();
+
   return (
     <aside className="fixed left-0 top-20 z-40 flex h-[calc(100vh-5rem)] w-64 flex-col border-r border-taironaTerracotta/20 bg-obsidian font-headline">
       <div className="border-b border-taironaTerracotta/20 bg-taironaTerracotta/5 p-8">
@@ -47,18 +53,28 @@ export function SideNavBar() {
         ))}
       </nav>
 
-      <div className="mt-auto border-t border-taironaTerracotta/20 py-6">
-        {FOOTER_ITEMS.map((item) => (
-          <a
-            key={item.label}
-            className="flex items-center gap-3 px-6 py-3 text-[10px] uppercase tracking-widest text-koguiCream/40 transition-colors hover:text-muiscaGold"
-            href={item.route}
+      {session && (
+        <div className="mt-auto border-t border-taironaTerracotta/20 py-6">
+          {FOOTER_ITEMS.map((item) => (
+            <a
+              key={item.label}
+              className="flex items-center gap-3 px-6 py-3 text-[10px] uppercase tracking-widest text-koguiCream/40 transition-colors hover:text-muiscaGold"
+              href={item.route}
+            >
+              <span className="material-symbols-outlined text-xs">{item.icon}</span>
+              {item.label}
+            </a>
+          ))}
+          <button
+            className="flex w-full items-center gap-3 px-6 py-3 text-[10px] uppercase tracking-widest text-koguiCream/40 transition-colors hover:text-muiscaGold"
+            type="button"
+            onClick={handleLogout}
           >
-            <span className="material-symbols-outlined text-xs">{item.icon}</span>
-            {item.label}
-          </a>
-        ))}
-      </div>
+            <span className="material-symbols-outlined text-xs">logout</span>
+            Salir
+          </button>
+        </div>
+      )}
     </aside>
   );
 }
