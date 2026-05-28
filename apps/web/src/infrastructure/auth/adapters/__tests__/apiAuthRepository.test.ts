@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiAuthRepository } from '../apiAuthRepository';
 import type { AuthDraft } from '../../../../domain/auth/entities/auth';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://localhost:3001';
 
 const validDraft: AuthDraft = {
   email: 'test@mingarecords.com',

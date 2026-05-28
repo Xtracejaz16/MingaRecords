@@ -1,6 +1,6 @@
 import type { AuthTab } from '../domain/auth/entities/auth';
 
-export type AppRouteKey = 'home' | 'login' | 'register' | 'panel' | 'beats' | 'ganancias' | 'analisis' | 'actualizaciones' | 'configuracion' | 'marketplace' | 'intercambio';
+export type AppRouteKey = 'home' | 'login' | 'register' | 'verify-email' | 'panel' | 'beats' | 'ganancias' | 'analisis' | 'actualizaciones' | 'configuracion' | 'marketplace' | 'intercambio';
 export type ResolvedRouteKind = 'public' | 'private' | 'notFound';
 
 interface RouteDefinition {
@@ -38,6 +38,12 @@ const ROUTES: Record<AppRouteKey, RouteDefinition> = {
     canonicalHash: '#/ser-productor',
     aliases: ['register', 'producer', 'ser-productor'],
     authTab: 'register',
+  },
+  'verify-email': {
+    key: 'verify-email',
+    kind: 'public',
+    canonicalHash: '#/verify-email',
+    aliases: ['verificar-email'],
   },
   panel: {
     key: 'panel',
@@ -102,7 +108,7 @@ export function isPrivateRoute(key: AppRouteKey) {
 }
 
 export function resolveHashRoute(hash: string): ResolvedRoute {
-  const normalized = normalizeHash(hash);
+  const normalized = normalizeHash(hash).split('?')[0];
 
   if (normalized === '') {
     return {

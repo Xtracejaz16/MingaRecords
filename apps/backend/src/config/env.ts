@@ -2,12 +2,26 @@ import dotenv from 'dotenv';
 import fs from 'node:fs';
 import path from 'node:path';
 
-dotenv.config();
+function findEnvDir(startDir: string = process.cwd()): string {
+    let dir = startDir;
+    while (dir !== path.dirname(dir)) {
+        if (fs.existsSync(path.join(dir, '.env'))) {
+            return dir;
+        }
+        dir = path.dirname(dir);
+    }
+    return startDir;
+}
+
+dotenv.config({ path: path.join(findEnvDir(), '.env') });
 
 const requiredEnvVars = [
     'JWT_SECRET',
     'DATABASE_URL',
     'RESEND_API_KEY',
+    'RESEND_SENDER_EMAIL',
+    'FRONTEND_URL',
+    'PORT',
 ] as const;
 
 function getEnvVar(name: string): string {
@@ -18,9 +32,11 @@ function getEnvVar(name: string): string {
     return value;
 }
 
-function getEnvVarNumber(name: string, defaultValue: number): number {
+function getEnvVarNumber(name: string): number {
     const value = process.env[name];
-    if (!value) return defaultValue;
+    if (!value) {
+        throw new Error(`Missing required environment variable: ${name}`);
+    }   
     const parsed = parseInt(value, 10);
     if (isNaN(parsed)) {
         throw new Error(`Environment variable ${name} must be a number, got: ${value}`);
@@ -49,7 +65,9 @@ export const env = {
     jwtSecret: getEnvVar('JWT_SECRET'),
     databaseUrl: getEnvVar('DATABASE_URL'),
     resendApiKey: getEnvVar('RESEND_API_KEY'),
-    port: getEnvVarNumber('PORT', 3000),
+    resendSenderEmail: getEnvVar('RESEND_SENDER_EMAIL'),
+    frontendUrl: getEnvVar('FRONTEND_URL'),
+    port: getEnvVarNumber('PORT'),
     isProduction: process.env.NODE_ENV === 'production',
     storageDriver: storageDriver as 'local' | 's3',
     uploadsDir,
