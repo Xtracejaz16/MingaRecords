@@ -3,9 +3,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { defineConfig } from "prisma/config";
 
-dotenv.config({ path: path.resolve(__dirname, "src/.env") });
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+dotenv.config({ path: path.resolve(__dirname, "src/.env") });
 
 export default defineConfig({
   schema: "prisma/schema.prisma",

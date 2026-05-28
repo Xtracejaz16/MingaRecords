@@ -1,19 +1,21 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { HTMLAudioPlayerAdapter } from '../../../infrastructure/marketplace/HTMLAudioPlayerAdapter';
 import { PlayBeatUseCase } from '../../../application/marketplace/PlayBeatUseCase';
 import { usePlayerStore } from '../store/playerStore';
 import type { Beat } from '../../../domain/marketplace/Beat';
+import type { AudioPlayerRepository } from '../../../domain/marketplace/AudioPlayerRepository';
 
-// Singleton: shared adapter instance across all components
-const adapter = new HTMLAudioPlayerAdapter();
-const useCase = new PlayBeatUseCase(adapter);
+function createAudioPlayer(): AudioPlayerRepository {
+  return new HTMLAudioPlayerAdapter();
+}
 
 export function useAudioPlayer() {
+  const [adapter] = useState(() => createAudioPlayer());
+  const [useCase] = useState(() => new PlayBeatUseCase(adapter));
 
   const setProgress = usePlayerStore((s) => s.setProgress);
   const setDuration = usePlayerStore((s) => s.setDuration);
   const setStatus = usePlayerStore((s) => s.setStatus);
-  const setIsPlaying = usePlayerStore((s) => s.setIsPlaying);
   const pauseBeat = usePlayerStore((s) => s.pauseBeat);
 
   // Wire audio events to store
@@ -24,12 +26,10 @@ export function useAudioPlayer() {
 
     adapter.onLoadedMetadata((duration) => {
       setDuration(duration);
-      setIsPlaying(true);
       setStatus('playing');
     });
 
     adapter.onEnded(() => {
-      setIsPlaying(false);
       pauseBeat();
       setStatus('ended');
     });
@@ -41,7 +41,7 @@ export function useAudioPlayer() {
     return () => {
       adapter.cleanup();
     };
-  }, [setProgress, setDuration, setStatus, setIsPlaying, pauseBeat]);
+  }, [adapter, setProgress, setDuration, setStatus, pauseBeat]);
 
   const setCurrentBeat = usePlayerStore((s) => s.setCurrentBeat);
 
