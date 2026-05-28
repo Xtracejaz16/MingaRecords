@@ -1,5 +1,6 @@
+import { useState, useRef, useEffect } from 'react';
 import { usePlayerStore } from '../store/playerStore';
-import { useEffect, useRef } from 'react';
+import { useAudioPlayer } from '../hooks/useAudioPlayer';
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -7,40 +8,82 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-export function PersistentPlayer() {
-  const {
-    currentBeat,
-    isPlaying,
-    progress,
-    duration,
-    volume,
-    pauseBeat,
-    resumeBeat,
-  } = usePlayerStore();
+function getPercentFromEvent(e: MouseEvent, element: HTMLDivElement): number {
+  const rect = element.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  return Math.max(0, Math.min(100, (x / rect.width) * 100));
+}
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  // Integrate a real <audio> element to play beats so the player actually emits audio
-  // Hook must be declared unconditionally before any early return.
+export function PersistentPlayer() {
+  const currentBeat = usePlayerStore((s) => s.currentBeat);
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const progress = usePlayerStore((s) => s.progress);
+  const duration = usePlayerStore((s) => s.duration);
+  const volume = usePlayerStore((s) => s.volume);
+  const isMuted = usePlayerStore((s) => s.isMuted);
+  const { seek, setVolume, toggleMute, pause, resume } = useAudioPlayer();
+
+  const [isDragging, setIsDragging] = useState(false);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const volumeRef = useRef<HTMLDivElement>(null);
+
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (duration <= 0) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percent = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    seek((percent / 100) * duration);
+  };
+
+  const handleThumbMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
   useEffect(() => {
-    if (!audioRef.current) return;
-    const audio = audioRef.current;
-    // TODO: the repository currently doesn't provide an audioUrl field; when available use it.
-    // For now, we don't set src to avoid invalid requests. This keeps UI responsive.
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!progressRef.current || duration <= 0) return;
+      const percent = getPercentFromEvent(e, progressRef.current);
+      seek((percent / 100) * duration);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, duration, seek]);
+
+  const handleVolumeClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percent = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    setVolume(percent);
+  };
+
+  const handlePlayPause = () => {
+    if (!currentBeat) return;
     if (isPlaying) {
-      void audio.play().catch(() => {
-        // ignore play errors in environments without audio
-      });
+      pause();
     } else {
-      audio.pause();
+      resume();
     }
-  }, [isPlaying, currentBeat]);
+  };
 
   if (!currentBeat) return null;
 
   const progressPercent = duration > 0 ? (progress / duration) * 100 : 0;
 
   return (
-    <div className="h-24 w-full flex-shrink-0 z-50 bg-obsidian/90 backdrop-blur-xl border-t border-brightGold/20 flex items-center px-8 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+    <div className="h-24 w-full flex-shrink-0 z-50 bg-obsidian/90 backdrop-blur-xl border-t border-b border-brightGold/20 flex items-center px-8 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
       {/* Track Info */}
       <div className="w-1/4 flex items-center gap-4">
         <div className="w-14 h-14 border border-blush shrink-0 overflow-hidden">
@@ -52,7 +95,9 @@ export function PersistentPlayer() {
             />
           ) : (
             <div className="w-full h-full bg-mud flex items-center justify-center">
-              <span className="material-symbols-outlined text-mutedCream/40 text-lg">music_note</span>
+              <span className="material-symbols-outlined text-mutedCream/40 text-lg">
+                music_note
+              </span>
             </div>
           )}
         </div>
@@ -70,17 +115,24 @@ export function PersistentPlayer() {
       <div className="flex-1 flex flex-col items-center gap-3">
         {/* Buttons */}
         <div className="flex items-center gap-6">
-          <button className="text-mutedCream hover:text-paleCream transition-colors cursor-pointer">
+          <button
+            type="button"
+            className="text-mutedCream hover:text-paleCream transition-colors cursor-pointer"
+          >
             <span className="material-symbols-outlined text-lg">shuffle</span>
           </button>
-          <button className="text-mutedCream hover:text-paleCream transition-colors cursor-pointer">
+          <button
+            type="button"
+            className="text-mutedCream hover:text-paleCream transition-colors cursor-pointer"
+          >
             <span className="material-symbols-outlined text-lg">
               skip_previous
             </span>
           </button>
           <button
-            className="w-10 h-10 bg-muiscaGold text-[#452b00] /* TODO: token para deepBrown */ flex items-center justify-center rounded-full hover:scale-105 active:scale-95 transition-transform cursor-pointer"
-            onClick={() => (isPlaying ? pauseBeat() : resumeBeat())}
+            type="button"
+            className="w-10 h-10 bg-muiscaGold text-deepBrown flex items-center justify-center rounded-full hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+            onClick={handlePlayPause}
           >
             <span
               className="material-symbols-outlined text-xl"
@@ -89,12 +141,18 @@ export function PersistentPlayer() {
               {isPlaying ? 'pause' : 'play_arrow'}
             </span>
           </button>
-          <button className="text-mutedCream hover:text-paleCream transition-colors cursor-pointer">
+          <button
+            type="button"
+            className="text-mutedCream hover:text-paleCream transition-colors cursor-pointer"
+          >
             <span className="material-symbols-outlined text-lg">
               skip_next
             </span>
           </button>
-          <button className="text-mutedCream hover:text-paleCream transition-colors cursor-pointer">
+          <button
+            type="button"
+            className="text-mutedCream hover:text-paleCream transition-colors cursor-pointer"
+          >
             <span className="material-symbols-outlined text-lg">repeat</span>
           </button>
         </div>
@@ -104,41 +162,57 @@ export function PersistentPlayer() {
           <span className="text-[10px] text-mutedCream font-body w-10 text-right">
             {formatTime(progress)}
           </span>
-          <div className="flex-1 h-1 bg-mud relative cursor-pointer">
+          <div
+            ref={progressRef}
+            className="flex-1 h-1 bg-mud relative cursor-pointer"
+            onClick={handleProgressClick}
+          >
             <div
               className="absolute inset-y-0 left-0 bg-gradient-to-r from-zenuCopper to-muiscaGold"
               style={{ width: `${progressPercent}%` }}
             />
             <div
-              className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-muiscaGold border-2 border-[#452b00] /* TODO: token para deepBrown */"
+              className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-muiscaGold border-2 border-deepBrown cursor-grab active:cursor-grabbing"
               style={{ left: `calc(${progressPercent}% - 6px)` }}
+              onMouseDown={handleThumbMouseDown}
             />
           </div>
           <span className="text-[10px] text-mutedCream font-body w-10">
             {formatTime(duration)}
           </span>
         </div>
-    </div>
+      </div>
 
       {/* Volume + CTA */}
       <div className="w-1/4 flex justify-end items-center gap-6">
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-mutedCream text-lg cursor-pointer">
-            volume_up
-          </span>
-          <div className="w-24 h-1 bg-mud relative cursor-pointer">
+          <button
+            type="button"
+            className="text-mutedCream hover:text-paleCream transition-colors cursor-pointer"
+            onClick={toggleMute}
+          >
+            <span className="material-symbols-outlined text-lg">
+              {isMuted ? 'volume_off' : 'volume_up'}
+            </span>
+          </button>
+          <div
+            ref={volumeRef}
+            className="w-24 h-1 bg-mud relative cursor-pointer"
+            onClick={handleVolumeClick}
+          >
             <div
               className="absolute inset-y-0 left-0 bg-muiscaGold"
               style={{ width: `${volume}%` }}
             />
           </div>
         </div>
-        <button className="bg-brightGold text-[#452b00] /* TODO: token para deepBrown */ px-6 py-2 font-display text-xs font-bold tracking-widest active:scale-95 transition-transform cursor-pointer">
+        <button
+          type="button"
+          className="bg-brightGold text-deepBrown px-6 py-2 font-display text-xs font-bold tracking-widest active:scale-95 transition-transform cursor-pointer"
+        >
           ADQUIRIR
         </button>
       </div>
-      {/* Hidden audio element for playback */}
-      <audio ref={audioRef} style={{ display: 'none' }} aria-hidden />
     </div>
   );
 }

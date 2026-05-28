@@ -11,7 +11,7 @@ import { ReleaseList } from '../components/ReleaseList';
 import { PersistentPlayer } from '../components/PersistentPlayer';
 import { ToastNotification } from '../components/ToastNotification';
 import { useUIStore } from '../store/uiStore';
-import { usePlayerStore } from '../store/playerStore';
+import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { useMarketplace } from '../hooks/useMarketplace';
 import type { Beat } from '../../../domain/marketplace/Beat';
 
@@ -37,7 +37,7 @@ export function MarketplacePage() {
     toggleFavorite,
     isFavorite,
   } = useUIStore();
-  const playBeat = usePlayerStore((s) => s.playBeat);
+  const { playBeat } = useAudioPlayer();
 
   // Synchronize error -> toastMessage inside an effect to avoid setState during render
   // and ensure toast is shown when an error appears.

@@ -1,4 +1,5 @@
 import type { Beat } from './Beat';
+import type { PlayerStatus } from './PlayerStatus';
 
 export interface PlayerState {
   currentBeat: Beat | null;
@@ -6,4 +7,6 @@ export interface PlayerState {
   progress: number;
   duration: number;
   volume: number;
+  isMuted: boolean;
+  status: PlayerStatus;
 }

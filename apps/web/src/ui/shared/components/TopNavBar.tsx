@@ -7,7 +7,7 @@ import { CartIconBadge } from '../../cart/components/CartIconBadge';
 export function TopNavBar() {
   const { session } = useAuth();
   const { itemCount } = useCart();
-  const { navigateTo } = useAppShell();
+  const { navigateTo, resolvedRoute } = useAppShell();
 
   return (
     <header className="fixed top-0 z-50 flex h-20 w-full items-center justify-between border-b border-taironaTerracotta/30 bg-obsidian/95 px-8 font-headline tracking-widest text-muiscaGold shadow-2xl backdrop-blur-md">
@@ -30,13 +30,15 @@ export function TopNavBar() {
       </nav>
 
       <div className="flex items-center gap-6">
-        <button
-          type="button"
-          className="bg-muiscaGold text-obsidian px-6 py-2 text-sm font-display tracking-widest uppercase shadow-lg shadow-muiscaGold/10 transition-all duration-300 hover:bg-koguiCream cursor-pointer"
-          onClick={() => navigateTo('marketplace')}
-        >
-          EXPLORAR BEATS
-        </button>
+        {resolvedRoute.key !== 'marketplace' && (
+          <button
+            type="button"
+            className="bg-muiscaGold text-obsidian px-6 py-2 text-sm font-display tracking-widest uppercase shadow-lg shadow-muiscaGold/10 transition-all duration-300 hover:bg-koguiCream cursor-pointer"
+            onClick={() => navigateTo('marketplace')}
+          >
+            EXPLORAR BEATS
+          </button>
+        )}
 
         <div className="flex gap-4 items-center text-koguiCream/60">
           {!session || session.emailVerified === false ? (

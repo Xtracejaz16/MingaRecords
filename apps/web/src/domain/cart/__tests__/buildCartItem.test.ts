@@ -10,6 +10,7 @@ const mockBeat: Beat = {
   genreColor: '#FF5733',
   price: 29,
   coverUrl: 'https://example.com/cover.jpg',
+  audioUrl: 'https://example.com/audio.mp3',
 };
 
 describe('buildCartItem', () => {
