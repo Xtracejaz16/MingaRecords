@@ -1,7 +1,16 @@
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config"; // Quita 'env' de aquí
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+
+dotenv.config({ path: path.resolve(__dirname, "src/.env") });
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -13,6 +22,7 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: env("DATABASE_URL"),
+    // Usa process.env directamente
+    url: process.env.DATABASE_URL,
   },
 });
