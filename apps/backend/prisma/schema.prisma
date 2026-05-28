@@ -33,6 +33,7 @@ enum Role {
   ADMIN
 }
 
+
 // --- Models ---
 
 // La tabla de usuarios. Cada registro es una persona que se registró.

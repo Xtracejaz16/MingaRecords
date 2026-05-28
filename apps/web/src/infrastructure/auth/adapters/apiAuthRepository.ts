@@ -13,8 +13,30 @@ const ERROR_MESSAGES: Record<number, string> = {
 const NETWORK_ERROR = 'No pudimos conectar con el servidor. Revisá tu conexión.';
 const DEFAULT_SERVER_ERROR = 'Error del servidor. Intentá más tarde.';
 
+const ACCESS_TOKEN_KEY = 'mr_access_token';
+
+function readToken(): string | null {
+  try {
+    return window.localStorage.getItem(ACCESS_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeToken(token: string | null): void {
+  try {
+    if (token === null) {
+      window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+    } else {
+      window.localStorage.setItem(ACCESS_TOKEN_KEY, token);
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 export class ApiAuthRepository implements AuthRepository {
-  private accessToken: string | null = null;
+  private accessToken: string | null = readToken();
   private refreshPromise: Promise<string | null> | null = null;
   private readonly baseUrl: string;
 
@@ -34,6 +56,7 @@ export class ApiAuthRepository implements AuthRepository {
     try {
       const res = await this.fetchWithAuth(`${this.baseUrl}/api/v1/auth/logout`, { method: 'POST' });
       this.accessToken = null;
+      writeToken(null);
 
       if (!res.ok) {
         return this.toAuthResult(res);
@@ -42,6 +65,7 @@ export class ApiAuthRepository implements AuthRepository {
       return { ok: true, message: 'Sesión cerrada.' };
     } catch {
       this.accessToken = null;
+      writeToken(null);
       return { ok: false, message: NETWORK_ERROR };
     }
   }
@@ -53,6 +77,7 @@ export class ApiAuthRepository implements AuthRepository {
   async saveSession(session: AuthSession | null): Promise<void> {
     if (!session) {
       this.accessToken = null;
+      writeToken(null);
     }
   }
 
@@ -103,6 +128,7 @@ export class ApiAuthRepository implements AuthRepository {
 
       const data = await res.json();
       this.accessToken = (data as Record<string, unknown>).accessToken as string ?? null;
+      writeToken(this.accessToken);
       const user = (data as Record<string, unknown>).user;
       const session = this.toSession(user);
       return { ok: true, message: 'Sesión iniciada.', user: session ?? undefined };
@@ -131,9 +157,11 @@ export class ApiAuthRepository implements AuthRepository {
       const newToken = await this.refreshPromise;
       if (!newToken) {
         this.accessToken = null;
+        writeToken(null);
         return new Response(null, { status: 401 });
       }
       this.accessToken = newToken;
+      writeToken(newToken);
       return this.fetchWithAuth(input, init);
     }
 
@@ -143,10 +171,12 @@ export class ApiAuthRepository implements AuthRepository {
 
     if (!newToken) {
       this.accessToken = null;
+      writeToken(null);
       return new Response(null, { status: 401 });
     }
 
     this.accessToken = newToken;
+    writeToken(newToken);
     return this.fetchWithAuth(input, init);
   }
 

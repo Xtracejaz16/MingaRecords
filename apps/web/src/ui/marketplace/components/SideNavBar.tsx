@@ -6,12 +6,13 @@ import { LoginRequiredModal, type LoginRequiredModalProps } from '../../cart/com
 
 const NAV_ITEMS = [
   {
-    label: 'Marketplace',
-    icon: 'storefront',
-    active: true,
-    activeClasses: 'bg-taironaTerracotta/30 border-l-4 border-taironaTerracotta text-white',
-    hoverClasses: '',
-    action: 'marketplace' as const,
+    label: 'Favoritos',
+    icon: 'favorite',
+    active: false,
+    activeClasses: '',
+    hoverClasses: 'hover:bg-surface-container-high/20 hover:text-zenuCopper',
+    badge: 0,
+    action: 'favorites' as const,
   },
   {
     label: 'Mis Compras',
@@ -21,15 +22,6 @@ const NAV_ITEMS = [
     hoverClasses: 'hover:bg-surface-container-high/20 hover:text-wayuuJade',
     badge: 0,
     action: 'purchases' as const,
-  },
-  {
-    label: 'Favoritos',
-    icon: 'favorite',
-    active: false,
-    activeClasses: '',
-    hoverClasses: 'hover:bg-surface-container-high/20 hover:text-zenuCopper',
-    badge: 0,
-    action: 'favorites' as const,
   },
   {
     label: 'Mi Perfil',
@@ -48,16 +40,11 @@ const FOOTER_ITEMS = [
 
 export function SideNavBar() {
   const { session } = useAuth();
-  const { navigateTo } = useAppShell();
+  const { navigateTo, handleLogout } = useAppShell();
   const [modalVariant, setModalVariant] = useState<LoginRequiredModalProps['variant']>('not-logged-in-purchases');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleNavClick = (action: typeof NAV_ITEMS[number]['action']) => {
-    if (action === 'marketplace') {
-      navigateTo('marketplace');
-      return;
-    }
-
     if (action === 'purchases') {
       const guard = checkCartAccess(session);
       if (!guard.allowed) {
@@ -79,7 +66,7 @@ export function SideNavBar() {
   };
 
   return (
-    <aside className="h-full w-64 flex-shrink-0 bg-surface border-r border-outline/5 z-40 flex flex-col overflow-y-auto">
+    <aside className="h-full w-64 flex-shrink-0 bg-surface border-r border-outline/5 z-40 flex flex-col overflow-y-auto pt-20">
       {/* Profile */}
       {session && (
         <div className="p-6 border-b border-outline/10">
@@ -105,7 +92,7 @@ export function SideNavBar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
-        {NAV_ITEMS.filter((item) => session || (item.action !== 'profile' && item.action !== 'purchases')).map((item) => (
+        {NAV_ITEMS.filter((item) => session || item.action !== 'profile').map((item) => (
           <button
             key={item.label}
             type="button"
@@ -143,6 +130,8 @@ export function SideNavBar() {
             <button
               key={item.label}
               className="w-full flex items-center gap-3 px-4 py-2 text-koguiCream/40 hover:text-koguiCream text-xs font-display tracking-widest uppercase cursor-pointer transition-colors"
+              type="button"
+              onClick={item.label === 'Salir' ? handleLogout : undefined}
             >
               <span className="material-symbols-outlined text-base">
                 {item.icon}
