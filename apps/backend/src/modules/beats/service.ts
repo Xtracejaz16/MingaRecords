@@ -8,7 +8,7 @@ import type {
   ProducerStats,
   GenreRecord,
 } from './types.js';
-import { VALID_STATUS_TRANSITIONS } from './types.js';
+import { VALID_STATUS_TRANSITIONS, PRICE_RANGES, validateLicensePrice } from './types.js';
 import * as beatsRepo from './repository.js';
 
 // --- Errors ---
@@ -129,6 +129,100 @@ export async function markAudioReady(
     streamUrl: urls.streamUrl,
     status: 'ready',
   });
+}
+
+export async function markBeatCover(
+  beatId: string,
+  coverUrl: string,
+): Promise<Beat> {
+  const beat = await getBeat(beatId);
+  // No auth check — this is called internally by Storage module
+
+  return beatsRepo.updateBeat(beatId, {
+    coverUrl,
+  });
+}
+
+// --- License Errors ---
+
+export class InvalidLicenseTypeError extends Error {
+  constructor(type: string) {
+    super(`Invalid license type: ${type}`);
+    this.name = 'InvalidLicenseTypeError';
+  }
+}
+
+export class PriceOutOfRangeError extends Error {
+  constructor(type: string, priceCents: number, minCents: number, maxCents: number) {
+    super(
+      `Price ${priceCents} is out of range for ${type} license. Must be between ${minCents} and ${maxCents} cents.`,
+    );
+    this.name = 'PriceOutOfRangeError';
+  }
+}
+
+// --- License Service Functions ---
+
+export async function getLicenses(
+  beatId: string,
+  currentUserId: string,
+): Promise<Array<{
+  id: string;
+  type: string;
+  priceCents: number;
+  isActive: boolean;
+  createdAt: Date;
+  beatId: string;
+}>> {
+  const beat = await getBeat(beatId);
+  if (beat.producerId !== currentUserId) throw new BeatForbiddenError();
+  return beatsRepo.getLicensesByBeatId(beatId);
+}
+
+export async function upsertLicenses(
+  beatId: string,
+  currentUserId: string,
+  licenses: Array<{ type: string; priceCents: number; isActive?: boolean }>,
+): Promise<Array<{
+  id: string;
+  type: string;
+  priceCents: number;
+  isActive: boolean;
+  createdAt: Date;
+  beatId: string;
+}>> {
+  const beat = await getBeat(beatId);
+  if (beat.producerId !== currentUserId) throw new BeatForbiddenError();
+
+  const results: Array<{
+    id: string;
+    type: string;
+    priceCents: number;
+    isActive: boolean;
+    createdAt: Date;
+    beatId: string;
+  }> = [];
+
+  for (const lic of licenses) {
+    const validTypes = ['BASIC', 'PREMIUM', 'EXCLUSIVE'];
+    if (!validTypes.includes(lic.type)) {
+      throw new InvalidLicenseTypeError(lic.type);
+    }
+
+    const error = validateLicensePrice(lic.type, lic.priceCents);
+    if (error) {
+      const range = PRICE_RANGES[lic.type as keyof typeof PRICE_RANGES];
+      throw new PriceOutOfRangeError(lic.type, lic.priceCents, range.minCents, range.maxCents);
+    }
+
+    const result = await beatsRepo.upsertLicense(beatId, lic.type as any, {
+      priceCents: lic.priceCents,
+      isActive: lic.isActive,
+    });
+    results.push(result);
+  }
+
+  return results;
 }
 
 export async function markAsSold(beatId: string): Promise<Beat> {

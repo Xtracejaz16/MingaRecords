@@ -1,185 +1,82 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { SideNavBar } from '../../shared/components/SideNavBar';
 import { TopNavBar } from '../../shared/components/TopNavBar';
-import { useAuth } from '../../auth/hooks/useAuth';
+import { useBeats } from '../hooks/useBeats';
+import { BeatLicenseManager } from './BeatLicenseManager';
+import type { CreateBeatInput } from '../../../domain/beats/entities/beat.js';
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001';
 
-interface Beat {
-  id: string;
-  title: string;
-  slug: string;
-  description: string | null;
-  priceCents: number;
-  genre: string | null;
-  bpm: number | null;
-  key: string | null;
-  audioUrl: string | null;
-  status: string;
-  playsCount: number;
-  salesCount: number;
-  createdAt: string;
-}
-
-type UploadStatus = 'idle' | 'creating' | 'uploading' | 'done' | 'error';
-
 export function BeatsPage() {
-  const { session, isLoading: authLoading, getAccessToken } = useAuth();
-  const [beats, setBeats] = useState<Beat[]>([]);
-  const [fetching, setFetching] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  const {
+    beats,
+    isLoading,
+    error,
+    uploadStatus,
+    uploadError,
+    uploadBeat,
+    deleteBeat,
+    resetUpload,
+    actionMsg,
+    isProducer,
+  } = useBeats();
 
-  // Formulario de subida
+  // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priceCents, setPriceCents] = useState(999);
   const [genre, setGenre] = useState('');
   const [bpm, setBpm] = useState<number | ''>('');
   const [beatKey, setBeatKey] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [licenseManagerBeatId, setLicenseManagerBeatId] = useState<string | null>(null);
+  const audioFileRef = useRef<HTMLInputElement>(null);
+  const coverFileRef = useRef<HTMLInputElement>(null);
 
-  // Mensaje de acción
-  const [actionMsg, setActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const actionTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
-  const isProducer = session?.role === 'producer';
-
-  // Cargar beats
-  useEffect(() => {
-    loadBeats();
-  }, []);
-
-  async function loadBeats() {
-    setFetching(true);
-    setFetchError(null);
-    try {
-      const res = await fetch(`${API_BASE}/api/v1/beats`);
-      if (!res.ok) throw new Error(`Error ${res.status}`);
-      const data = await res.json();
-      // La API devuelve { data: Beat[], pagination: ... }
-      setBeats((data as { data: Beat[] }).data ?? []);
-    } catch (err) {
-      setFetchError(err instanceof Error ? err.message : 'Error al cargar beats');
-      setBeats([]);
-    } finally {
-      setFetching(false);
-    }
-  }
-
-  function showMessage(type: 'success' | 'error', text: string) {
-    if (actionTimer.current) clearTimeout(actionTimer.current);
-    setActionMsg({ type, text });
-    actionTimer.current = setTimeout(() => setActionMsg(null), 4000);
+  function resetForm() {
+    setTitle('');
+    setDescription('');
+    setPriceCents(999);
+    setGenre('');
+    setBpm('');
+    setBeatKey('');
+    setAudioFile(null);
+    setCoverFile(null);
+    if (audioFileRef.current) audioFileRef.current.value = '';
+    if (coverFileRef.current) coverFileRef.current.value = '';
+    setShowForm(false);
+    resetUpload();
   }
 
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault();
-    if (!file || !title.trim()) return;
+    if (!audioFile || !title.trim()) return;
 
-    const token = getAccessToken();
-    if (!token) {
-      showMessage('error', 'Necesitás iniciar sesión para subir beats');
-      return;
-    }
+    const input: CreateBeatInput = {
+      title: title.trim(),
+      description: description.trim() || undefined,
+      priceCents,
+      genre: genre || undefined,
+      bpm: bpm || undefined,
+      key: beatKey || undefined,
+    };
 
-    setUploadStatus('creating');
-    setUploadError(null);
-
-    try {
-      // 1. Crear el beat (metadata)
-      const createRes = await fetch(`${API_BASE}/api/v1/beats`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title: title.trim(),
-          description: description.trim() || undefined,
-          priceCents,
-          genre: genre || undefined,
-          bpm: bpm || undefined,
-          key: beatKey || undefined,
-        }),
-      });
-
-      if (!createRes.ok) {
-        const errBody = await createRes.json().catch(() => ({}));
-        throw new Error((errBody as { detail?: string }).detail ?? `Error al crear beat (${createRes.status})`);
-      }
-
-      const beat = (await createRes.json()) as Beat;
-      const beatId = beat.id;
-
-      // 2. Subir el archivo de audio
-      setUploadStatus('uploading');
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const uploadRes = await fetch(`${API_BASE}/api/v1/storage/upload/${beatId}`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        const errBody = await uploadRes.json().catch(() => ({}));
-        throw new Error((errBody as { error?: string }).error ?? `Error al subir archivo (${uploadRes.status})`);
-      }
-
-      setUploadStatus('done');
-      showMessage('success', `¡"${title}" subido exitosamente!`);
-
-      // Resetear formulario
-      setTitle('');
-      setDescription('');
-      setPriceCents(999);
-      setGenre('');
-      setBpm('');
-      setBeatKey('');
-      setFile(null);
-      if (fileRef.current) fileRef.current.value = '';
-      setShowForm(false);
-
-      // Recargar lista
-      loadBeats();
-    } catch (err) {
-      setUploadStatus('error');
-      setUploadError(err instanceof Error ? err.message : 'Error inesperado');
-      showMessage('error', err instanceof Error ? err.message : 'Error inesperado');
+    await uploadBeat(input, audioFile, coverFile);
+    if (uploadStatus !== 'error') {
+      resetForm();
     }
   }
 
   async function handleDelete(beatId: string) {
     if (!confirm('¿Eliminar este beat definitivamente?')) return;
-
-    const token = getAccessToken();
-    if (!token) return;
-
-    try {
-      const res = await fetch(`${API_BASE}/api/v1/beats/${beatId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error(`Error al eliminar (${res.status})`);
-
-      showMessage('success', 'Beat eliminado');
-      loadBeats();
-    } catch (err) {
-      showMessage('error', err instanceof Error ? err.message : 'Error al eliminar');
-    }
+    await deleteBeat(beatId);
   }
 
-  const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
-
-  if (authLoading) {
+  if (isLoading) {
     return (
       <main className="page-shell page-shell--dashboard min-h-screen bg-obsidian font-body text-koguiCream mineral-grain flex items-center justify-center">
         <div className="flex items-center gap-3">
@@ -198,7 +95,7 @@ export function BeatsPage() {
       <div className="page-shell__pattern" />
 
       <div className="relative ml-64 mt-20 flex max-w-7xl flex-1 flex-col gap-8 bg-transparent p-12 pattern-vueltiao-subtle">
-        {/* Encabezado */}
+        {/* Header */}
         <section className="flex items-center justify-between">
           <div>
             <h1 className="font-headline text-5xl font-black leading-none tracking-tighter text-koguiCream md:text-6xl">
@@ -216,7 +113,7 @@ export function BeatsPage() {
           )}
         </section>
 
-        {/* Mensaje de acción */}
+        {/* Action message */}
         {actionMsg && (
           <div
             className={`rounded-lg border px-6 py-4 text-sm font-medium ${
@@ -229,7 +126,7 @@ export function BeatsPage() {
           </div>
         )}
 
-        {/* Formulario de subida */}
+        {/* Upload form */}
         {showForm && (
           <form onSubmit={handleUpload} className="rounded-lg border border-koguiCream/20 bg-obsidian/80 p-6 space-y-4">
             <h2 className="font-headline text-xl font-bold text-muiscaGold">Subir nuevo beat</h2>
@@ -299,18 +196,33 @@ export function BeatsPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-xs font-bold uppercase tracking-widest text-koguiCream/60">Archivo de audio * (MP3, WAV o FLAC, máx 50MB)</label>
+              <label className="block text-xs font-bold uppercase tracking-widest text-koguiCream/60">
+                Archivo de audio * (MP3, WAV o FLAC, máx 50MB)
+              </label>
               <input
-                ref={fileRef}
+                ref={audioFileRef}
                 type="file"
                 accept=".mp3,.wav,.flac,audio/mpeg,audio/wav,audio/flac"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)}
                 required
                 className="w-full text-sm text-koguiCream/60 file:mr-4 file:rounded-lg file:border-0 file:bg-muiscaGold file:px-4 file:py-2 file:text-sm file:font-bold file:text-obsidian file:cursor-pointer hover:file:bg-muiscaGold/80"
               />
             </div>
 
-            {uploadError && (
+            <div className="space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-widest text-koguiCream/60">
+                Imagen de portada (opcional, JPG/PNG/WebP/GIF, máx 10MB)
+              </label>
+              <input
+                ref={coverFileRef}
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif"
+                onChange={(e) => setCoverFile(e.target.files?.[0] ?? null)}
+                className="w-full text-sm text-koguiCream/60 file:mr-4 file:rounded-lg file:border-0 file:bg-muiscaGold file:px-4 file:py-2 file:text-sm file:font-bold file:text-obsidian file:cursor-pointer hover:file:bg-muiscaGold/80"
+              />
+            </div>
+
+            {(uploadError) && (
               <p className="text-sm text-taironaTerracotta">{uploadError}</p>
             )}
 
@@ -322,29 +234,29 @@ export function BeatsPage() {
               {uploadStatus === 'creating'
                 ? 'Creando beat...'
                 : uploadStatus === 'uploading'
-                  ? 'Subiendo archivo...'
+                  ? 'Subiendo archivos...'
                   : 'Subir Beat'}
             </button>
           </form>
         )}
 
-        {/* Error al cargar */}
-        {fetchError && (
+        {/* Error loading beats */}
+        {error && (
           <div className="rounded-lg border border-taironaTerracotta/30 bg-taironaTerracotta/10 px-6 py-4 text-sm text-taironaTerracotta">
-            Error al cargar beats: {fetchError}
-            <button onClick={loadBeats} className="ml-4 underline hover:text-koguiCream">
+            Error al cargar beats: {error}
+            <button onClick={() => window.location.reload()} className="ml-4 underline hover:text-koguiCream">
               Reintentar
             </button>
           </div>
         )}
 
-        {/* Tabla de beats */}
-        {fetching ? (
+        {/* Beats table */}
+        {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <span className="w-2 h-2 bg-muiscaGold animate-pulse" />
             <span className="ml-3 font-headline text-sm tracking-widest text-koguiCream/60 uppercase">Cargando beats...</span>
           </div>
-        ) : beats.length === 0 && !fetchError ? (
+        ) : beats.length === 0 && !error ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <p className="font-headline text-xl text-koguiCream/40">No hay beats todavía</p>
             {isProducer && (
@@ -362,12 +274,14 @@ export function BeatsPage() {
               <thead className="bg-obsidian/50 text-left text-sm uppercase tracking-wider text-koguiCream/70">
                 <tr>
                   <th className="p-4">Título</th>
+                  <th className="p-4">Portada</th>
                   <th className="p-4">Género</th>
                   <th className="p-4">BPM</th>
                   <th className="p-4">Precio</th>
                   <th className="p-4">Estado</th>
                   <th className="p-4">Reproducciones</th>
                   <th className="p-4">Audio</th>
+                  {isProducer && <th className="p-4">Licencias</th>}
                   {isProducer && <th className="p-4">Acción</th>}
                 </tr>
               </thead>
@@ -375,6 +289,17 @@ export function BeatsPage() {
                 {beats.map((beat) => (
                   <tr key={beat.id} className="hover:bg-muiscaGold/5 transition-colors">
                     <td className="p-4 font-medium text-koguiCream">{beat.title}</td>
+                    <td className="p-4">
+                      {beat.coverUrl ? (
+                        <img
+                          src={`${API_BASE}${beat.coverUrl}`}
+                          alt={`${beat.title} cover`}
+                          className="h-10 w-10 rounded object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs text-koguiCream/30">—</span>
+                      )}
+                    </td>
                     <td className="p-4 text-koguiCream/80">{beat.genre ?? '—'}</td>
                     <td className="p-4 text-koguiCream/80">{beat.bpm ?? '—'}</td>
                     <td className="p-4 text-muiscaGold">{formatPrice(beat.priceCents)}</td>
@@ -392,29 +317,36 @@ export function BeatsPage() {
                     <td className="p-4 text-koguiCream/80">{beat.playsCount}</td>
                     <td className="p-4">
                       {beat.audioUrl ? (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={async () => {
-                              try {
-                                const res = await fetch(`${API_BASE}/api/v1/storage/download/${encodeURIComponent(beat.audioUrl!)}`);
-                                if (!res.ok) throw new Error('Error al obtener URL');
-                                const data = (await res.json()) as { url: string };
-                                window.open(data.url, '_blank');
-                              } catch {
-                                // En modo local, la URL es directa
-                                window.open(`${API_BASE}${beat.audioUrl}`, '_blank');
-                              }
-                            }}
-                            className="text-xs font-bold uppercase tracking-wider text-muiscaGold hover:text-muiscaGold/70 transition-colors"
-                            title="Descargar"
-                          >
-                            ⬇ Descargar
-                          </button>
-                        </div>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(`${API_BASE}/api/v1/storage/download/${encodeURIComponent(beat.audioUrl!)}`);
+                              if (!res.ok) throw new Error('Error al obtener URL');
+                              const data = (await res.json()) as { url: string };
+                              window.open(data.url, '_blank');
+                            } catch {
+                              window.open(`${API_BASE}${beat.audioUrl}`, '_blank');
+                            }
+                          }}
+                          className="text-xs font-bold uppercase tracking-wider text-muiscaGold hover:text-muiscaGold/70 transition-colors"
+                          title="Descargar"
+                        >
+                          ⬇ Descargar
+                        </button>
                       ) : (
                         <span className="text-xs text-koguiCream/30">Sin audio</span>
                       )}
                     </td>
+                    {isProducer && (
+                      <td className="p-4">
+                        <button
+                          onClick={() => setLicenseManagerBeatId(beat.id)}
+                          className="text-xs font-bold uppercase tracking-wider text-muiscaGold hover:text-muiscaGold/70 transition-colors"
+                        >
+                          ⚙ Licencias
+                        </button>
+                      </td>
+                    )}
                     {isProducer && (
                       <td className="p-4">
                         <button
@@ -432,6 +364,18 @@ export function BeatsPage() {
           </div>
         )}
       </div>
+
+      {/* License Manager Modal */}
+      {licenseManagerBeatId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/80 backdrop-blur-sm">
+          <div className="w-full max-w-lg px-4">
+            <BeatLicenseManager
+              beatId={licenseManagerBeatId}
+              onClose={() => setLicenseManagerBeatId(null)}
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 }

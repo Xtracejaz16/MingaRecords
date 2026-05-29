@@ -1,5 +1,5 @@
 export type AuthTab = 'login' | 'register';
-export type AuthRole = 'artist' | 'producer';
+export type AuthRole = 'BEATMAKER' | 'BUYER' | 'ADMIN';
 
 export interface AuthDraft {
   email: string;

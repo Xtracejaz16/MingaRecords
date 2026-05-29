@@ -1,11 +1,43 @@
 schema: spec-driven
 
 context: |
-  Tech stack: Vite 7.3.1, React 19.2.0, TypeScript 5.9.3, Tailwind CSS 4.2.2 (CDN + PostCSS)
-  Architecture: Hexagonal frontend (domain → application → infrastructure → ui), hash-based routing
-  Testing: Vitest 3.2.4 (jsdom), @testing-library/react 16.3.0, strict_tdd: true
-  Style: Custom CSS design system with Colombian indigenous theming (Muisca, Tairona, Wayuu, etc.)
-  Package manager: pnpm 10.32.1
+  Monorepo (pnpm workspace + Turborepo 2.3).
+
+  Backend: Express 4.21, TypeScript 5.6, Prisma 7.8, PostgreSQL.
+  Frontend: React 19.2, Vite 7.3, TypeScript 5.9, Tailwind CSS 4.2 (CDN + PostCSS).
+  Architecture: Hexagonal frontend (domain -> application -> infrastructure -> ui), hash-based routing.
+  Testing: Vitest 3.2.4 + supertest 7.2 (backend); Vitest 3.2.4 + @testing-library/react 16.3 (frontend).
+  Quality: ESLint (@typescript-eslint, no-explicit-any: error), TypeScript strict, Prettier.
+  Conventions: ADRs in docs/decisions/, SDD docs in docs/sdd/, conventional commits.
+  Theming: Dark earthy pre-Columbian Colombian (Muisca, Tairona, Wayuu, etc.).
+  Package manager: pnpm 10.32.1.
+
+testing:
+  strict_tdd: true
+  backend:
+    runner: vitest
+    command: pnpm --filter @mingarecords/backend test
+    environment: node
+    integration: supertest
+    test_dir: tests/
+    coverage: false
+  frontend:
+    runner: vitest
+    command: pnpm --filter @mingarecords/web test:run
+    environment: jsdom
+    unit: "@testing-library/react"
+    setup: src/test/setup.ts
+    coverage: false
+  e2e: false
+  layers:
+    unit: true
+    integration: true
+    e2e: false
+
+quality:
+  linter: eslint (@typescript-eslint, no-explicit-any: error)
+  type_checker: typescript --strict
+  formatter: prettier (printWidth: 100, singleQuote, trailingComma: all)
 
 rules:
   proposal:
@@ -20,7 +52,7 @@ rules:
     - Group by phase, use hierarchical numbering
     - Keep tasks completable in one session
   apply:
-    - Follow existing hexagonal patterns (domain → application → infrastructure → ui)
+    - Follow existing hexagonal patterns (domain -> application -> infrastructure -> ui)
     - tdd: true
     - test_command: "pnpm test:run"
   verify:

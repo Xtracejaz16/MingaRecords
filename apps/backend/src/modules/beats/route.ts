@@ -17,6 +17,12 @@ import {
   getGenres,
   getDashboard,
 } from './service.js';
+import { UpsertLicensesBodySchema } from './routes.js';
+import {
+  getLicenses,
+  upsertLicenses,
+} from './service.js';
+import type { AuthenticatedRequest } from '@/modules/auth/types.js';
 import { ZodError } from 'zod';
 
 const router = Router();
@@ -38,13 +44,13 @@ function rfc7807Error(
 router.post('/', requireAuth, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    if (user.role !== 'producer') {
+    if (user.role !== 'BEATMAKER') {
       res.status(403).json(
         rfc7807Error(
           'https://mingarecords.com/errors/forbidden',
           'Rol insuficiente',
           403,
-          'Solo los productores pueden crear beats',
+          'Solo los beatmakers pueden crear beats',
           req.originalUrl,
         ),
       );
@@ -90,13 +96,13 @@ router.get('/genres', async (_req: Request, res: Response) => {
 router.get('/dashboard', requireAuth, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    if (user.role !== 'producer') {
+    if (user.role !== 'BEATMAKER') {
       res.status(403).json(
         rfc7807Error(
           'https://mingarecords.com/errors/forbidden',
           'Rol insuficiente',
           403,
-          'Solo los productores pueden acceder al dashboard',
+          'Solo los beatmakers pueden acceder al dashboard',
           req.originalUrl,
         ),
       );
@@ -130,6 +136,44 @@ router.get('/producers/:id/beats', async (req: Request, res: Response) => {
     const take = req.query.take ? Number(req.query.take) : 20;
     const beats = await getProducerBeats(req.params.id, { skip, take });
     res.status(200).json(beats);
+  } catch (error) {
+    handleBeatsError(error, res, req);
+  }
+});
+
+// ─── License Routes ──────────────────────────────────────────────
+// NOTE: Must be BEFORE /:id to avoid matching "beat-1/licenses" as :id
+
+router.get('/:id/licenses', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const beatId = req.params.id;
+    const userId = (req as AuthenticatedRequest).user?.userId;
+    if (!userId) {
+      res.status(401).json(rfc7807Error('https://mingarecords.com/errors/unauthorized', 'No autorizado', 401, 'Usuario no autenticado', req.originalUrl));
+      return;
+    }
+    const licenses = await getLicenses(beatId, userId);
+    res.status(200).json(licenses);
+  } catch (error) {
+    handleBeatsError(error, res, req);
+  }
+});
+
+router.put('/:id/licenses', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const beatId = req.params.id;
+    const user = (req as AuthenticatedRequest).user;
+    if (!user) {
+      res.status(401).json(rfc7807Error('https://mingarecords.com/errors/unauthorized', 'No autorizado', 401, 'Usuario no autenticado', req.originalUrl));
+      return;
+    }
+    if (user.role !== 'BEATMAKER') {
+      res.status(403).json(rfc7807Error('https://mingarecords.com/errors/forbidden', 'Rol insuficiente', 403, 'Solo los beatmakers pueden gestionar licencias', req.originalUrl));
+      return;
+    }
+    const input = UpsertLicensesBodySchema.parse(req.body);
+    const result = await upsertLicenses(beatId, user.userId, input);
+    res.status(200).json(result);
   } catch (error) {
     handleBeatsError(error, res, req);
   }
@@ -230,6 +274,28 @@ function handleBeatsError(error: unknown, res: Response, req: Request): void {
             'https://mingarecords.com/errors/forbidden',
             'Rol de productor requerido',
             403,
+            error.message,
+            req.originalUrl,
+          ),
+        );
+        return;
+      case 'InvalidLicenseTypeError':
+        res.status(400).json(
+          rfc7807Error(
+            'https://mingarecords.com/errors/validation',
+            'Tipo de licencia inválido',
+            400,
+            error.message,
+            req.originalUrl,
+          ),
+        );
+        return;
+      case 'PriceOutOfRangeError':
+        res.status(422).json(
+          rfc7807Error(
+            'https://mingarecords.com/errors/price-out-of-range',
+            'Precio fuera de rango',
+            422,
             error.message,
             req.originalUrl,
           ),
