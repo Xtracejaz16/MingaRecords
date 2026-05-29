@@ -1,88 +1,94 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { HTMLAudioPlayerAdapter } from '../../../infrastructure/marketplace/HTMLAudioPlayerAdapter';
 import { PlayBeatUseCase } from '../../../application/marketplace/PlayBeatUseCase';
 import { usePlayerStore } from '../store/playerStore';
 import type { Beat } from '../../../domain/marketplace/Beat';
 import type { AudioPlayerRepository } from '../../../domain/marketplace/AudioPlayerRepository';
 
-function createAudioPlayer(): AudioPlayerRepository {
-  return new HTMLAudioPlayerAdapter();
+// ── Singleton adapter ─────────────────────────────────────────────────────
+// Tanto MarketplacePage como PersistentPlayer llaman a useAudioPlayer().
+// Sin singleton, cada uno crea su propio <audio> — los controles de uno
+// no afectan al otro. El adapter se crea una sola vez y se comparte.
+let sharedAdapter: AudioPlayerRepository | null = null;
+let eventsWired = false;
+
+function getAdapter(): AudioPlayerRepository {
+  if (!sharedAdapter) {
+    sharedAdapter = new HTMLAudioPlayerAdapter();
+  }
+  return sharedAdapter;
 }
 
 export function useAudioPlayer() {
-  const [adapter] = useState(() => createAudioPlayer());
-  const [useCase] = useState(() => new PlayBeatUseCase(adapter));
+  const adapter = getAdapter();
 
-  const setProgress = usePlayerStore((s) => s.setProgress);
-  const setDuration = usePlayerStore((s) => s.setDuration);
-  const setStatus = usePlayerStore((s) => s.setStatus);
-  const pauseBeat = usePlayerStore((s) => s.pauseBeat);
+  // Wire events UNA sola vez (no importa cuántas veces llame useAudioPlayer)
+  if (!eventsWired) {
+    eventsWired = true;
 
-  // Wire audio events to store
-  useEffect(() => {
     adapter.onTimeUpdate((time) => {
-      setProgress(time);
+      usePlayerStore.getState().setProgress(time);
     });
 
     adapter.onLoadedMetadata((duration) => {
-      setDuration(duration);
-      setStatus('playing');
+      usePlayerStore.getState().setDuration(duration);
+      usePlayerStore.getState().resumeBeat(); // ← isPlaying = true
     });
 
     adapter.onEnded(() => {
-      pauseBeat();
-      setStatus('ended');
+      usePlayerStore.getState().pauseBeat();
+      usePlayerStore.getState().setStatus('ended');
     });
 
     adapter.onError(() => {
-      setStatus('error');
+      usePlayerStore.getState().setStatus('error');
     });
+  }
 
-    return () => {
-      adapter.cleanup();
-    };
-  }, [adapter, setProgress, setDuration, setStatus, pauseBeat]);
-
-  const setCurrentBeat = usePlayerStore((s) => s.setCurrentBeat);
+  // useCase también singleton
+  const useCaseRef = useRef<PlayBeatUseCase | null>(null);
+  if (!useCaseRef.current) {
+    useCaseRef.current = new PlayBeatUseCase(adapter);
+  }
 
   const playBeat = async (beat: Beat) => {
-    setCurrentBeat(beat);
-    setStatus('loading');
+    usePlayerStore.getState().setCurrentBeat(beat);
+    usePlayerStore.getState().setStatus('loading');
     try {
-      await useCase.execute(beat);
+      await useCaseRef.current!.execute(beat);
     } catch (error) {
       if (error instanceof Error && error.message === 'MISSING_AUDIO_URL') {
         return;
       }
-      setStatus('error');
+      usePlayerStore.getState().setStatus('error');
     }
   };
 
-  const pause = () => {
+  const pause = useCallback(() => {
     adapter.pause();
     usePlayerStore.getState().pauseBeat();
-  };
+  }, []);
 
-  const resume = () => {
+  const resume = useCallback(() => {
     adapter.play().catch(() => {
       usePlayerStore.getState().setStatus('error');
     });
     usePlayerStore.getState().resumeBeat();
-  };
+  }, []);
 
-  const seek = (time: number) => {
+  const seek = useCallback((time: number) => {
     adapter.seek(time);
-  };
+  }, []);
 
-  const setVolume = (value: number) => {
+  const setVolume = useCallback((value: number) => {
     adapter.setVolume(value);
     usePlayerStore.getState().setVolume(value);
-  };
+  }, []);
 
-  const toggleMute = () => {
+  const toggleMute = useCallback(() => {
     adapter.toggleMute();
     usePlayerStore.getState().toggleMute();
-  };
+  }, []);
 
   return {
     playBeat,

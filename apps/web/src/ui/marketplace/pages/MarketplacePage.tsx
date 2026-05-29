@@ -1,6 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import '../marketplace.css';
-import { TopNavBar } from '../../shared/components/TopNavBar';
+import { TopNavBar } from '../components/TopNavBar';
 import { SideNavBar } from '../components/SideNavBar';
 import { HeroHeader } from '../components/HeroHeader';
 import { SearchBar } from '../components/SearchBar';
@@ -90,17 +89,17 @@ export function MarketplacePage() {
   };
 
   return (
-    <div className="marketplace-shell h-screen flex flex-col overflow-hidden bg-obsidian font-body text-koguiCream selection:bg-muiscaGold selection:text-taironaTerracotta">
+    <div className="bg-surface font-body text-on-surface selection:bg-primary selection:text-on-primary min-h-screen overflow-x-hidden">
       {/* Background overlays */}
-      <div className="fixed inset-0 marketplace-pattern z-0 pointer-events-none"></div>
-      <div className="fixed inset-0 marketplace-grain z-0 pointer-events-none"></div>
+      <div className="fixed inset-0 bg-[url('data:image/svg+xml,%3Csvg%20viewBox=%270%200%20200%20200%27%20xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cfilter%20id=%27noiseFilter%27%3E%3CfeTurbulence%20type=%27fractalNoise%27%20baseFrequency=%270.65%27%20numOctaves=%273%27%20stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect%20width=%27100%25%27%20height=%27100%25%27%20filter=%27url(%23noiseFilter)%27/%3E%3C/svg%3E')] opacity-[0.03] z-0 pointer-events-none"></div>
+      <div className="fixed inset-0 bg-[length:24px_24px] bg-[radial-gradient(#c8860a_0.5px,transparent_0.5px)] opacity-5 z-0 pointer-events-none"></div>
 
       <TopNavBar />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex pt-20 pb-24 min-h-screen">
         <SideNavBar />
 
-        <main className="flex-1 overflow-y-auto relative z-10">
+        <main className="ml-64 flex-1 px-12 py-12 max-w-7xl">
           {loading ? (
             <div className="h-full flex items-center justify-center">
               <div className="flex items-center gap-3">
@@ -111,7 +110,7 @@ export function MarketplacePage() {
               </div>
             </div>
           ) : (
-            <div className="px-12 py-12 max-w-7xl mx-auto">
+            <>
               <HeroHeader />
 
               {/* Search & Filters */}
@@ -130,10 +129,10 @@ export function MarketplacePage() {
                     <h3 className="font-display text-3xl font-bold tracking-widest text-on-surface uppercase pr-6">
                       La Cosecha
                     </h3>
-                    <div className="h-[1px] flex-1 bg-gradient-to-r from-wayuuJade/20 via-muiscaGold/40 to-zenuCopper/20"></div>
+                    <div className="h-[1px] flex-1 bg-gradient-to-r from-[#1A7A6E]/20 via-[#C8860A]/40 to-[#B5651D]/20"></div>
                   </div>
                   <button
-                    className="text-primary font-display text-xs tracking-widest underline decoration-secondary ml-10"
+                    className="text-primary font-display text-xs tracking-widest underline decoration-secondary ml-10 cursor-pointer"
                     type="button"
                   >
                     VER TODOS LOS BEATS
@@ -159,7 +158,7 @@ export function MarketplacePage() {
                   <h3 className="font-display text-2xl font-bold tracking-widest text-on-surface uppercase">
                     La Minga Activity
                   </h3>
-                  <div className="h-[1px] flex-1 bg-gradient-to-r from-wayuuJade/20 via-muiscaGold/40 to-zenuCopper/20"></div>
+                  <div className="h-[1px] flex-1 bg-gradient-to-r from-[#1A7A6E]/20 via-[#C8860A]/40 to-[#B5651D]/20"></div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {activities.map((activity) => (
@@ -177,14 +176,14 @@ export function MarketplacePage() {
               <footer className="mt-20 py-12 border-t border-outline-variant/10 text-center space-y-6">
                 <div className="flex justify-center gap-8 font-display text-[10px] tracking-[0.4em] text-on-surface-variant uppercase">
                   <button
-                    className="hover:text-primary transition-colors"
+                    className="hover:text-primary transition-colors cursor-pointer"
                     type="button"
                   >
                     Minga License
                   </button>
                   <span className="text-outline-variant/30">|</span>
                   <button
-                    className="hover:text-primary transition-colors"
+                    className="hover:text-primary transition-colors cursor-pointer"
                     type="button"
                   >
                     Support Portal
@@ -194,7 +193,7 @@ export function MarketplacePage() {
                   © 2024 MINGA RECORDS · Ancestral Audio Solutions
                 </p>
               </footer>
-            </div>
+            </>
           )}
         </main>
       </div>

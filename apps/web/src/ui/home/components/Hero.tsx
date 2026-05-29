@@ -4,12 +4,12 @@ export function Hero() {
   const { navigateTo } = useAppShell();
 
   return (
-    <section className="relative min-h-screen pt-32 pb-20 flex flex-col items-center justify-center text-center pattern-vueltiao overflow-hidden">
+    <section className="relative min-h-screen pt-32 pb-20 flex flex-col items-center justify-center text-center bg-[url('data:image/svg+xml,%3Csvg%20width=%2760%27%20height=%2760%27%20viewBox=%270%200%2060%2060%27%20xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cpath%20d=%27M30%200L60%2030L30%2060L0%2030L30%200ZM30%2010L50%2030L30%2050L10%2030L30%2010Z%27%20fill=%27%23F2E8D0%27%20fill-opacity=%270.04%27/%3E%3C/svg%3E')] bg-[length:24px_24px] overflow-hidden">
       {/* Rotating Muisca Emblem Background */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 pointer-events-none">
-        <svg className="solar-emblem w-[600px] h-[600px]" fill="none" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <svg className="w-[600px] h-[600px] animate-rotate-solar" fill="none" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <circle cx="50" cy="50" r="45" stroke="#C8860A" strokeDasharray="2 2" strokeWidth="0.5" />
-          <path d="M50  L55 45 L95 50 L55 55 L50 95 L45 55 L5 50 L45 45 Z" fill="#C8860A" />
+          <path d="M50 5 L55 45 L95 50 L55 55 L50 95 L45 55 L5 50 L45 45 Z" fill="#C8860A" />
           <circle cx="50" cy="50" r="10" stroke="#C8860A" strokeWidth="1" />
         </svg>
       </div>

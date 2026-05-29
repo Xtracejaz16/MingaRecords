@@ -1,18 +1,68 @@
 <!DOCTYPE html>
-<html class="scroll-smooth" lang="es">
+<html class="dark scroll-smooth" lang="es">
 <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>MINGA RECORDS | El Ritmo Nació Aquí</title>
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Newsreader:opsz,wght@6..72,400;6..72,700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <script>
     tailwind.config = {
+      darkMode: "class",
       theme: {
         extend: {
           colors: {
+            // Stitch tokens (48)
+            'tertiary-container': '#4ca295',
+            'surface-bright': '#403923',
+            'surface-tint': '#ffb950',
+            'on-surface': '#efe2c2',
+            'secondary-container': '#892400',
+            'on-secondary-fixed': '#3a0a00',
+            'on-error': '#690005',
+            'background': '#0F0A00',
+            'secondary': '#ffb59f',
+            'on-primary-fixed-variant': '#633f00',
+            'surface-container-high': '#302915',
+            'surface-container-lowest': '#130e01',
+            'tertiary-fixed': '#9df2e3',
+            'surface-container-highest': '#3b341f',
+            'inverse-primary': '#825500',
+            'on-surface-variant': '#d6c4af',
+            'on-primary-container': '#3f2700',
+            'on-secondary-container': '#ffa084',
+            'on-background': '#efe2c2',
+            'primary-fixed-dim': '#ffb950',
+            'on-tertiary-container': '#00332d',
+            'surface-dim': '#181303',
+            'outline': '#9e8e7b',
+            'on-secondary': '#5e1600',
+            'inverse-on-surface': '#37301b',
+            'secondary-fixed': '#ffdbd1',
+            'secondary-fixed-dim': '#ffb59f',
+            'on-tertiary-fixed': '#00201c',
+            'tertiary': '#81d6c7',
+            'surface-variant': '#3b341f',
+            'error-container': '#93000a',
+            'on-tertiary-fixed-variant': '#005047',
+            'tertiary-fixed-dim': '#81d6c7',
+            'surface-container-low': '#211b08',
+            'surface-container': '#251f0b',
+            'primary-fixed': '#ffddb3',
+            'primary-container': '#c8860a',
+            'on-secondary-fixed-variant': '#852300',
+            'outline-variant': '#514535',
+            'surface': '#0F0A00',
+            'on-primary': '#452b00',
+            'inverse-surface': '#efe2c2',
+            'error': '#ffb4ab',
+            'on-tertiary': '#003731',
+            'on-error-container': '#ffdad6',
+            'primary': '#ffb950',
+            'on-primary-fixed': '#291800',
+            // Legacy named tokens (backward compat)
             obsidian: '#0F0A00',
             muiscaGold: '#C8860A',
             taironaTerracotta: '#8B2500',
@@ -20,51 +70,36 @@
             zenuCopper: '#B5651D',
             emberaNavy: '#1A2340',
             wayuuJade: '#1A7A6E',
-            surface: '#0F0A00',
-            'surface-container-high': '#211b08',
-            primary: '#C8860A',
-            secondary: '#8B2500',
-            'on-background': '#F2E8D0',
-            'on-surface': '#efe2c2',
-            'on-surface-variant': '#d6c4af',
-            outline: '#514535',
-            'outline-variant': '#514535',
+          },
+          borderRadius: {
+            DEFAULT: '0px',
+            lg: '0px',
+            xl: '0px',
+            full: '9999px',
           },
           fontFamily: {
             headline: ['Cinzel', 'serif'],
-            body: ['Crimson Pro', 'serif'],
-            label: ['Crimson Pro', 'serif'],
             display: ['Cinzel', 'serif'],
             cinzel: ['Cinzel', 'serif'],
+            body: ['Crimson Pro', 'serif'],
             crimson: ['Crimson Pro', 'serif'],
+            label: ['Newsreader', 'serif'],
+          },
+          keyframes: {
+            rotateSolar: {
+              from: { transform: 'rotate(0deg)' },
+              to: { transform: 'rotate(360deg)' },
+            },
+          },
+          animation: {
+            'rotate-solar': 'rotateSolar 20s linear infinite',
           },
         }
       }
     }
   </script>
-  <style>
-    .pattern-vueltiao {
-      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L60 30L30 60L0 30L30 0ZM30 10L50 30L30 50L10 30L30 10Z' fill='%23F2E8D0' fill-opacity='0.04'/%3E%3C/svg%3E");
-    }
-    .solar-emblem {
-      animation: rotateSolar 20s linear infinite;
-    }
-    @keyframes rotateSolar {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-    .reveal {
-      opacity: 0;
-      transform: translateY(30px);
-      transition: all 0.8s ease-out;
-    }
-    .reveal.active {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  </style>
 </head>
-<body class="bg-obsidian text-koguiCream font-crimson overflow-x-hidden">
+<body class="bg-surface font-body text-on-surface selection:bg-primary selection:text-on-primary min-h-screen overflow-x-hidden">
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>

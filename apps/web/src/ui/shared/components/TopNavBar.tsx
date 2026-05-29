@@ -30,7 +30,7 @@ export function TopNavBar() {
       </nav>
 
       <div className="flex items-center gap-6">
-        {resolvedRoute.key !== 'marketplace' && (
+        {resolvedRoute.key !== 'marketplace' && resolvedRoute.key !== 'intercambio' && (
           <button
             type="button"
             className="bg-muiscaGold text-obsidian px-6 py-2 text-sm font-display tracking-widest uppercase shadow-lg shadow-muiscaGold/10 transition-all duration-300 hover:bg-koguiCream cursor-pointer"

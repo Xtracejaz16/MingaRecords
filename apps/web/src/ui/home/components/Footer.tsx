@@ -36,7 +36,7 @@ export function Footer() {
       </div>
       
       {/* Pattern Base */}
-      <div className="w-full h-8 mt-12 pattern-vueltiao opacity-20" />
+      <div className="w-full h-8 mt-12 bg-[url('data:image/svg+xml,%3Csvg%20width=%2760%27%20height=%2760%27%20viewBox=%270%200%2060%2060%27%20xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cpath%20d=%27M30%200L60%2030L30%2060L0%2030L30%200ZM30%2010L50%2030L30%2050L10%2030L30%2010Z%27%20fill=%27%23F2E8D0%27%20fill-opacity=%270.04%27/%3E%3C/svg%3E')] opacity-20" />
     </footer>
   );
 }
