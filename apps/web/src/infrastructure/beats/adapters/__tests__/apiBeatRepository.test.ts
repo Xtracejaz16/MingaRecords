@@ -52,7 +52,7 @@ describe('ApiBeatRepository', () => {
   describe('createBeat', () => {
     it('should POST beat metadata and return the created beat', async () => {
       const input = { title: 'New Beat', priceCents: 999, genre: 'Hip Hop' };
-      const created = { id: '1', ...input, status: 'draft' } as any;
+      const created: Record<string, unknown> = { id: '1', ...input, status: 'draft' };
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(created),
