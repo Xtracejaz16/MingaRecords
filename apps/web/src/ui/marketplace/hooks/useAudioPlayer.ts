@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 import { HTMLAudioPlayerAdapter } from '../../../infrastructure/marketplace/HTMLAudioPlayerAdapter';
 import { PlayBeatUseCase } from '../../../application/marketplace/PlayBeatUseCase';
 import { usePlayerStore } from '../store/playerStore';
@@ -8,54 +8,51 @@ import type { AudioPlayerRepository } from '../../../domain/marketplace/AudioPla
 // ── Singleton adapter ─────────────────────────────────────────────────────
 // Tanto MarketplacePage como PersistentPlayer llaman a useAudioPlayer().
 // Sin singleton, cada uno crea su propio <audio> — los controles de uno
-// no afectan al otro. El adapter se crea una sola vez y se comparte.
+// no afectan al otro. El adapter se crea una sola vez y los eventos se
+// conectan durante la inicialización, no durante el render del hook.
 let sharedAdapter: AudioPlayerRepository | null = null;
-let eventsWired = false;
 
 function getAdapter(): AudioPlayerRepository {
   if (!sharedAdapter) {
     sharedAdapter = new HTMLAudioPlayerAdapter();
-  }
-  return sharedAdapter;
-}
 
-export function useAudioPlayer() {
-  const adapter = getAdapter();
-
-  // Wire events UNA sola vez (no importa cuántas veces llame useAudioPlayer)
-  if (!eventsWired) {
-    eventsWired = true;
-
-    adapter.onTimeUpdate((time) => {
+    // Wire events UNA sola vez (al crear el singleton)
+    sharedAdapter.onTimeUpdate((time) => {
       usePlayerStore.getState().setProgress(time);
     });
 
-    adapter.onLoadedMetadata((duration) => {
+    sharedAdapter.onLoadedMetadata((duration) => {
       usePlayerStore.getState().setDuration(duration);
       usePlayerStore.getState().resumeBeat(); // ← isPlaying = true
     });
 
-    adapter.onEnded(() => {
+    sharedAdapter.onEnded(() => {
       usePlayerStore.getState().pauseBeat();
       usePlayerStore.getState().setStatus('ended');
     });
 
-    adapter.onError(() => {
+    sharedAdapter.onError(() => {
       usePlayerStore.getState().setStatus('error');
     });
   }
+  return sharedAdapter;
+}
 
-  // useCase también singleton
-  const useCaseRef = useRef<PlayBeatUseCase | null>(null);
-  if (!useCaseRef.current) {
-    useCaseRef.current = new PlayBeatUseCase(adapter);
+let sharedUseCase: PlayBeatUseCase | null = null;
+
+function getUseCase(): PlayBeatUseCase {
+  if (!sharedUseCase) {
+    sharedUseCase = new PlayBeatUseCase(getAdapter());
   }
+  return sharedUseCase;
+}
 
+export function useAudioPlayer() {
   const playBeat = async (beat: Beat) => {
     usePlayerStore.getState().setCurrentBeat(beat);
     usePlayerStore.getState().setStatus('loading');
     try {
-      await useCaseRef.current!.execute(beat);
+      await getUseCase().execute(beat);
     } catch (error) {
       if (error instanceof Error && error.message === 'MISSING_AUDIO_URL') {
         return;
@@ -65,28 +62,28 @@ export function useAudioPlayer() {
   };
 
   const pause = useCallback(() => {
-    adapter.pause();
+    getAdapter().pause();
     usePlayerStore.getState().pauseBeat();
   }, []);
 
   const resume = useCallback(() => {
-    adapter.play().catch(() => {
+    getAdapter().play().catch(() => {
       usePlayerStore.getState().setStatus('error');
     });
     usePlayerStore.getState().resumeBeat();
   }, []);
 
   const seek = useCallback((time: number) => {
-    adapter.seek(time);
+    getAdapter().seek(time);
   }, []);
 
   const setVolume = useCallback((value: number) => {
-    adapter.setVolume(value);
+    getAdapter().setVolume(value);
     usePlayerStore.getState().setVolume(value);
   }, []);
 
   const toggleMute = useCallback(() => {
-    adapter.toggleMute();
+    getAdapter().toggleMute();
     usePlayerStore.getState().toggleMute();
   }, []);
 

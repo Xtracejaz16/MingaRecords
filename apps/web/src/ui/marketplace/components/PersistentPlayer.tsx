@@ -28,7 +28,6 @@ export function PersistentPlayer() {
   const progressRef = useRef<HTMLDivElement>(null);
   const volumeRef = useRef<HTMLDivElement>(null);
   const seekRef = useRef(seek);
-  seekRef.current = seek;
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (duration <= 0) return;
@@ -91,6 +90,11 @@ export function PersistentPlayer() {
       document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDraggingVolume, setVolume]);
+
+  // Keep seekRef in sync with latest seek callback (avoids stale closures)
+  useEffect(() => {
+    seekRef.current = seek;
+  }, [seek]);
 
   const handleVolumeClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();

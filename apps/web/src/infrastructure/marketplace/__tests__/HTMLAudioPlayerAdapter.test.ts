@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HTMLAudioPlayerAdapter } from '../HTMLAudioPlayerAdapter';
 
 // Store event listeners so we can trigger them in tests
-const eventListeners: Record<string, Function> = {};
+const eventListeners: Record<string, () => void> = {};
 
 // Mock HTMLAudioElement
 const mockAudio = {
@@ -15,7 +15,7 @@ const mockAudio = {
   play: vi.fn().mockResolvedValue(undefined),
   pause: vi.fn(),
   load: vi.fn(),
-  addEventListener: vi.fn((event: string, handler: Function) => {
+  addEventListener: vi.fn((event: string, handler: () => void) => {
     eventListeners[event] = handler;
   }),
   removeEventListener: vi.fn(),
