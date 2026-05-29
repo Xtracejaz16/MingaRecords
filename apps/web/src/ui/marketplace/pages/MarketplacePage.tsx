@@ -1,8 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
-import '../marketplace.css';
 import { TopNavBar } from '../../shared/components/TopNavBar';
 import { SideNavBar } from '../components/SideNavBar';
-import { HeroHeader } from '../components/HeroHeader';
 import { SearchBar } from '../components/SearchBar';
 import { GenreFilterChips } from '../components/GenreFilterChips';
 import { BeatCard } from '../components/BeatCard';
@@ -90,29 +88,61 @@ export function MarketplacePage() {
   };
 
   return (
-    <div className="marketplace-shell h-screen flex flex-col overflow-hidden bg-obsidian font-body text-koguiCream selection:bg-muiscaGold selection:text-taironaTerracotta">
-      {/* Background overlays */}
-      <div className="fixed inset-0 marketplace-pattern z-0 pointer-events-none"></div>
-      <div className="fixed inset-0 marketplace-grain z-0 pointer-events-none"></div>
+    <div className="h-screen flex flex-col overflow-hidden bg-surface font-body text-on-surface selection:bg-primary selection:text-on-primary min-h-screen overflow-x-hidden">
+      {/* Background overlays — Tailwind equivalents of grain and pattern */}
+      <div
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(#c8860a 0.5px, transparent 0.5px)',
+          backgroundSize: '24px 24px',
+          opacity: 0.05,
+        }}
+      />
+      <div
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          opacity: 0.03,
+        }}
+      />
 
       <TopNavBar />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex pt-20 pb-24 min-h-screen">
         <SideNavBar />
 
-        <main className="flex-1 overflow-y-auto relative z-10">
+        <main className="ml-64 flex-1 px-12 py-12 relative z-10 max-w-7xl">
           {loading ? (
             <div className="h-full flex items-center justify-center">
               <div className="flex items-center gap-3">
-                <span className="w-2 h-2 bg-secondary animate-pulse" />
-                <span className="font-display text-sm tracking-widest text-on-surface-variant uppercase">
+                <span className="flex h-2 w-2 rounded-full bg-secondary animate-pulse" />
+                <span className="text-secondary font-display text-xs tracking-[0.3em] uppercase">
                   Cargando la cosecha...
                 </span>
               </div>
             </div>
           ) : (
-            <div className="px-12 py-12 max-w-7xl mx-auto">
-              <HeroHeader />
+            <div>
+              {/* Hero Header */}
+              <section className="mb-16">
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="flex h-2 w-2 rounded-full bg-secondary animate-pulse" />
+                  <span className="text-secondary font-display text-xs tracking-[0.3em] uppercase">
+                    Cosecha del Mes
+                  </span>
+                </div>
+                <h2 className="leading-none mb-4">
+                  <span className="block text-on-surface font-display text-6xl font-bold tracking-tight">
+                    ENCUENTRA TU
+                  </span>
+                  <span className="block text-primary font-display text-7xl font-black tracking-tighter italic">
+                    PRÓXIMO SONIDO
+                  </span>
+                </h2>
+                <p className="text-on-surface-variant font-body text-xl italic max-w-2xl leading-relaxed">
+                  Descubre ritmos ancestrales procesados para la eternidad. Una curaduría de beats que conectan el pasado muisca con el futuro digital.
+                </p>
+              </section>
 
               {/* Search & Filters */}
               <section className="mb-12 space-y-8">
@@ -130,14 +160,14 @@ export function MarketplacePage() {
                     <h3 className="font-display text-3xl font-bold tracking-widest text-on-surface uppercase pr-6">
                       La Cosecha
                     </h3>
-                    <div className="h-[1px] flex-1 bg-gradient-to-r from-wayuuJade/20 via-muiscaGold/40 to-zenuCopper/20"></div>
+                    <div className="h-[1px] flex-1 bg-gradient-to-r from-[#1A7A6E]/20 via-[#C8860A]/40 to-[#B5651D]/20" />
                   </div>
-                  <button
+                  <a
                     className="text-primary font-display text-xs tracking-widest underline decoration-secondary ml-10"
-                    type="button"
+                    href="#"
                   >
                     VER TODOS LOS BEATS
-                  </button>
+                  </a>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {displayBeats.map((beat) => (
@@ -159,7 +189,7 @@ export function MarketplacePage() {
                   <h3 className="font-display text-2xl font-bold tracking-widest text-on-surface uppercase">
                     La Minga Activity
                   </h3>
-                  <div className="h-[1px] flex-1 bg-gradient-to-r from-wayuuJade/20 via-muiscaGold/40 to-zenuCopper/20"></div>
+                  <div className="h-[1px] flex-1 bg-gradient-to-r from-[#1A7A6E]/20 via-[#C8860A]/40 to-[#B5651D]/20" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {activities.map((activity) => (
@@ -176,19 +206,13 @@ export function MarketplacePage() {
               {/* Footer */}
               <footer className="mt-20 py-12 border-t border-outline-variant/10 text-center space-y-6">
                 <div className="flex justify-center gap-8 font-display text-[10px] tracking-[0.4em] text-on-surface-variant uppercase">
-                  <button
-                    className="hover:text-primary transition-colors"
-                    type="button"
-                  >
+                  <a className="hover:text-primary transition-colors" href="#">
                     Minga License
-                  </button>
+                  </a>
                   <span className="text-outline-variant/30">|</span>
-                  <button
-                    className="hover:text-primary transition-colors"
-                    type="button"
-                  >
+                  <a className="hover:text-primary transition-colors" href="#">
                     Support Portal
-                  </button>
+                  </a>
                 </div>
                 <p className="text-on-surface-variant/40 font-body text-xs tracking-widest uppercase">
                   © 2024 MINGA RECORDS · Ancestral Audio Solutions
