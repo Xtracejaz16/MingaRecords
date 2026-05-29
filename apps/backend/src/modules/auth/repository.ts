@@ -18,7 +18,7 @@ export async function createUser(
         email: string;
         passwordHash: string;
         alias: string;
-        role: 'producer' | 'artist';
+        role: 'BEATMAKER' | 'BUYER';
     }
 ): Promise<User> {
     const user = await prisma.user.create({ data });

@@ -131,6 +131,18 @@ export async function markAudioReady(
   });
 }
 
+export async function markBeatCover(
+  beatId: string,
+  coverUrl: string,
+): Promise<Beat> {
+  const beat = await getBeat(beatId);
+  // No auth check — this is called internally by Storage module
+
+  return beatsRepo.updateBeat(beatId, {
+    coverUrl,
+  });
+}
+
 export async function markAsSold(beatId: string): Promise<Beat> {
   const beat = await getBeat(beatId);
   // No auth check — this is called internally by Payments module

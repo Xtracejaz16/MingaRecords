@@ -14,7 +14,7 @@ const emptyDraft: AuthDraft = {
   email: '',
   password: '',
   alias: '',
-  role: 'artist',
+  role: 'BEATMAKER',
   remember: true,
 };
 
@@ -115,31 +115,31 @@ export function AuthScreen({ initialTab, onBackHome, onSubmit, notice }: AuthScr
                 <div className="mb-8 grid grid-cols-2 gap-4">
                   <label className="group relative cursor-pointer">
                     <input
-                      checked={draft.role === 'producer'}
+                      checked={draft.role === 'BEATMAKER'}
                       className="peer hidden"
                       name="role"
                       type="radio"
-                      value="producer"
-                      onChange={() => handleChange('role', 'producer')}
+                      value="BEATMAKER"
+                      onChange={() => handleChange('role', 'BEATMAKER')}
                     />
                     <div className="rounded-none border border-muiscaGold/30 p-4 text-center transition-all duration-300 peer-checked:border-muiscaGold peer-checked:bg-muiscaGold/5">
                       <Waves className="mx-auto mb-2 h-5 w-5 text-koguiCream/70 transition-colors peer-checked:text-muiscaGold" />
-                      <span className="font-headline block text-[10px] uppercase tracking-tighter">SOY PRODUCTOR</span>
+                      <span className="font-headline block text-[10px] uppercase tracking-tighter">SOY BEATMAKER</span>
                     </div>
                   </label>
 
                   <label className="group relative cursor-pointer">
                     <input
-                      checked={draft.role === 'artist'}
+                      checked={draft.role === 'BUYER'}
                       className="peer hidden"
                       name="role"
                       type="radio"
-                      value="artist"
-                      onChange={() => handleChange('role', 'artist')}
+                      value="BUYER"
+                      onChange={() => handleChange('role', 'BUYER')}
                     />
                     <div className="rounded-none border border-muiscaGold/30 p-4 text-center transition-all duration-300 peer-checked:border-muiscaGold peer-checked:bg-muiscaGold/5">
                       <Music2 className="mx-auto mb-2 h-5 w-5 text-koguiCream/70 transition-colors peer-checked:text-muiscaGold" />
-                      <span className="font-headline block text-[10px] uppercase tracking-tighter">SOY ARTISTA</span>
+                      <span className="font-headline block text-[10px] uppercase tracking-tighter">SOY BUYER</span>
                     </div>
                   </label>
                 </div>

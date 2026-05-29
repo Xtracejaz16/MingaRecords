@@ -60,7 +60,7 @@ export function TopNavBar() {
             </>
           ) : (
             <>
-              {session.role === 'artist' && (
+              {session.role === 'BEATMAKER' && (
                 <CartIconBadge
                   itemCount={itemCount}
                   onClick={() => navigateTo('intercambio')}

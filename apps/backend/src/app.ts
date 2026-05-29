@@ -9,6 +9,7 @@ import { env } from '@/config/env.js';
 import { beatsRouter } from '@/modules/beats/route.js';
 import { authRouter } from '@/modules/auth/route.js';
 import { storageRouter } from '@/modules/storage/routes.js';
+import { beatmakerRouter } from '@/modules/beatmaker/beatmaker.route.js';
 
 const app = express();
 
@@ -37,6 +38,9 @@ app.use('/uploads', express.static(path.resolve(process.cwd(), 'public', 'upload
 
 // Storage API routes
 app.use('/api/v1/storage', storageRouter);
+
+// Beatmaker API routes
+app.use('/api/v1/beatmaker', beatmakerRouter);
 
 // Ruta de salud — útil para monitoreo
 app.get('/health', (req, res) => {
