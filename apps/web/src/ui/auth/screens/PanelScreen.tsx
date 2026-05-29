@@ -34,7 +34,7 @@ export function PanelScreen({ session, onGoHome, onLogout }: PanelScreenProps) {
           <p className="panel-label">Sesión activa</p>
           <h2>{session.alias}</h2>
           <p>{session.email}</p>
-          <p className="panel-meta">Rol: {session.role === 'producer' ? 'Productor' : 'Artista'}</p>
+          <p className="panel-meta">Rol: {session.role === 'BEATMAKER' ? 'Beatmaker' : session.role === 'BUYER' ? 'Buyer' : 'Admin'}</p>
         </aside>
       </section>
     </main>

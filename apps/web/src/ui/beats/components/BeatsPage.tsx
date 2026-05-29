@@ -46,7 +46,7 @@ export function BeatsPage() {
   const [actionMsg, setActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const actionTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
-  const isProducer = session?.role === 'producer';
+  const isProducer = session?.role === 'BEATMAKER';
 
   // Cargar beats
   useEffect(() => {

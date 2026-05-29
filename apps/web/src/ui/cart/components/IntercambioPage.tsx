@@ -101,7 +101,7 @@ export function IntercambioPage() {
                   {session?.alias ?? 'ARTISTA'}
                 </p>
                 <p className="font-body text-xs text-on-surface-variant italic">
-                  {session?.role === 'artist' ? 'Minga Gold Member' : 'Productor'}
+                  {session?.role === 'BEATMAKER' ? 'Minga Gold Member' : 'Productor'}
                 </p>
               </div>
             </div>

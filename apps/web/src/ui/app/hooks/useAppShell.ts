@@ -53,9 +53,9 @@ export function useAppShell() {
         navigateTo('verify-email');
       } else {
         const targetRoute =
-          result.user.role === 'artist'
-            ? 'marketplace'
-            : result.user.role === 'producer'
+          result.user.role === 'BEATMAKER'
+            ? 'beatmaker-perfil'
+            : result.user.role === 'BUYER'
               ? 'panel'
               : nextRoute;
         navigateTo(targetRoute);

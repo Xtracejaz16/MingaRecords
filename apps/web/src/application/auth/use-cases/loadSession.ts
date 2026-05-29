@@ -10,7 +10,7 @@ function isSessionShape(session: unknown): session is AuthSession {
   return typeof candidate.id === 'string'
     && typeof candidate.email === 'string'
     && typeof candidate.alias === 'string'
-    && (candidate.role === 'artist' || candidate.role === 'producer')
+    && (candidate.role === 'BEATMAKER' || candidate.role === 'BUYER' || candidate.role === 'ADMIN')
     && typeof candidate.emailVerified === 'boolean'
     && typeof candidate.createdAt === 'string';
 }

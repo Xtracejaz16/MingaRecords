@@ -83,7 +83,7 @@ export function SideNavBar() {
                 {session.alias ?? 'ARTISTA'}
               </p>
               <p className="font-body text-xs text-koguiCream italic">
-                {session.role === 'artist' ? 'Minga Gold Member' : 'Productor'}
+                {session.role === 'BEATMAKER' ? 'Minga Gold Member' : 'Productor'}
               </p>
             </div>
           </div>

@@ -203,7 +203,7 @@ export class ApiAuthRepository implements AuthRepository {
       id: obj.id,
       email: obj.email,
       alias: typeof obj.alias === 'string' ? obj.alias : '',
-      role: obj.role === 'artist' || obj.role === 'producer' ? obj.role : 'artist',
+      role: obj.role === 'BEATMAKER' || obj.role === 'BUYER' || obj.role === 'ADMIN' ? obj.role : 'BEATMAKER',
       emailVerified: Boolean(obj.emailVerified),
       createdAt: typeof obj.createdAt === 'string' ? obj.createdAt : new Date().toISOString(),
     };

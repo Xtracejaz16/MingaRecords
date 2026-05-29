@@ -9,7 +9,7 @@ export function Hero() {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 pointer-events-none">
         <svg className="solar-emblem w-[600px] h-[600px]" fill="none" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <circle cx="50" cy="50" r="45" stroke="#C8860A" strokeDasharray="2 2" strokeWidth="0.5" />
-          <path d="M50  L55 45 L95 50 L55 55 L50 95 L45 55 L5 50 L45 45 Z" fill="#C8860A" />
+          <path d="M50 5 L55 45 L95 50 L55 55 L50 95 L45 55 L5 50 L45 45 Z" fill="#C8860A" />
           <circle cx="50" cy="50" r="10" stroke="#C8860A" strokeWidth="1" />
         </svg>
       </div>

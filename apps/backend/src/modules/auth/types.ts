@@ -1,12 +1,14 @@
 import { z } from 'zod';
 import type { Request } from 'express';
 
+export type Role = 'BEATMAKER' | 'BUYER' | 'ADMIN';
+
 export interface User {
     id: string;
     email: string;
     passwordHash: string;
     alias: string;
-    role: 'producer' | 'artist';
+    role: Role;
     emailVerified: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -15,7 +17,7 @@ export interface User {
 export interface JWTPayload {
     userId: string;
     email: string;
-    role: 'producer' | 'artist';
+    role: Role;
     iat: number;
     exp: number;
 }
@@ -35,8 +37,8 @@ export const RegisterInputSchema = z.object({
         .regex(/[A-Z]/, 'Debe tener al menos una mayúscula')
         .regex(/[0-9]/, 'Debe tener al menos un número'),
     alias: z.string().min(1, 'El alias es obligatorio'),
-    role: z.enum(['producer', 'artist'], {
-        message: 'El rol debe ser producer o artist',
+    role: z.enum(['BEATMAKER', 'BUYER'], {
+        message: 'El rol debe ser BEATMAKER o BUYER',
     }),
 });
 
@@ -60,7 +62,7 @@ export interface AuthResponse {
         id: string;
         email: string;
         alias: string;
-        role: 'producer' | 'artist';
+        role: Role;
         emailVerified: boolean;
     };
 }
@@ -69,7 +71,7 @@ export interface MeResponse {
     id: string;
     email: string;
     alias: string;
-    role: 'producer' | 'artist';
+    role: Role;
     emailVerified: boolean;
 }
 
