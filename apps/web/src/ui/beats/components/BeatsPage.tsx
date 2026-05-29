@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { SideNavBar } from '../../shared/components/SideNavBar';
 import { TopNavBar } from '../../shared/components/TopNavBar';
 import { useBeats } from '../hooks/useBeats';
+import { BeatLicenseManager } from './BeatLicenseManager';
 import type { CreateBeatInput } from '../../../domain/beats/entities/beat.js';
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001';
@@ -30,6 +31,7 @@ export function BeatsPage() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [licenseManagerBeatId, setLicenseManagerBeatId] = useState<string | null>(null);
   const audioFileRef = useRef<HTMLInputElement>(null);
   const coverFileRef = useRef<HTMLInputElement>(null);
 
@@ -279,6 +281,7 @@ export function BeatsPage() {
                   <th className="p-4">Estado</th>
                   <th className="p-4">Reproducciones</th>
                   <th className="p-4">Audio</th>
+                  {isProducer && <th className="p-4">Licencias</th>}
                   {isProducer && <th className="p-4">Acción</th>}
                 </tr>
               </thead>
@@ -337,6 +340,16 @@ export function BeatsPage() {
                     {isProducer && (
                       <td className="p-4">
                         <button
+                          onClick={() => setLicenseManagerBeatId(beat.id)}
+                          className="text-xs font-bold uppercase tracking-wider text-muiscaGold hover:text-muiscaGold/70 transition-colors"
+                        >
+                          ⚙ Licencias
+                        </button>
+                      </td>
+                    )}
+                    {isProducer && (
+                      <td className="p-4">
+                        <button
                           onClick={() => handleDelete(beat.id)}
                           className="text-xs font-bold uppercase tracking-wider text-taironaTerracotta hover:text-taironaTerracotta/70 transition-colors"
                         >
@@ -351,6 +364,18 @@ export function BeatsPage() {
           </div>
         )}
       </div>
+
+      {/* License Manager Modal */}
+      {licenseManagerBeatId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/80 backdrop-blur-sm">
+          <div className="w-full max-w-lg px-4">
+            <BeatLicenseManager
+              beatId={licenseManagerBeatId}
+              onClose={() => setLicenseManagerBeatId(null)}
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 }

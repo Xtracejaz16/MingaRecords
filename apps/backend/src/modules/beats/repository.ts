@@ -6,6 +6,7 @@ import type {
   PaginatedBeats,
   ProducerStats,
   GenreRecord,
+  LicenseTypeValue,
 } from './types.js';
 
 // --- Slug Helpers ---
@@ -150,6 +151,51 @@ export async function getBeatsByProducerId(
 
 export async function getGenres(): Promise<GenreRecord[]> {
   return prisma.genre.findMany({ orderBy: { name: 'asc' } });
+}
+
+// --- License Repository ---
+
+export async function getLicensesByBeatId(beatId: string): Promise<Array<{
+  id: string;
+  type: string;
+  priceCents: number;
+  isActive: boolean;
+  createdAt: Date;
+  beatId: string;
+}>> {
+  return prisma.license.findMany({
+    where: { beatId },
+  });
+}
+
+export async function upsertLicense(
+  beatId: string,
+  type: LicenseTypeValue,
+  data: { priceCents: number; isActive?: boolean },
+): Promise<{
+  id: string;
+  type: string;
+  priceCents: number;
+  isActive: boolean;
+  createdAt: Date;
+  beatId: string;
+}> {
+  const isActive = data.isActive ?? true;
+  return prisma.license.upsert({
+    where: {
+      beatId_type: { beatId, type },
+    },
+    create: {
+      type,
+      priceCents: data.priceCents,
+      isActive,
+      beatId,
+    },
+    update: {
+      priceCents: data.priceCents,
+      isActive,
+    },
+  });
 }
 
 export async function getProducerStats(producerId: string): Promise<ProducerStats> {

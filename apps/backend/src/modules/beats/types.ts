@@ -150,3 +150,40 @@ export interface GenreRecord {
   slug: string;
   createdAt: Date;
 }
+
+// --- License Types ---
+
+export type LicenseTypeValue = 'BASIC' | 'PREMIUM' | 'EXCLUSIVE';
+
+export interface LicenseWithBeat {
+  id: string;
+  type: LicenseTypeValue;
+  priceCents: number;
+  isActive: boolean;
+  createdAt: Date;
+  beatId: string;
+  beat: Beat;
+}
+
+export interface UpsertLicenseInput {
+  type: LicenseTypeValue;
+  priceCents: number;
+  isActive?: boolean;
+}
+
+export const PRICE_RANGES: Record<LicenseTypeValue, { minCents: number; maxCents: number }> = {
+  BASIC: { minCents: 100, maxCents: 5000 },
+  PREMIUM: { minCents: 2000, maxCents: 20000 },
+  EXCLUSIVE: { minCents: 10000, maxCents: 200000 },
+};
+
+export function validateLicensePrice(type: string, priceCents: number): string | null {
+  const range = PRICE_RANGES[type as LicenseTypeValue];
+  if (!range) {
+    throw new Error(`Unknown license type: ${type}`);
+  }
+  if (priceCents < range.minCents || priceCents > range.maxCents) {
+    return `Price ${priceCents} is out of range for ${type} license. Must be between ${range.minCents} and ${range.maxCents} cents.`;
+  }
+  return null;
+}
