@@ -83,10 +83,10 @@ export function PersistentPlayer() {
   const progressPercent = duration > 0 ? (progress / duration) * 100 : 0;
 
   return (
-    <div className="h-24 w-full flex-shrink-0 z-50 bg-obsidian/90 backdrop-blur-xl border-t border-b border-brightGold/20 flex items-center px-8 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+    <div className="fixed bottom-0 w-full h-24 z-50 bg-surface/90 backdrop-blur-xl border-t border-primary/20 flex items-center px-8 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
       {/* Track Info */}
-      <div className="w-1/4 flex items-center gap-4">
-        <div className="w-14 h-14 border border-blush shrink-0 overflow-hidden">
+      <div className="flex items-center gap-4 w-1/4">
+        <div className="w-14 h-14 border border-secondary shrink-0 overflow-hidden">
           {currentBeat.coverUrl ? (
             <img
               src={currentBeat.coverUrl}
@@ -94,77 +94,52 @@ export function PersistentPlayer() {
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-mud flex items-center justify-center">
-              <span className="material-symbols-outlined text-mutedCream/40 text-lg">
-                music_note
-              </span>
+            <div className="w-full h-full bg-surface-container-highest flex items-center justify-center">
+              <span className="material-symbols-outlined text-on-surface-variant/40 text-lg">music_note</span>
             </div>
           )}
         </div>
         <div className="min-w-0">
-          <p className="text-brightGold font-display text-sm font-bold tracking-tight truncate">
-            {currentBeat.title}
-          </p>
-          <p className="text-wayuuJade font-body text-[10px] tracking-[0.2em] uppercase truncate">
-            {currentBeat.artist}
-          </p>
+          <p className="text-primary font-display text-sm font-bold tracking-tight truncate">{currentBeat.title}</p>
+          <p className="text-wayuuJade font-body text-[10px] tracking-[0.2em] uppercase truncate">{currentBeat.artist}</p>
         </div>
       </div>
 
       {/* Controls */}
       <div className="flex-1 flex flex-col items-center gap-3">
-        {/* Buttons */}
-        <div className="flex items-center gap-6">
-          <button
-            type="button"
-            className="text-mutedCream hover:text-paleCream transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-lg">shuffle</span>
+        <div className="flex items-center gap-8">
+          <button type="button" className="text-on-surface-variant/60 hover:text-muiscaGold transition-colors cursor-pointer">
+            <span className="material-symbols-outlined">shuffle</span>
+          </button>
+          <button type="button" className="text-on-surface-variant/60 hover:text-muiscaGold transition-colors cursor-pointer">
+            <span className="material-symbols-outlined">skip_previous</span>
           </button>
           <button
             type="button"
-            className="text-mutedCream hover:text-paleCream transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-lg">
-              skip_previous
-            </span>
-          </button>
-          <button
-            type="button"
-            className="w-10 h-10 bg-muiscaGold text-deepBrown flex items-center justify-center rounded-full hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+            className="w-10 h-10 bg-muiscaGold text-on-primary flex items-center justify-center rounded-full hover:scale-105 transition-transform active:scale-95 cursor-pointer"
             onClick={handlePlayPause}
           >
             <span
-              className="material-symbols-outlined text-xl"
+              className="material-symbols-outlined"
               style={{ fontVariationSettings: "'FILL' 1" }}
             >
               {isPlaying ? 'pause' : 'play_arrow'}
             </span>
           </button>
-          <button
-            type="button"
-            className="text-mutedCream hover:text-paleCream transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-lg">
-              skip_next
-            </span>
+          <button type="button" className="text-on-surface-variant/60 hover:text-muiscaGold transition-colors cursor-pointer">
+            <span className="material-symbols-outlined">skip_next</span>
           </button>
-          <button
-            type="button"
-            className="text-mutedCream hover:text-paleCream transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-lg">repeat</span>
+          <button type="button" className="text-on-surface-variant/60 hover:text-muiscaGold transition-colors cursor-pointer">
+            <span className="material-symbols-outlined">repeat</span>
           </button>
         </div>
 
         {/* Progress bar */}
         <div className="w-full max-w-xl flex items-center gap-3">
-          <span className="text-[10px] text-mutedCream font-body w-10 text-right">
-            {formatTime(progress)}
-          </span>
+          <span className="text-[10px] text-on-surface-variant font-body">{formatTime(progress)}</span>
           <div
             ref={progressRef}
-            className="flex-1 h-1 bg-mud relative cursor-pointer"
+            className="flex-1 h-1 bg-surface-container-highest relative cursor-pointer"
             onClick={handleProgressClick}
           >
             <div
@@ -172,14 +147,12 @@ export function PersistentPlayer() {
               style={{ width: `${progressPercent}%` }}
             />
             <div
-              className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-muiscaGold border-2 border-deepBrown cursor-grab active:cursor-grabbing"
+              className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-muiscaGold border-2 border-on-primary cursor-grab active:cursor-grabbing"
               style={{ left: `calc(${progressPercent}% - 6px)` }}
               onMouseDown={handleThumbMouseDown}
             />
           </div>
-          <span className="text-[10px] text-mutedCream font-body w-10">
-            {formatTime(duration)}
-          </span>
+          <span className="text-[10px] text-on-surface-variant font-body">{formatTime(duration)}</span>
         </div>
       </div>
 
@@ -188,7 +161,7 @@ export function PersistentPlayer() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="text-mutedCream hover:text-paleCream transition-colors cursor-pointer"
+            className="text-on-surface-variant/60 hover:text-on-surface-variant transition-colors cursor-pointer"
             onClick={toggleMute}
           >
             <span className="material-symbols-outlined text-lg">
@@ -197,18 +170,18 @@ export function PersistentPlayer() {
           </button>
           <div
             ref={volumeRef}
-            className="w-24 h-1 bg-mud relative cursor-pointer"
+            className="w-24 h-1 bg-surface-container-highest relative cursor-pointer"
             onClick={handleVolumeClick}
           >
             <div
-              className="absolute inset-y-0 left-0 bg-muiscaGold"
+              className="absolute inset-y-0 left-0 bg-muiscaGold/40"
               style={{ width: `${volume}%` }}
             />
           </div>
         </div>
         <button
           type="button"
-          className="bg-brightGold text-deepBrown px-6 py-2 font-display text-xs font-bold tracking-widest active:scale-95 transition-transform cursor-pointer"
+          className="bg-primary text-on-primary px-6 py-2 font-display text-xs font-bold tracking-widest active:scale-95 transition-transform cursor-pointer"
         >
           ADQUIRIR
         </button>

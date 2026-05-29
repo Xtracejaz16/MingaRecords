@@ -1,35 +1,46 @@
-import { useState } from 'react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useAppShell } from '../../app/hooks/useAppShell';
-import { checkCartAccess } from '../../cart/hooks/useCartGuard';
-import { LoginRequiredModal, type LoginRequiredModalProps } from '../../cart/components/LoginRequiredModal';
 
 const NAV_ITEMS = [
   {
-    label: 'Favoritos',
-    icon: 'favorite',
-    active: false,
-    activeClasses: '',
-    hoverClasses: 'hover:bg-surface-container-high/20 hover:text-zenuCopper',
-    badge: 0,
-    action: 'favorites' as const,
+    label: 'Marketplace',
+    icon: 'storefront',
+    fill: true,
+    active: true,
+    activeBg: 'bg-taironaTerracotta/30',
+    activeBorder: 'border-taironaTerracotta',
+    hoverColor: 'hover:text-taironaTerracotta',
+    iconHover: 'group-hover:text-taironaTerracotta',
   },
   {
     label: 'Mis Compras',
     icon: 'shopping_bag',
+    fill: false,
     active: false,
-    activeClasses: '',
-    hoverClasses: 'hover:bg-surface-container-high/20 hover:text-wayuuJade',
-    badge: 0,
-    action: 'purchases' as const,
+    activeBg: '',
+    activeBorder: '',
+    hoverColor: 'hover:text-wayuuJade',
+    iconHover: 'group-hover:text-wayuuJade',
+  },
+  {
+    label: 'Favoritos',
+    icon: 'favorite',
+    fill: false,
+    active: false,
+    activeBg: '',
+    activeBorder: '',
+    hoverColor: 'hover:text-zenuCopper',
+    iconHover: 'group-hover:text-zenuCopper',
   },
   {
     label: 'Mi Perfil',
     icon: 'person',
+    fill: false,
     active: false,
-    activeClasses: '',
-    hoverClasses: 'hover:bg-surface-container-high/20 hover:text-muiscaGold',
-    action: 'profile' as const,
+    activeBg: '',
+    activeBorder: '',
+    hoverColor: 'hover:text-muiscaGold',
+    iconHover: 'group-hover:text-muiscaGold',
   },
 ] as const;
 
@@ -41,112 +52,68 @@ const FOOTER_ITEMS = [
 export function SideNavBar() {
   const { session } = useAuth();
   const { navigateTo, handleLogout } = useAppShell();
-  const [modalVariant, setModalVariant] = useState<LoginRequiredModalProps['variant']>('not-logged-in-purchases');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleNavClick = (action: typeof NAV_ITEMS[number]['action']) => {
-    if (action === 'purchases') {
-      const guard = checkCartAccess(session);
-      if (!guard.allowed) {
-        setModalVariant(guard.variant === 'not-logged-in' ? 'not-logged-in-purchases' : 'wrong-role');
-        setIsModalOpen(true);
-        return;
-      }
-      navigateTo('intercambio');
-      return;
-    }
-
-    // For favorites and profile — guard check too
-    const guard = checkCartAccess(session);
-    if (!guard.allowed) {
-      const variant = action === 'favorites' ? 'not-logged-in-favorite' as const : 'not-logged-in-buy' as const;
-      setModalVariant(guard.variant === 'not-logged-in' ? variant : 'wrong-role');
-      setIsModalOpen(true);
-    }
-  };
 
   return (
-    <aside className="h-full w-64 flex-shrink-0 bg-surface border-r border-outline/5 z-40 flex flex-col overflow-y-auto pt-20">
+    <aside className="fixed left-0 top-20 h-[calc(100vh-160px)] w-64 bg-surface-container-low border-r border-outline-variant/5 flex flex-col py-8 z-40">
       {/* Profile */}
       {session && (
-        <div className="p-6 border-b border-outline/10">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 border border-muiscaGold/50 p-1 shrink-0">
-              <div className="w-full h-full bg-surface-container-high flex items-center justify-center">
-                <span className="material-symbols-outlined text-muiscaGold">
-                  person
-                </span>
-              </div>
+        <div className="px-6 mb-10 flex items-center gap-4">
+          <div className="w-12 h-12 border border-secondary/50 p-1">
+            <div className="w-full h-full bg-surface-container-high flex items-center justify-center">
+              <span className="material-symbols-outlined text-on-surface-variant">person</span>
             </div>
-            <div>
-              <p className="font-display text-sm font-bold text-muiscaGold tracking-tighter">
-                {session.alias ?? 'ARTISTA'}
-              </p>
-              <p className="font-body text-xs text-koguiCream italic">
-                {session.role === 'artist' ? 'Minga Gold Member' : 'Productor'}
-              </p>
-            </div>
+          </div>
+          <div>
+            <p className="font-display text-sm font-bold text-primary tracking-tighter">ARTISTA ELITE</p>
+            <p className="font-body text-xs text-on-surface-variant italic">Minga Gold Member</p>
           </div>
         </div>
       )}
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
-        {NAV_ITEMS.filter((item) => session || item.action !== 'profile').map((item) => (
+      {/* Nav items */}
+      <nav className="flex-1 space-y-1">
+        {NAV_ITEMS.map((item) => (
           <button
             key={item.label}
             type="button"
-            className={`w-full flex items-center gap-3 px-4 py-3 font-display text-xs tracking-widest uppercase cursor-pointer transition-colors ${
+            className={`flex items-center gap-4 px-6 py-3 w-full text-left font-display text-sm tracking-widest uppercase transition-all cursor-pointer ${
               item.active
-                ? item.activeClasses
-                : `text-koguiCream ${item.hoverClasses}`
+                ? `text-white ${item.activeBg} border-l-4 ${item.activeBorder}`
+                : `text-on-surface-variant hover:bg-surface-container-highest/20 ${item.hoverColor} group`
             }`}
-            onClick={() => handleNavClick(item.action)}
+            onClick={() => {
+              if (item.label === 'Favoritos') navigateTo('marketplace');
+              if (item.label === 'Mis Compras') navigateTo('marketplace');
+              if (item.label === 'Mi Perfil') navigateTo('marketplace');
+            }}
           >
             <span
-              className="material-symbols-outlined text-lg"
-              style={
-                item.active
-                  ? { fontVariationSettings: "'FILL' 1" }
-                  : undefined
-              }
+              className={`material-symbols-outlined ${item.active ? '' : item.iconHover}`}
+              style={item.fill ? { fontVariationSettings: "'FILL' 1" } : undefined}
             >
               {item.icon}
             </span>
-            <span className="flex-1 text-left">{item.label}</span>
-            {'badge' in item && item.badge > 0 && (
-              <span className="ml-auto bg-taironaTerracotta text-white text-[10px] px-1.5 py-0.5">
-                {item.badge}
-              </span>
-            )}
+            <span>{item.label}</span>
           </button>
         ))}
       </nav>
 
       {/* Footer */}
-      {session && (
-        <div className="p-4 border-t border-outline/10 space-y-1">
-          {FOOTER_ITEMS.map((item) => (
-            <button
-              key={item.label}
-              className="w-full flex items-center gap-3 px-4 py-2 text-koguiCream/40 hover:text-koguiCream text-xs font-display tracking-widest uppercase cursor-pointer transition-colors"
-              type="button"
-              onClick={item.label === 'Salir' ? handleLogout : undefined}
-            >
-              <span className="material-symbols-outlined text-base">
-                {item.icon}
-              </span>
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      <LoginRequiredModal
-        variant={modalVariant}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
+      <div className="mt-auto px-6 space-y-2">
+        {FOOTER_ITEMS.map((item) => (
+          <button
+            key={item.label}
+            type="button"
+            className="flex items-center gap-4 py-2 text-on-surface-variant/40 hover:text-on-surface-variant transition-colors text-xs font-display tracking-widest uppercase w-full text-left cursor-pointer"
+            onClick={() => {
+              if (item.label === 'Salir') handleLogout();
+            }}
+          >
+            <span className="material-symbols-outlined text-sm">{item.icon}</span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </div>
     </aside>
   );
 }

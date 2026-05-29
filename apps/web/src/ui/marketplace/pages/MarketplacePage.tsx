@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import '../marketplace.css';
-import { TopNavBar } from '../../shared/components/TopNavBar';
+import { TopNavBar } from '../components/TopNavBar';
 import { SideNavBar } from '../components/SideNavBar';
 import { HeroHeader } from '../components/HeroHeader';
 import { SearchBar } from '../components/SearchBar';
@@ -24,7 +24,6 @@ export function MarketplacePage() {
     releases,
     loading,
     error,
-    // searchBeats is unused in this component after combining logic here
     filterByGenre,
     beats,
   } = useMarketplace();
@@ -39,18 +38,14 @@ export function MarketplacePage() {
   } = useUIStore();
   const { playBeat } = useAudioPlayer();
 
-  // Synchronize error -> toastMessage inside an effect to avoid setState during render
-  // and ensure toast is shown when an error appears.
   useEffect(() => {
     if (!error) return;
-    // schedule setToastMessage in microtask to avoid lint complaining about sync setState
     Promise.resolve().then(() => setToastMessage(error));
   }, [error]);
 
-  // Combine filters: genre + search text. Both should apply additively.
   const displayBeats = (() => {
     const byGenre = selectedGenre ? filterByGenre(selectedGenre) : undefined;
-    const candidates = byGenre ?? beats; // start from all beats when no genre selected
+    const candidates = byGenre ?? beats;
     const q = searchQuery?.trim() ?? '';
     if (q === '') return candidates;
     const lowerQ = q.toLowerCase();
@@ -90,17 +85,17 @@ export function MarketplacePage() {
   };
 
   return (
-    <div className="marketplace-shell h-screen flex flex-col overflow-hidden bg-obsidian font-body text-koguiCream selection:bg-muiscaGold selection:text-taironaTerracotta">
+    <div className="h-screen flex flex-col overflow-hidden bg-surface font-body text-on-surface selection:bg-primary selection:text-on-primary">
       {/* Background overlays */}
-      <div className="fixed inset-0 marketplace-pattern z-0 pointer-events-none"></div>
-      <div className="fixed inset-0 marketplace-grain z-0 pointer-events-none"></div>
+      <div className="fixed inset-0 pattern-vueltiao z-0 pointer-events-none"></div>
+      <div className="fixed inset-0 grain-overlay z-0 pointer-events-none"></div>
 
       <TopNavBar />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex pt-20 pb-24 min-h-screen">
         <SideNavBar />
 
-        <main className="flex-1 overflow-y-auto relative z-10">
+        <main className="ml-64 flex-1 px-12 py-12 relative z-10 max-w-7xl">
           {loading ? (
             <div className="h-full flex items-center justify-center">
               <div className="flex items-center gap-3">
@@ -111,7 +106,7 @@ export function MarketplacePage() {
               </div>
             </div>
           ) : (
-            <div className="px-12 py-12 max-w-7xl mx-auto">
+            <>
               <HeroHeader />
 
               {/* Search & Filters */}
@@ -133,8 +128,8 @@ export function MarketplacePage() {
                     <div className="h-[1px] flex-1 bg-gradient-to-r from-wayuuJade/20 via-muiscaGold/40 to-zenuCopper/20"></div>
                   </div>
                   <button
-                    className="text-primary font-display text-xs tracking-widest underline decoration-secondary ml-10"
                     type="button"
+                    className="text-primary font-display text-xs tracking-widest underline decoration-secondary ml-10"
                   >
                     VER TODOS LOS BEATS
                   </button>
@@ -177,15 +172,15 @@ export function MarketplacePage() {
               <footer className="mt-20 py-12 border-t border-outline-variant/10 text-center space-y-6">
                 <div className="flex justify-center gap-8 font-display text-[10px] tracking-[0.4em] text-on-surface-variant uppercase">
                   <button
-                    className="hover:text-primary transition-colors"
                     type="button"
+                    className="hover:text-primary transition-colors"
                   >
                     Minga License
                   </button>
                   <span className="text-outline-variant/30">|</span>
                   <button
-                    className="hover:text-primary transition-colors"
                     type="button"
+                    className="hover:text-primary transition-colors"
                   >
                     Support Portal
                   </button>
@@ -194,7 +189,7 @@ export function MarketplacePage() {
                   © 2024 MINGA RECORDS · Ancestral Audio Solutions
                 </p>
               </footer>
-            </div>
+            </>
           )}
         </main>
       </div>

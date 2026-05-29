@@ -10,6 +10,7 @@ interface GenreChip {
   activeText: string;
   hoverBg: string;
   hoverText: string;
+  hasBorder?: boolean;
 }
 
 const GENRE_CHIPS: GenreChip[] = [
@@ -33,41 +34,42 @@ const GENRE_CHIPS: GenreChip[] = [
     label: 'CHAMPETA',
     value: 'CHAMPETA',
     activeBg: 'bg-zenuCopper',
-    activeText: 'text-obsidian',
+    activeText: 'text-on-surface',
     hoverBg: 'hover:bg-zenuCopper',
-    hoverText: 'hover:text-obsidian',
+    hoverText: 'hover:text-on-surface',
   },
   {
     label: 'CUMBIA',
     value: 'CUMBIA',
     activeBg: 'bg-emberaNavy',
-    activeText: 'text-paleCream',
+    activeText: 'text-on-surface',
     hoverBg: 'hover:bg-emberaNavy',
-    hoverText: 'hover:text-paleCream',
+    hoverText: 'hover:text-on-surface',
+    hasBorder: true,
   },
   {
     label: 'TRAP',
     value: 'TRAP',
-    activeBg: 'bg-taironaTerracotta',
-    activeText: 'text-white',
+    activeBg: 'bg-surface-container-high',
+    activeText: 'text-on-surface',
     hoverBg: 'hover:bg-taironaTerracotta',
     hoverText: 'hover:text-white',
   },
   {
     label: 'R&B',
     value: 'R&B',
-    activeBg: 'bg-wayuuJade',
-    activeText: 'text-white',
+    activeBg: 'bg-surface-container-high',
+    activeText: 'text-on-surface',
     hoverBg: 'hover:bg-wayuuJade',
     hoverText: 'hover:text-white',
   },
   {
     label: 'VALLENATO',
     value: 'VALLENATO',
-    activeBg: 'bg-zenuCopper',
-    activeText: 'text-obsidian',
+    activeBg: 'bg-surface-container-high',
+    activeText: 'text-on-surface',
     hoverBg: 'hover:bg-zenuCopper',
-    hoverText: 'hover:text-obsidian',
+    hoverText: 'hover:text-on-surface',
   },
 ];
 
@@ -83,13 +85,14 @@ export function GenreFilterChips({ selectedGenre, onSelectGenre }: GenreFilterCh
         return (
           <button
             key={chip.value}
+            type="button"
             onClick={() => onSelectGenre(isDefault ? null : chip.value)}
             className={`px-6 py-2 font-display text-xs tracking-widest font-bold cursor-pointer transition-all ${
               isActive
-                ? `${chip.activeBg} ${chip.activeText} border border-transparent`
-                : `bg-darkMud border border-outline/30 text-mutedCream ${chip.hoverBg} ${chip.hoverText}`
+                ? `${chip.activeBg} ${chip.activeText}`
+                : `bg-surface-container-high border border-outline-variant/30 text-on-surface-variant ${chip.hoverBg} ${chip.hoverText}`
             } ${
-              chip.value === 'CUMBIA' && isActive
+              chip.hasBorder && isActive
                 ? 'border border-muiscaGold'
                 : ''
             }`}
