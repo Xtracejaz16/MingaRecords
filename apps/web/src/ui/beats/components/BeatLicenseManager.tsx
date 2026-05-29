@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useBeatLicenses } from '../hooks/useBeatLicenses';
 import {
   LICENSE_TYPE_INFO,
@@ -22,36 +22,39 @@ interface Props {
 
 const LICENSE_TYPES: LicenseTypeValue[] = ['BASIC', 'PREMIUM', 'EXCLUSIVE'];
 
+function buildDefaultEntries(): LicenseFormEntry[] {
+  return LICENSE_TYPES.map((type) => ({
+    type,
+    priceCents: PRICE_RANGES[type].minCents,
+    isActive: false,
+  }));
+}
+
+function buildEntriesFromLicenses(licenses: LicenseFormEntry[]): LicenseFormEntry[] {
+  return LICENSE_TYPES.map((type) => {
+    const existing = licenses.find((l) => l.type === type);
+    return {
+      type,
+      priceCents: existing?.priceCents ?? PRICE_RANGES[type].minCents,
+      isActive: existing?.isActive ?? false,
+    };
+  });
+}
+
 export function BeatLicenseManager({ beatId, onClose }: Props) {
   const { licenses, isLoading, error, isSaving, updateLicenses, loadLicenses } = useBeatLicenses(beatId);
-  const [formEntries, setFormEntries] = useState<LicenseFormEntry[]>([]);
+  const [formEntries, setFormEntries] = useState<LicenseFormEntry[]>(buildDefaultEntries);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const initialized = useRef(false);
 
-  // Initialize form from loaded licenses
-  useEffect(() => {
+  // Initialize form from loaded licenses (render-time, avoids cascading effect)
+  if (!initialized.current && !isLoading) {
+    initialized.current = true;
     if (licenses.length > 0) {
-      setFormEntries(
-        LICENSE_TYPES.map((type) => {
-          const existing = licenses.find((l) => l.type === type);
-          return {
-            type,
-            priceCents: existing?.priceCents ?? PRICE_RANGES[type].minCents,
-            isActive: existing?.isActive ?? false,
-          };
-        }),
-      );
-    } else if (!isLoading && licenses.length === 0) {
-      // No licenses yet — create default entries (all inactive by default)
-      setFormEntries(
-        LICENSE_TYPES.map((type) => ({
-          type,
-          priceCents: PRICE_RANGES[type].minCents,
-          isActive: false,
-        })),
-      );
+      setFormEntries(buildEntriesFromLicenses(licenses));
     }
-  }, [licenses, isLoading]);
+  }
 
   function updateEntry(type: LicenseTypeValue, field: keyof LicenseFormEntry, value: boolean | number) {
     setFormEntries((prev) =>
