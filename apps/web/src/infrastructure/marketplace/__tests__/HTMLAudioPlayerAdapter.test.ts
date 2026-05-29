@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HTMLAudioPlayerAdapter } from '../HTMLAudioPlayerAdapter';
 
+// Store event listeners so we can trigger them in tests
+const eventListeners: Record<string, () => void> = {};
+
 // Mock HTMLAudioElement
 const mockAudio = {
   src: '',
@@ -12,7 +15,9 @@ const mockAudio = {
   play: vi.fn().mockResolvedValue(undefined),
   pause: vi.fn(),
   load: vi.fn(),
-  addEventListener: vi.fn(),
+  addEventListener: vi.fn((event: string, handler: () => void) => {
+    eventListeners[event] = handler;
+  }),
   removeEventListener: vi.fn(),
 };
 
@@ -28,6 +33,8 @@ describe('HTMLAudioPlayerAdapter', () => {
     mockAudio.muted = false;
     mockAudio.currentTime = 0;
     mockAudio.duration = 100;
+    // Clear stored event listeners between tests
+    Object.keys(eventListeners).forEach((key) => delete eventListeners[key]);
     adapter = new HTMLAudioPlayerAdapter();
   });
 
@@ -58,6 +65,38 @@ describe('HTMLAudioPlayerAdapter', () => {
 
     adapter.setVolume(-10);
     expect(mockAudio.volume).toBe(0);
+  });
+
+  it('queues seek when duration is NaN and applies on loadedmetadata', () => {
+    // Register for loadedmetadata so the adapter sets up its listener
+    adapter.onLoadedMetadata(vi.fn());
+
+    mockAudio.duration = NaN;
+    adapter.seek(50);
+    // currentTime should remain unchanged because duration is NaN
+    expect(mockAudio.currentTime).toBe(0);
+
+    // Set valid duration and simulate loadedmetadata event
+    mockAudio.duration = 100;
+    eventListeners['loadedmetadata']();
+
+    // pendingSeek should have been applied: currentTime should be 50
+    expect(mockAudio.currentTime).toBe(50);
+  });
+
+  it('replaces pending seek on subsequent calls before metadata loads', () => {
+    adapter.onLoadedMetadata(vi.fn());
+
+    mockAudio.duration = NaN;
+    adapter.seek(10);
+    adapter.seek(80); // Should replace the first seek
+    expect(mockAudio.currentTime).toBe(0);
+
+    mockAudio.duration = 100;
+    eventListeners['loadedmetadata']();
+
+    // Only the last seek value (80) should be applied
+    expect(mockAudio.currentTime).toBe(80);
   });
 
   it('cleanup removes listeners', () => {

@@ -70,4 +70,23 @@ describe('useAudioPlayer', () => {
 
     expect(usePlayerStore.getState().volume).toBe(75);
   });
+
+  it('seek reference is stable across renders', () => {
+    const { result, rerender } = renderHook(() => useAudioPlayer());
+    const seekRef = result.current.seek;
+
+    // Re-render the hook (simulates parent re-render)
+    rerender();
+
+    expect(result.current.seek).toBe(seekRef);
+  });
+
+  it('setVolume reference is stable across renders', () => {
+    const { result, rerender } = renderHook(() => useAudioPlayer());
+    const setVolumeRef = result.current.setVolume;
+
+    rerender();
+
+    expect(result.current.setVolume).toBe(setVolumeRef);
+  });
 });

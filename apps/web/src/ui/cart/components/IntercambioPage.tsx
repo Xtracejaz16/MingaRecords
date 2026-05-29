@@ -81,7 +81,7 @@ export function IntercambioPage() {
   return (
     <div className="bg-obsidian min-h-screen relative">
       {/* Background overlays */}
-      <div className="fixed inset-0 pointer-events-none pattern-vueltiao-subtle opacity-20 z-0" />
+      <div className="fixed inset-0 pointer-events-none bg-[url('data:image/svg+xml,%3Csvg%20width=%2760%27%20height=%2760%27%20viewBox=%270%200%2060%2060%27%20xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cpath%20d=%27M30%200L60%2030L30%2060L0%2030L30%200ZM30%2010L50%2030L30%2050L10%2030L30%2010Z%27%20fill=%27%23C8860A%27%20fill-opacity=%270.04%27/%3E%3C/svg%3E')] opacity-20 z-0" />
       <div className="fixed inset-0 pointer-events-none mineral-grain z-0" />
 
       <TopNavBar />

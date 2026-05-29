@@ -6,6 +6,7 @@ export class HTMLAudioPlayerAdapter implements AudioPlayerRepository {
   private loadedMetadataCallback: ((duration: number) => void) | null = null;
   private endedCallback: (() => void) | null = null;
   private errorCallback: ((error: Error) => void) | null = null;
+  private pendingSeek: number | null = null;
 
   constructor() {
     this.audio = new Audio();
@@ -31,7 +32,11 @@ export class HTMLAudioPlayerAdapter implements AudioPlayerRepository {
 
   seek(time: number): void {
     const duration = this.audio.duration;
-    if (!Number.isFinite(duration) || duration <= 0) return;
+    if (!Number.isFinite(duration) || duration <= 0) {
+      this.pendingSeek = time;
+      return;
+    }
+    this.pendingSeek = null;
     this.audio.currentTime = Math.max(0, Math.min(time, duration));
   }
 
@@ -89,6 +94,13 @@ export class HTMLAudioPlayerAdapter implements AudioPlayerRepository {
 
   private handleLoadedMetadata(): void {
     this.loadedMetadataCallback?.(this.audio.duration);
+    if (this.pendingSeek !== null) {
+      const duration = this.audio.duration;
+      if (Number.isFinite(duration) && duration > 0) {
+        this.audio.currentTime = Math.max(0, Math.min(this.pendingSeek, duration));
+      }
+      this.pendingSeek = null;
+    }
   }
 
   private handleEnded(): void {
