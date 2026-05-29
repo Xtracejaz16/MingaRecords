@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useBeatLicenses } from '../hooks/useBeatLicenses';
 import {
   LICENSE_TYPE_INFO,
@@ -46,14 +46,16 @@ export function BeatLicenseManager({ beatId, onClose }: Props) {
   const [formEntries, setFormEntries] = useState<LicenseFormEntry[]>(buildDefaultEntries);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const initialized = useRef(false);
+  const [synced, setSynced] = useState(false);
 
-  // Initialize form from loaded licenses (render-time, avoids cascading effect)
-  if (!initialized.current && !isLoading) {
-    initialized.current = true;
-    if (licenses.length > 0) {
-      setFormEntries(buildEntriesFromLicenses(licenses));
-    }
+  // Sync form with API data once loading completes (render-time, safe pattern)
+  if (!synced && !isLoading) {
+    setFormEntries(
+      licenses.length > 0
+        ? buildEntriesFromLicenses(licenses)
+        : buildDefaultEntries(),
+    );
+    setSynced(true);
   }
 
   function updateEntry(type: LicenseTypeValue, field: keyof LicenseFormEntry, value: boolean | number) {
